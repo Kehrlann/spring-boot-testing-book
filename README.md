@@ -1,2 +1,3 @@
 # spring-boot-testing-book
-Spring Boot Testing In Action
+
+Book project for `Spring Boot Testing In Action`.
