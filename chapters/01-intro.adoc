@@ -1,0 +1,10 @@
+= This is the title
+
+:author: Daniel Garnier-Moiroux
+
+++++
+<script type="text/javascript" src="http://livejs.com/live.js"></script>
+++++
+
+
+Hello, {author} (this is a variable).
