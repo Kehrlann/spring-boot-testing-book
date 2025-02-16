@@ -3,7 +3,7 @@
 .SHELLFLAGS = -c
 MAKEFLAGS += --silent
 
-html:
+html: chapters/*.adoc
 	asciidoctor --destination-dir html/ chapters/*.adoc
 
 .PHONY: server
