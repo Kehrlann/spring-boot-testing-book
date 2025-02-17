@@ -1,10 +1,35 @@
-= This is the title
-
-:author: Daniel Garnier-Moiroux
+=  Testing Spring Boot applications
 
 ++++
 <script type="text/javascript" src="http://livejs.com/live.js"></script>
 ++++
 
+TODO: remove
 
-Hello, {author} (this is a variable).
+Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle. If you don't test explicitly, someone will. And hopefully, it's not your end-users. In any Serious Software Engineering project, automating at least part of these checks is table stakes. If you picked up this book, chances are you have already implemented extensive testing yourself. In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write. They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests. On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app. Those are sometimes called integration tests, or end-to-end tests.
+
+
+== The challenges of testing Spring Boot applications
+
+Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds. They are isolated and test a small piece of code, a specification or algorithm. By carefully controlling the inputs and outputs, you can verify that every line of code and every conditional branch are executed and that the outputs match your expectations. Because they do not require dependencies like databases or external services, unit tests are usually very deterministic. Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly. For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
+
+// TODO: interact with the classes
+
+End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended. But they come with significant drawbacks. First, you need to run the application under tests, usually in a dedicated environment. You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems. You may need to stub some of those system, for example by providing fake APIs with pre-determined responses. Second, they are much slower to execute as they go through more setup, and exercise more code. Third, they are less deterministic by nature and you need to take a lot of side effects and asynchronous behavior into account. Lastly, since they test the full depth of the program, you may need to set up a lot of state to exercise a specific behavior, for example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discout", so they are not a good fit for extensive testing.
+
+There is a gap between these two ends of the spectrum, where you could run only some parts of the application in your tests, reach out to
+
+
+== The need for Spring-specific tooling
+
+The Spring Framework provides powerful abstractions to connect different parts of an application together. They make it is easy to resolve component dependencies, decide which flavor of a specific interface should be used, and, through the `ApplicationContext`, allow you to discover, access and manipulate the "beans", or component instances, used throughout the application.
+
+++++
+This chapter introduces the specific challenges that arise when testing a Spring application, and how Spring has dedicated tooling to overcome such challenges. We will explore what Spring Boot has to offer in terms of testing: the Spring TestContex Framework and other Spring tools, the bundled testing libraries such as Mockito and assertJ, and the optional testing integrations such as Testcontainers or HtmlUnit. We will discuss how a traditional approach would handle testing Boot applications, either through very narrow unit tests, or very broad black-box testing. We will discuss how the testing affordances of Spring offer a path in between these approaches, and how Spring Boot makes it easy to test with the @SpringBootTest annotation. We will draw a broad picture of how the different libraries and components interact in a typical test. Lastly, I will list out what readers will learn in this book
+
+1. The challenges of testing Spring Boot applications
+1. The need for Spring-specific tooling
+1. What’s included in spring-boot-starter-test
+1. A typical Spring Boot test
+1. What you will learn in this book
+++++
