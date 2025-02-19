@@ -1,4 +1,5 @@
 =  Testing Spring Boot applications
+:source-highlighter: rouge
 
 ++++
 <script type="text/javascript" src="http://livejs.com/live.js"></script>
@@ -30,15 +31,16 @@ There is a gap between these two ends of the testing spectrum we discussed. Idea
 
 The Spring Framework provides powerful abstractions to connect different parts of an application together. With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used. Through the `ApplicationContext`, you can discover, access and manipulate the "beans", or component instances, used throughout the application. Using those abstractions, you can create your own test instances that resemble your prodction application, programmatically run the app, and interact with the created beans. But if you try to use the Spring Framework to do this manually, you may end up writing a lot of boilerplate code. Let's take a simple test as an example:
 
-```java
+[source,java]
+----
 class MyWidgetTests {
 
-  AnnotationConfigWebApplicationContext applicationContext;
+  AnnotationConfigWebApplicationContext applicationContext; <1>
 
   @Test
   void widgetCountIncreases() {
-    var service = applicationContext.getBean(WidgetService.class)
-    var repository = applicationContext.getBean(WidgetRepository.class)
+    var service = applicationContext.getBean(WidgetService.class) <2>
+    var repository = applicationContext.getBean(WidgetRepository.class) <2>
     var widgetCount = repository.countWidgets();
 
     service.addWidget(/* ... */);
@@ -47,12 +49,14 @@ class MyWidgetTests {
   }
 
 }
-```
+----
+<1> This is the application context of the application you are testing. It will has to be wired up manually, see the setup below.
+<2> The `service` and `repository` beans can be retrieved from the application context.
 
 You would then write your test configuration, like so:
 
-```java
-@PropertySource("classpath:/wf/garnier/example/widget-tests.properties")
+[source,java]
+----
 @Configuration
 @ComponentScan(
   basePackages = {"wf.garnier.examples"},
@@ -63,6 +67,7 @@ You would then write your test configuration, like so:
     )
   }
 )
+@PropertySource("classpath:/wf/garnier/example/widget-tests.properties")
 static class MyWidgetConfiguration {
 
   @Bean
@@ -78,11 +83,12 @@ static class MyWidgetConfiguration {
   }
 
 }
-```
+----
 
 As well as test-specific setup and teardown code:
 
-```java
+[source,java]
+----
 class MyWidgetTests {
 
   @BeforeEach
@@ -99,12 +105,12 @@ class MyWidgetTests {
 
   // ...
 }
-```
-
+----
 
 This is quite a complicated config for such a simple application. And we're not even properly ensuring that the tests end "cleanly": what happens if the user kills the test process? It is far from the delightful Spring Boot user experience that we've grown accustomed to! In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code. Of course, the power of Spring has been applied to testing as well. Chances are, if you picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but look somewhat like this:
 
-```java
+[source,java]
+----
 @SpringBootTest(properties = "widget.validation.enabled=false")
 class MyWidgetTests {
 
@@ -128,7 +134,7 @@ class MyWidgetTests {
   }
 
 }
-```
+----
 
 
 This is much crisper. It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
