@@ -35,18 +35,6 @@ class MyWidgetTests {
 
   AnnotationConfigWebApplicationContext applicationContext;
 
-  @BeforeEach
-  void setup() {
-    applicationContext = new AnnotationConfigWebApplicationContext();
-    applicationContext.register(MyWidgetTestConfiguration.class);
-    applicationContext.refresh();
-  }
-
-  @AfterEach
-  void tearDown() {
-    applicationContext.
-  }
-
   @Test
   void widgetCountIncreases() {
     var service = applicationContext.getBean(WidgetService.class)
@@ -71,22 +59,79 @@ You would then write your test configuration, like so:
   excludeFilters = {
     @ComponentScan.Filter(
       type = FilterType.ASSIGNABLE_TYPE,
-      value = {WidgetRepository.class}
+      value = {WidgetRepository.class, WidgetValidator.class}
     )
   }
 )
 static class MyWidgetConfiguration {
 
   @Bean
-  WidgetRepository mockRepository() {
+  WidgetRepository widgetRepository() {
     return new InMemoryWidgetRepository();
+  }
+
+  @Bean
+  WidgetValidator widgetValidator() {
+    var validator = new MockWidgetValidtor();
+    validator.setDefaultValidateResponse(true);
+    return validator;
+  }
+
+}
+```
+
+As well as test-specific setup and teardown code:
+
+```java
+class MyWidgetTests {
+
+  @BeforeEach
+  void setup() {
+    applicationContext = new AnnotationConfigWebApplicationContext();
+    applicationContext.register(MyWidgetTestConfiguration.class);
+    applicationContext.refresh();
+  }
+
+  @AfterEach
+  void tearDown() {
+    applicationContext.close();
+  }
+
+  // ...
+}
+```
+
+
+This is quite a complicated config for such a simple application. And we're not even properly ensuring that the tests end "cleanly": what happens if the user kills the test process? It is far from the delightful Spring Boot user experience that we've grown accustomed to! In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code. Of course, the power of Spring has been applied to testing as well. Chances are, if you picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but look somewhat like this:
+
+```java
+@SpringBootTest(properties = "widget.validation.enabled=false")
+class MyWidgetTests {
+
+  @Autowired
+  WidgetService service;
+
+  @MockitoBean
+  WidgetValidator validator;
+
+  @Autowired
+  WidgetRepository repository;
+
+  @Test
+  void widgetCountIncreases() {
+    when(validator.validate(any()).thenReturn(true);
+    var widgetCount = repository.countWidgets();
+
+    service.addWidget(/* ... */);
+
+    asssertThat(repository.countWidgets()).isEqualTo(widgetCount + 1);
   }
 
 }
 ```
 
 
-This is quite a complicated config for such a simple application. It is far from the delightfully Spring Boot user experience that we've grown accustomed to! In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code.
+This is much crisper. It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
 
 ++++
 This chapter introduces the specific challenges that arise when testing a Spring application, and how Spring has dedicated tooling to overcome such challenges. We will explore what Spring Boot has to offer in terms of testing: the Spring TestContex Framework and other Spring tools, the bundled testing libraries such as Mockito and assertJ, and the optional testing integrations such as Testcontainers or HtmlUnit. We will discuss how a traditional approach would handle testing Boot applications, either through very narrow unit tests, or very broad black-box testing. We will discuss how the testing affordances of Spring offer a path in between these approaches, and how Spring Boot makes it easy to test with the @SpringBootTest annotation. We will draw a broad picture of how the different libraries and components interact in a typical test. Lastly, I will list out what readers will learn in this book
