@@ -11,18 +11,82 @@ Testing applications and verifying that they have the intended behavior is an un
 
 == The challenges of testing Spring Boot applications
 
-Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds. They are isolated and test a small piece of code, a specification or algorithm. By carefully controlling the inputs and outputs, you can verify that every line of code and every conditional branch are executed and that the outputs match your expectations. Because they do not require dependencies like databases or external services, unit tests are usually very deterministic. Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly. For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
+Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds. They are isolated and test a small piece of code, a specification or algorithm. By wiring classes manually, and introducing stubs and mocks, you can control the inputs of every test with minimal friction. This, in turn, allows you to create test suites that verify that every line of code and every conditional branch are executed, and that the outputs match your expectations. Because they do not require dependencies like databases or external services, unit tests are usually very deterministic. You can mock dependencies and simulate complex error conditions with relative ease. Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly. For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
 
 // TODO: interact with the classes
 
-End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended. But they come with significant drawbacks. First, you need to run the application under tests, usually in a dedicated environment. You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems. You may need to stub some of those system, for example by providing fake APIs with pre-determined responses. Second, they are much slower to execute as they go through more setup, and exercise more code. Third, they are less deterministic by nature and you need to take a lot of side effects and asynchronous behavior into account. Lastly, since they test the full depth of the program, you may need to set up a lot of state to exercise a specific behavior, for example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discout", so they are not a good fit for extensive testing.
+End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended. But they come with significant drawbacks:
 
-There is a gap between these two ends of the spectrum, where you could run only some parts of the application in your tests, reach out to
+- You need to run the application under tests, usually in a dedicated environment. You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems. You may need to stub some of those system, for example by providing fake APIs with pre-determined responses.
+- They are less deterministic by nature. You need to take a lot of side effects and asynchronous behavior into account. For example, if you are testing through a browser and a webdriver, you will often need to "wait until this or that element is visible".
+- They test the full depth of the program. You need to set up a lot of state to exercise a specific behavior. For example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discount".
+- You do not have access to the internals of the application, and you need to write a lot of code to verify behavior. Following up on the previous example above, to verify that the user has exercised the GoldenSale discount, you need to navigate to the order history, find the appropriate order, open the page, and then verify that a "GoldenSale" badge is displayed. And since you cannot manipulate internal state, you have no shortcut to say "The user is eligible to a GoldenSale discount"
+- They are much slower to execute. They go through more setup, require more dependencies to start, and exercise more code. As a result, you run them much more infrequently.
 
 
 == The need for Spring-specific tooling
 
-The Spring Framework provides powerful abstractions to connect different parts of an application together. They make it is easy to resolve component dependencies, decide which flavor of a specific interface should be used, and, through the `ApplicationContext`, allow you to discover, access and manipulate the "beans", or component instances, used throughout the application.
+There is a gap between these two ends of the testing spectrum we discussed. Ideally, you would have some tooling to run most of the stack of your application, but swap out some complex pieces, and set the boundaries manually.
+
+The Spring Framework provides powerful abstractions to connect different parts of an application together. With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used. Through the `ApplicationContext`, you can discover, access and manipulate the "beans", or component instances, used throughout the application. Using those abstractions, you can create your own test instances that resemble your prodction application, programmatically run the app, and interact with the created beans. But if you try to use the Spring Framework to do this manually, you may end up writing a lot of boilerplate code. Let's take a simple test as an example:
+
+```java
+class MyWidgetTests {
+
+  AnnotationConfigWebApplicationContext applicationContext;
+
+  @BeforeEach
+  void setup() {
+    applicationContext = new AnnotationConfigWebApplicationContext();
+    applicationContext.register(MyWidgetTestConfiguration.class);
+    applicationContext.refresh();
+  }
+
+  @AfterEach
+  void tearDown() {
+    applicationContext.
+  }
+
+  @Test
+  void widgetCountIncreases() {
+    var service = applicationContext.getBean(WidgetService.class)
+    var repository = applicationContext.getBean(WidgetRepository.class)
+    var widgetCount = repository.countWidgets();
+
+    service.addWidget(/* ... */);
+
+    asssertThat(repository.countWidgets()).isEqualTo(widgetCount + 1);
+  }
+
+}
+```
+
+You would then write your test configuration, like so:
+
+```java
+@PropertySource("classpath:/wf/garnier/example/widget-tests.properties")
+@Configuration
+@ComponentScan(
+  basePackages = {"wf.garnier.examples"},
+  excludeFilters = {
+    @ComponentScan.Filter(
+      type = FilterType.ASSIGNABLE_TYPE,
+      value = {WidgetRepository.class}
+    )
+  }
+)
+static class MyWidgetConfiguration {
+
+  @Bean
+  WidgetRepository mockRepository() {
+    return new InMemoryWidgetRepository();
+  }
+
+}
+```
+
+
+This is quite a complicated config for such a simple application. It is far from the delightfully Spring Boot user experience that we've grown accustomed to! In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code.
 
 ++++
 This chapter introduces the specific challenges that arise when testing a Spring application, and how Spring has dedicated tooling to overcome such challenges. We will explore what Spring Boot has to offer in terms of testing: the Spring TestContex Framework and other Spring tools, the bundled testing libraries such as Mockito and assertJ, and the optional testing integrations such as Testcontainers or HtmlUnit. We will discuss how a traditional approach would handle testing Boot applications, either through very narrow unit tests, or very broad black-box testing. We will discuss how the testing affordances of Spring offer a path in between these approaches, and how Spring Boot makes it easy to test with the @SpringBootTest annotation. We will draw a broad picture of how the different libraries and components interact in a typical test. Lastly, I will list out what readers will learn in this book
