@@ -1,12 +1,7 @@
-=  Testing Spring Boot applications
+= Testing Spring Boot applications
 :source-highlighter: rouge
 
-++++
-<script type="text/javascript" src="http://livejs.com/live.js"></script>
-++++
-
-TODO: remove
-
+[.normal]
 Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle. If you don't test explicitly, someone will. And hopefully, it's not your end-users. In any Serious Software Engineering project, automating at least part of these checks is table stakes. If you picked up this book, chances are you have already implemented extensive testing yourself. In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write. They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests. On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app. Those are sometimes called integration tests, or end-to-end tests.
 
 
