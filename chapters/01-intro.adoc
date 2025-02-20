@@ -1,5 +1,6 @@
 = Testing Spring Boot applications
 :source-highlighter: rouge
+:icons: font
 
 [.normal]
 Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle. If you don't test explicitly, someone will. And hopefully, it's not your end-users. In any Serious Software Engineering project, automating at least part of these checks is table stakes. If you picked up this book, chances are you have already implemented extensive testing yourself. In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write. They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests. On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app. Those are sometimes called integration tests, or end-to-end tests.
@@ -28,12 +29,12 @@ The Spring Framework provides powerful abstractions to connect different parts o
 ----
 class MyWidgetTests {
 
-  AnnotationConfigWebApplicationContext applicationContext; <1>
+  AnnotationConfigWebApplicationContext applicationContext; // <1>
 
   @Test
   void widgetCountIncreases() {
-    var service = applicationContext.getBean(WidgetService.class) <2>
-    var repository = applicationContext.getBean(WidgetRepository.class) <2>
+    var service = applicationContext.getBean(WidgetService.class); // <2>
+    var repository = applicationContext.getBean(WidgetRepository.class); // <2>
     var widgetCount = repository.countWidgets();
 
     service.addWidget(/* ... */);
@@ -104,21 +105,21 @@ This is quite a complicated config for such a simple application. And we're not 
 
 [source,java]
 ----
-@SpringBootTest(properties = "widget.validation.enabled=false") <1>
+@SpringBootTest(properties = "widget.validation.enabled=false") // <1>
 class MyWidgetTests {
 
   @Autowired
-  WidgetService service; <2>
+  WidgetService service; // <2>
 
   @Autowired
-  WidgetRepository repository; <2>
+  WidgetRepository repository; // <2>
 
   @MockitoBean
-  WidgetValidator validator; <3>
+  WidgetValidator validator; // <3>
 
   @Test
   void widgetCountIncreases() {
-    when(validator.validate(any()).thenReturn(true);
+    when(validator.validate(any())).thenReturn(true);
     var widgetCount = repository.countWidgets();
 
     service.addWidget(/* ... */);
@@ -140,12 +141,12 @@ When you create a new project using the Spring Initializr, better known as https
 
 [source,xml]
 ----
-</dependencies>
+<dependencies>
   <!-- ... -->
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-test</artifactId>
-    <scope>test</scope> <1>
+    <scope>test</scope> <!--1-->
   </dependency>
 </dependencies>
 ----
@@ -157,8 +158,9 @@ With Gradle:
 ----
 dependencies {
   // ...
-  testImplementation 'org.springframework.boot:spring-boot-starter-test' <1>
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher' <2>
+  testImplementation 'org.springframework.boot:spring-boot-starter-test' // <1>
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher' // <2>
+  // ...
 }
 ----
 <1> The dependencies from spring-boot-starter-test are in the `testImplementation` configuration, and will not be available in your production code. It includes all the important libraries for running tests.
