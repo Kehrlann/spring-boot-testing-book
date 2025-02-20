@@ -203,6 +203,12 @@ When inspecting `org.springframework.boot:spring-boot-starter-test`, you will se
 
 With these dependencies, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
 
+== What you will learn in this book
+
+First and foremost, this book offers a hands-on approach to learning how to write tests for your Spring Boot applications. As it often is the case with Spring Boot, the first few steps are deceptively simple. You can achieve a lot very quickly, without needing much context on how Boot works under the hood. The second goal of this book is to make you familiar with the lesser-known aspects of testing Spring applications, and guide you around the pitfalls of doing only "the basics". You will learn the fundamentals, how the magic `@SpringBootApplication` works and what are the costs associated with it, and how to work around limitations. Lastly, Part 3 will discuss in more detail the testing libraries that are bundled with Spring Boot Test, so you can write better, more elegant and more stable tests.
+
+== Summary
+
 ++++
 This chapter introduces the specific challenges that arise when testing a Spring application, and how Spring has dedicated tooling to overcome such challenges. We will explore what Spring Boot has to offer in terms of testing: the Spring TestContex Framework and other Spring tools, the bundled testing libraries such as Mockito and assertJ, and the optional testing integrations such as Testcontainers or HtmlUnit. We will discuss how a traditional approach would handle testing Boot applications, either through very narrow unit tests, or very broad black-box testing. We will discuss how the testing affordances of Spring offer a path in between these approaches, and how Spring Boot makes it easy to test with the @SpringBootTest annotation. We will draw a broad picture of how the different libraries and components interact in a typical test. Lastly, I will list out what readers will learn in this book
 
