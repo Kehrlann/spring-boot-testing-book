@@ -1,6 +1,9 @@
 # output
 html/
 
+# samples directory
+samples
+
 # editors
 .fleet
 .idea
