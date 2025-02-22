@@ -1,2 +1,6 @@
 # output
 html/
+
+# editors
+.fleet
+.idea
