@@ -3,27 +3,57 @@
 :icons: font
 
 [.normal]
-Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle. If you don't test explicitly, someone will. And hopefully, it's not your end-users. In any Serious Software Engineering project, automating at least part of these checks is table stakes. If you picked up this book, chances are you have already implemented extensive testing yourself. In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write. They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests. On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app. Those are sometimes called integration tests, or end-to-end tests.
-
+Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle.
+If you don't test explicitly, someone will.
+And hopefully, it's not your end-users.
+In any Serious Software Engineering project, automating at least part of these checks is table stakes.
+If you picked up this book, chances are you have already implemented extensive testing yourself.
+In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write.
+They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests.
+On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app.
+Those are sometimes called integration tests, or end-to-end tests.
 
 == The challenges of testing Spring Boot applications
 
-Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds. They are isolated and test a small piece of code, a specification or algorithm. By wiring classes manually, and introducing stubs and mocks, you can control the inputs of every test with minimal friction. This, in turn, allows you to create test suites that verify that every line of code and every conditional branch are executed, and that the outputs match your expectations. Because they do not require dependencies like databases or external services, unit tests are usually very deterministic. You can mock dependencies and simulate complex error conditions with relative ease. Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly. For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
+Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds.
+They are isolated and test a small piece of code, a specification or algorithm.
+By wiring classes manually, and introducing stubs and mocks, you can control the inputs of every test with minimal friction.
+This, in turn, allows you to create test suites that verify that every line of code and every conditional branch are executed, and that the outputs match your expectations.
+Because they do not require dependencies like databases or external services, unit tests are usually very deterministic.
+You can mock dependencies and simulate complex error conditions with relative ease.
+Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly.
+For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
 
-End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended. But they come with significant drawbacks:
+End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended.
+But they come with significant drawbacks:
 
-- You need to run the application under tests, usually in a dedicated environment. You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems. You may need to stub some of those system, for example by providing fake APIs with pre-determined responses.
-- They are less deterministic by nature. You need to take a lot of side effects and asynchronous behavior into account. For example, if you are testing through a browser and a webdriver, you will often need to "wait until this or that element is visible".
-- They test the full depth of the program. You need to set up a lot of state to exercise a specific behavior. For example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discount".
-- You do not have access to the internals of the application, and you need to write a lot of code to verify behavior. Following up on the previous example above, to verify that the user has exercised the GoldenSale discount, you need to navigate to the order history, find the appropriate order, open the page, and then verify that a "GoldenSale" badge is displayed. And since you cannot manipulate internal state, you have no shortcut to say "The user is eligible to a GoldenSale discount"
-- They are much slower to execute. They go through more setup, require more dependencies to start, and exercise more code. As a result, you run them much more infrequently.
-
+- You need to run the application under tests, usually in a dedicated environment.
+You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems.
+You may need to stub some of those system, for example by providing fake APIs with pre-determined responses.
+- They are less deterministic by nature.
+You need to take a lot of side effects and asynchronous behavior into account.
+For example, if you are testing through a browser and a webdriver, you will often need to "wait until this or that element is visible".
+- They test the full depth of the program.
+You need to set up a lot of state to exercise a specific behavior.
+For example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discount".
+- You do not have access to the internals of the application, and you need to write a lot of code to verify behavior.
+Following up on the previous example above, to verify that the user has exercised the GoldenSale discount, you need to navigate to the order history, find the appropriate order, open the page, and then verify that a "GoldenSale" badge is displayed.
+And since you cannot manipulate internal state, you have no shortcut to say "The user is eligible to a GoldenSale discount"
+- They are much slower to execute.
+They go through more setup, require more dependencies to start, and exercise more code.
+As a result, you run them much more infrequently.
 
 == The need for Spring-specific tooling
 
-There is a gap between these two ends of the testing spectrum we discussed. Ideally, you would have some tooling to run most of the stack of your application, but swap out some complex pieces, and set the boundaries manually.
+There is a gap between these two ends of the testing spectrum we discussed.
+Ideally, you would have some tooling to run most of the stack of your application, but swap out some complex pieces, and set the boundaries manually.
 
-The Spring Framework provides powerful abstractions to connect different parts of an application together. With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used. Through the `ApplicationContext`, you can discover, access and manipulate the "beans", or component instances, used throughout the application. Using those abstractions, you can create your own test instances that resemble your prodction application, programmatically run the app, and interact with the created beans. But if you try to use the Spring Framework to do this manually, you may end up writing a lot of boilerplate code. Let's take a simple test as an example:
+The Spring Framework provides powerful abstractions to connect different parts of an application together.
+With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used.
+Through the `ApplicationContext`, you can discover, access and manipulate the "beans", or component instances, used throughout the application.
+Using those abstractions, you can create your own test instances that resemble your prodction application, programmatically run the app, and interact with the created beans.
+But if you try to use the Spring Framework to do this manually, you may end up writing a lot of boilerplate code.
+Let's take a simple test as an example:
 
 [source,java]
 ----
@@ -44,7 +74,9 @@ class MyWidgetTests {
 
 }
 ----
-<1> This is the application context of the application you are testing. It will has to be wired up manually, see the setup below.
+
+<1> This is the application context of the application you are testing.
+It will has to be wired up manually, see the setup below.
 <2> The `service` and `repository` beans can be retrieved from the application context.
 
 You would then write your test configuration, like so:
@@ -101,7 +133,12 @@ class MyWidgetTests {
 }
 ----
 
-This is quite a complicated config for such a simple application. And we're not even properly ensuring that the tests end "cleanly": what happens if the user kills the test process? It is far from the delightful Spring Boot user experience that we've grown accustomed to! In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code. Of course, the power of Spring has been applied to testing as well. Chances are, if you picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but look somewhat like this:
+This is quite a complicated config for such a simple application.
+And we're not even properly ensuring that the tests end "cleanly": what happens if the user kills the test process?
+It is far from the delightful Spring Boot user experience that we've grown accustomed to!
+In the world of Spring Boot, where things "just work", and you can gradually swap out the auto-configured parts for your own code.
+Of course, the power of Spring has been applied to testing as well.
+Chances are, if you picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but look somewhat like this:
 
 [source,java]
 ----
@@ -129,15 +166,22 @@ class MyWidgetTests {
 
 }
 ----
-<1> A single annotation declares this as a test of your Spring Boot application. Here, we are passing inline properties instead of relying on external files for setting property values.
-<2> Access to the Spring beans is done with the usual `@Autowired` annotations
-<3> Replacing a bean in the context is also annotation driven. Here, the `WidgetValidator` will be a mock object.
 
-This is much crisper. It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
+<1> A single annotation declares this as a test of your Spring Boot application.
+Here, we are passing inline properties instead of relying on external files for setting property values.
+<2> Access to the Spring beans is done with the usual `@Autowired` annotations
+<3> Replacing a bean in the context is also annotation driven.
+Here, the `WidgetValidator` will be a mock object.
+
+This is much crisper.
+It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
 
 == Bootstrapping the tests: spring-boot-starter-tests
 
-When you create a new project using the Spring Initializr, better known as https://start.spring.io , no matter which projects you select from the dropdown list, you get two dependencies included. Of course, the first one is Spring Boot, in the form of `org.springframework.boot:spring-boot-starter`. But every project also comes with Spring Boot Starter Test, in the "test" scope of your project. With Maven:
+When you create a new project using the Spring Initializr, better known as https://start.spring.io , no matter which projects you select from the dropdown list, you get two dependencies included.
+Of course, the first one is Spring Boot, in the form of `org.springframework.boot:spring-boot-starter`.
+But every project also comes with Spring Boot Starter Test, in the "test" scope of your project.
+With Maven:
 
 [source,xml]
 ----
@@ -150,7 +194,9 @@ When you create a new project using the Spring Initializr, better known as https
   </dependency>
 </dependencies>
 ----
-<1> The dependencies from spring-boot-starter-test are in the maven `test` scope, and will not be available in your production code. It includes everything required to run tests.
+
+<1> The dependencies from spring-boot-starter-test are in the maven `test` scope, and will not be available in your production code.
+It includes everything required to run tests.
 
 With Gradle:
 
@@ -163,14 +209,19 @@ dependencies {
   // ...
 }
 ----
-<1> The dependencies from spring-boot-starter-test are in the `testImplementation` configuration, and will not be available in your production code. It includes all the important libraries for running tests.
-<2> The JUnit platform launcher is required to discover and run JUnit tests in Gradle. In maven, this is automatically handled by the Surefire plugin.
 
-The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach, it contains a curated list of dependencies that will make writing tests easier. Using your build tool of choice, you can inspect the project for dependencies:
+<1> The dependencies from spring-boot-starter-test are in the `testImplementation` configuration, and will not be available in your production code.
+It includes all the important libraries for running tests.
+<2> The JUnit platform launcher is required to discover and run JUnit tests in Gradle.
+In maven, this is automatically handled by the Surefire plugin.
+
+The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach, it contains a curated list of dependencies that will make writing tests easier.
+Using your build tool of choice, you can inspect the project for dependencies:
 - With Maven: `./mvnw dependency:tree -Dscope=test`
 - With Gradle: `./gradlew dependencies --configuration testCompileClasspath`
 
-Both commands will show you a tree-like representation of your dependencies. Looking for the root dependency of `org.springframework.boot:spring-boot-starter-test`, you should see something like:
+Both commands will show you a tree-like representation of your dependencies.
+Looking for the root dependency of `org.springframework.boot:spring-boot-starter-test`, you should see something like:
 
 [source]
 ----
@@ -188,25 +239,49 @@ testCompileClasspath - Compile classpath for source set 'test'.
 
 <omitted>
 ----
+
 <1> These dependencies are your "production" dependencies, which are also required for your tests.
 <2> Everything under `org.springframework.boot:spring-boot-starter-test` are the dependencies that Spring Boot Test pulls
 
-When inspecting `org.springframework.boot:spring-boot-starter-test`, you will see quite a few dependencies. Here is a non-exhaustive list:
-- Everything in the `org.springframework` and `org.springframework.boot` groups are Spring-specific testing utilities. For example, this is where you will find the `@SpringBootTest` annotation.
-- JUnit, the testing framework, with `org.junit.jupiter:junit-jupiter`. This is where you will find your `@Test` annotation. JUnit is the most popular testing framework in Java, no other framework even comes close. For advanced JUnit usage, please refer to chapter 8, "Creating reusable test abstractions with JUnit".
-- Two assertion libarires, Hamcrest (`org.hamcrest:hamcrest`) and AssertJ (`org.assertj:assertj-core`). With these, you can write assertions that explain what your test expects, for exemple "When I add one widget, I expect the widget count to be 5" is expressed in code `assertThat(widgetCount).isEqualTo(5)`. When the assertions are not fulfilled, the assertion framework throws a nice, human-readable exception. Hamcrest is the "historical" library, while AssertJ has a more "modern" take on assertions. In this book, all of our assertions will be written with AssertJ. To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
-- One "mocking" library, Mockito, with `org.mockito:mockito-core`. Mocking allows you to easily create "fake" objects that have the same API as your classes. This is useful for replacing classes. For example, when you want to disconnect your tests from external dependencies such as databases, or when you want to treat some subset of your object graph as a black box that returns pre-determined results. You can add behavior ("when the user calls widgetService.count(), return 5") as well as verifications ("verify that the emailService.sendEmail() was called once, with email user@example.com"). To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
-- And a few other utilities, such as XMLUnit for checking properties on XML, JSONassert for checking properties on JSON, Awaitility for waiting on asynchronous conditions. To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
+When inspecting `org.springframework.boot:spring-boot-starter-test`, you will see quite a few dependencies.
+Here is a non-exhaustive list:
+- Everything in the `org.springframework` and `org.springframework.boot` groups are Spring-specific testing utilities.
+For example, this is where you will find the `@SpringBootTest` annotation.
+- JUnit, the testing framework, with `org.junit.jupiter:junit-jupiter`.
+This is where you will find your `@Test` annotation.
+JUnit is the most popular testing framework in Java, no other framework even comes close.
+For advanced JUnit usage, please refer to chapter 8, "Creating reusable test abstractions with JUnit".
+- Two assertion libarires, Hamcrest (`org.hamcrest:hamcrest`) and AssertJ (`org.assertj:assertj-core`).
+With these, you can write assertions that explain what your test expects, for exemple "When I add one widget, I expect the widget count to be 5" is expressed in code `assertThat(widgetCount).isEqualTo(5)`.
+When the assertions are not fulfilled, the assertion framework throws a nice, human-readable exception.
+Hamcrest is the "historical" library, while AssertJ has a more "modern" take on assertions.
+In this book, all of our assertions will be written with AssertJ.
+To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
+- One "mocking" library, Mockito, with `org.mockito:mockito-core`.
+Mocking allows you to easily create "fake" objects that have the same API as your classes.
+This is useful for replacing classes.
+For example, when you want to disconnect your tests from external dependencies such as databases, or when you want to treat some subset of your object graph as a black box that returns pre-determined results.
+You can add behavior ("when the user calls widgetService.count(), return 5") as well as verifications ("verify that the emailService.sendEmail() was called once, with email user@example.com").
+To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
+- And a few other utilities, such as XMLUnit for checking properties on XML, JSONassert for checking properties on JSON, Awaitility for waiting on asynchronous conditions.
+To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
 With these dependencies, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
 
 == What you will learn in this book
 
-First and foremost, this book offers a hands-on approach to learning how to write tests for your Spring Boot applications. To get the most out of it, you must be familiar with Spring Framework and Spring Boot. If you are not, consider reading a primer on the topic. There are many great publications, but you could pick either _Spring In Action, Sixth Edition_ by Craig Walls (Manning, 2022) or _Spring Start Here_ by Laurențiu Spilcă (Manning, 2021).
+First and foremost, this book offers a hands-on approach to learning how to write tests for your Spring Boot applications.
+To get the most out of it, you must be familiar with Spring Framework and Spring Boot.
+If you are not, consider reading a primer on the topic.
+There are many great publications, but you could pick either _Spring In Action, Sixth Edition_ by Craig Walls (Manning, 2022) or _Spring Start Here_ by Laurențiu Spilcă (Manning, 2021).
 
-As it often is the case with Spring Boot, the first few steps are deceptively simple. You can achieve a lot very quickly, without needing much context on how Boot works under the hood. The second goal of this book is to make you familiar with the lesser-known aspects of testing Spring applications, and guide you around the pitfalls of doing only "the basics". You will learn the fundamentals, how the magic `@SpringBootApplication` works and what are the costs associated with it, and how to work around limitations.
+As it often is the case with Spring Boot, the first few steps are deceptively simple.
+You can achieve a lot very quickly, without needing much context on how Boot works under the hood.
+The second goal of this book is to make you familiar with the lesser-known aspects of testing Spring applications, and guide you around the pitfalls of doing only "the basics".
+You will learn the fundamentals, how the magic `@SpringBootApplication` works and what are the costs associated with it, and how to work around limitations.
 
-In part 3, we will discuss the testing libraries that are bundled with Spring Boot Test in more detail. While you may use those libraries on a daily basis, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
+In part 3, we will discuss the testing libraries that are bundled with Spring Boot Test in more detail.
+While you may use those libraries on a daily basis, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
 
 == Summary
 
