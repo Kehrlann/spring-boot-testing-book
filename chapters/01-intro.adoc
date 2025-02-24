@@ -148,13 +148,23 @@ When you use `@AutoconfigureMockMvc`, you can access a `MockMvc` instance in you
 <4> You can replace any bean by a mock with a simple annotation, without having to exclude the production class yourself.
 These replacement instances are Mockito-based mocks.
 
+The code for the actual test does not differ much:
 
 [source,java]
 ----
 include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=content;!annotations;!class-members;!ignored]
 ----
 
-This is much crisper.
+<1> Configure the `WidgetValidator` mock so that it never throws an exception.
+<2> Make HTTP to your application, without having to worry about the URL or the exact shape of the the body of the request.
+<3> Assert that the response returns HTTP 201.
+<4> Inspect the headers of the request.
+<5> Ensure the widget is actually created in the repository.
+
+The test is simpler, and with `MockMvc` you can make assertions on the HTTP responses from your application.
+But the gains are most noticeable in the boilerplate, or lack thereof.
+You do not need to touch lower-lever Spring abstractions like the `ApplicationContext`.
+You do not even need to write setup or teardown methods.
 It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
 
 == Bootstrapping the tests: spring-boot-starter-tests
