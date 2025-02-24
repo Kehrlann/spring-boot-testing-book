@@ -5,14 +5,23 @@
 
 [.normal]
 Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle.
-If you don't test explicitly, someone will.
-And hopefully, it's not your end-users.
-In any Serious Software Engineering project, automating at least part of these checks is table stakes.
-If you picked up this book, chances are you have already implemented extensive testing yourself.
+This is true for all types of applications, web, mobile, desktop or embedded, whether they're written in Spring, in Javascript, in Erlang or in COBOL.
+And if you, as a developer, don't test explicitly, someone will.
+Hopefully, that someone is a colleague who is part of your software development process, and not your end-users.
+
+In any serious software engineering project, automating at least part of these tests is table stakes.
+You do not want to be clicking buttons manually everytime you make a change.
+If you picked up this book, chances are you have already implemented extensive testing yourself, and you do not need to be convinced that you should, in fact, write tests.
+
 In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write.
-They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: unit tests.
+They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: those are unit tests.
 On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app.
 Those are sometimes called integration tests, or end-to-end tests.
+There is a whole spectrum in between those two types of tests.
+Each type of test has its own advantages and drawbacks, as well as specific tooling associated to it.
+
+In this chapter, we will discuss the tools that Spring and Spring Boot can offer to simplify testing.
+You will discover where on the testing spectrum these tools shine, and how they outperform manually crafting those tests.
 
 == The challenges of testing Spring Boot applications
 
