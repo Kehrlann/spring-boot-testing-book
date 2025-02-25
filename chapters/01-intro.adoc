@@ -5,7 +5,7 @@
 
 [.normal]
 Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle.
-This is true for all types of applications, web, mobile, desktop or embedded, whether they're written in Spring, in Javascript, in Erlang or in COBOL.
+This is true for all types of applications, web, mobile, desktop or embedded, whether they're written in Java, in Javascript, in Erlang or in COBOL.
 And if you, as a developer, don't test explicitly, someone will.
 Hopefully, that someone is a colleague who is part of your software development process, and not your end-users.
 
@@ -17,69 +17,91 @@ In the case of a regular web application, whether it was developed using Spring 
 They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: those are unit tests.
 On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, and run a testing program against this running app.
 Those are sometimes called integration tests, or end-to-end tests.
-There is a whole spectrum in between those two types of tests.
-Each type of test has its own advantages and drawbacks, as well as specific tooling associated to it.
+And there is a continuum of types of tests in between.
+Each "testing level" has its own advantages and drawbacks, as well as specific tooling associated to it.
 
 In this chapter, we will discuss the tools that Spring and Spring Boot can offer to simplify testing.
 You will discover where on the testing spectrum these tools shine, and how they outperform manually crafting those tests.
 
+[NOTE]
+This book is not a general-purpose book on tests.
+It is focused on Spring applications, and assumes passing familiarity with testing.
+There are countless resources both in print and online.
+If you have never written a test before, you should get familiar with those resources before focusing on Spring-specific content.
+
 == The challenges of testing Spring Boot applications
 
-Unit tests are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds.
-They are isolated and test a small piece of code, a specification or algorithm.
-By wiring classes manually, and introducing stubs and mocks, you can control the inputs of every test with minimal friction.
+We've discussed two types of tests in the introduction.
+
+Unit tests are the backbone of software testing, and they come with great porterties:
+
+- They are fast to run: clicking a button for a given test will give you feedback within tens or hundreds of milliseconds.
+- They are isolated and test a small piece of code, a specification or algorithm.
+A failing test points you to a specific failure.
+- You can control the inputs of every test with minimal friction, by wiring classes manually, and introducing stubs and mocks in your dependency graph.
 This, in turn, allows you to create test suites that verify that every line of code and every conditional branch are executed, and that the outputs match your expectations.
-Because they do not require dependencies like databases or external services, unit tests are usually very deterministic.
-You can mock dependencies and simulate complex error conditions with relative ease.
-Such a narrow focus comes with limitations: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly.
+- Because they do not require dependencies like databases or external services, unit tests are usually very deterministic.
+A failure is a sign of an issue in your production code.
+- You can mock dependencies and simulate complex error conditions with relative ease.
+
+However, their narrow focus on classes or methods comes with an important caveat: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly.
 For example, using raw unit tests, you cannot easily verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
 
-End-to-end tests address those limitations, and allow you to ensure that the system as whole works as intended.
+End-to-end tests address those limitations, and ensure that the system as whole works as intended.
 But they come with significant drawbacks:
 
-- You need to run the application under tests, usually in a dedicated environment.
-You can sometimes write them on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems.
+- Before you can execute the tests, you need to actually run the application under tests, usually in a dedicated environment.
+You can run the application locally on your developer machine, but this requires setting up and maintaining the required dependencies, such as databases, message queues or external systems.
 You may need to stub some of those system, for example by providing fake APIs with pre-determined responses.
 - They are less deterministic by nature.
 You need to take a lot of side effects and asynchronous behavior into account.
 For example, if you are testing through a browser and a webdriver, you will often need to "wait until this or that element is visible".
-- They test the full depth of the program.
-You need to set up a lot of state to exercise a specific behavior.
+- Because they test the full depth of the program, you need to set up a lot of state to exercise a specific behavior.
 For example "GIVEN The user is logged in, AND they have three Widgets in their basket, AND they have a membership card, AND they have bought at least five Doodads in the past six months BUT they never had a GoldenSale discount, THEN they have access to a GoldenSale 10% discount".
+This may result in many API calls just to bootstrap the state of your application before any given test.
 - You do not have access to the internals of the application, and you need to write a lot of code to verify behavior.
 Following up on the previous example above, to verify that the user has exercised the GoldenSale discount, you need to navigate to the order history, find the appropriate order, open the page, and then verify that a "GoldenSale" badge is displayed.
-And since you cannot manipulate internal state, you have no shortcut to say "The user is eligible to a GoldenSale discount"
+And since you cannot manipulate internal state, you have no shortcut to set up the state of the program.
+For example, you can't just write "The user is eligible to a GoldenSale discount".
 - They are much slower to execute.
 They go through more setup, require more dependencies to start, and exercise more code.
 As a result, you run them much more infrequently.
 
+There is a gap between these two ends of the testing spectrum.
+Ideally, you would have some tooling to run _most_ of the stack of your application, but swap out some complex pieces on demand.
+For example, you want to run the full app, including the database, but stub out the external "Payment Service" which is too difficult to run locally.
+
+This is where Spring and Spring Boot come in.
+
 == The need for Spring-specific tooling
 
-There is a gap between these two ends of the testing spectrum we discussed.
-Ideally, you would have some tooling to run most of the stack of your application, but swap out some complex pieces, and set the boundaries manually.
-
 The Spring Framework provides powerful abstractions to connect different parts of an application together.
-With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used.
+With those abstractions, you can easily resolve component dependencies, decide which flavor of a specific interface should be used in some specific cases, turn off some components, etc.
 Through the `ApplicationContext`, you can discover, access and manipulate the "beans", or component instances, used throughout the application.
-Using those abstractions, you can create your own test instances that resemble your production application, programmatically run the app, and interact with the created beans.
-But if you try to use the Spring Framework to do this manually, you may end up writing a lot of boilerplate code.
+Using those abstractions, you can create your own "test application" that look a lot like your production application, programmatically run the app, and interact with the created beans.
+But if you tried to use the Spring Framework to do this manually, you would end up writing a lot of boilerplate code.
 You would also face specific testing challenges managing multiple configurations for different tests.
-To make sense of the code you would to write, let's examine an example.
-It might not be the best way to write these tests, but again, the whole point of Spring Boot Test is to do all of this for you.
+To make sense of the code you would need to write, let's examine an example.
 
 The application is a fairly simple app, responsible for handling Widgets.
 Users interact with it through a `@RestController`, and data is ultimately stored in `@WidgetRepository`.
 The `WidgetValidator` service represents an external service, used to validate Widgets before they are stored.
+It has complex logic, and is difficult to run on a developer machine, so you want to avoid running it locally.
+However, the Java API is fairly simple, `void validate(Widget widget)` method that throws a specific exception when there is a validation error.
 
 image::../images/ch1-fig1.png[]
 
-Let's imagine that Spring Boot doesn't help our tests at all.
-We can engage in a thought exercise: what would it take to run tests again our application?
-Of course, this book is all about what Spring Boot _actually_ provides in terms of testing, so this example is an anti-pattern.
+Let's imagine a world in which Spring Boot does not have any specific tooling for writing tests.
+What would it take to run tests against our application, without the `WidgetValidator`?
+
+[WARNING]
+Of course, this book is all about what Spring Boot _actually_ provides in terms of testing.
+This example is an absolute anti-pattern.
 It is only showcased for educational purposes.
 Please don't do this in your own test code!
 
-First, let's outline one test, and assume you have a running application that you can write your tests against, without worrying about all the boilerplate required to make it work:
+First, let's assume you have a running application that you can write your tests against, without worrying about all the boilerplate required to make it work.
+Let's outline a simple test:
 
 [source,java]
 ----
