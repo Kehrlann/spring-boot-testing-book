@@ -96,8 +96,7 @@ What would it take to run tests against our application, without the `WidgetVali
 
 [WARNING]
 Of course, this book is all about what Spring Boot _actually_ provides in terms of testing.
-This example is an absolute anti-pattern.
-It is only showcased for educational purposes.
+This example is an anti-pattern, only showcased for educational purposes.
 Please don't do this in your own test code!
 
 First, let's assume you have a running application that you can write your tests against, without worrying about all the boilerplate required to make it work.
@@ -108,21 +107,39 @@ Let's outline a simple test:
 include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tags=content;!before-after;!configuration;!ignored]
 ----
 
-<1> This is the application context of the application you are testing.
-You will have to wire it up manually, see the setup below.
-Most of the boilerplate you write will be to set this up.
+<1> This is the `ApplicationContext` of the application you are testing, referencing all beans, properties, etc.
 <2> The `RestClient` is the HTTP client we will be using to make HTTP calls to the test instance of our application.
-Like the `ConfigurableApplicationContext` above, you will have to point it at the application under test, manually.
-<3> This is actual test, everything in this method is the logic for your test.
-<4> Using `.getBean()`, you can obtain references to bean instances in the running application, to interact with them.
-These can be production classes like `WidgetRepository`, or special-purpose stubs, like the stub implementation of `WidgetValidator`.
-<5> Using the `RestClient`, you can make actual HTTP requests, specifying the header, body, etc, as you would in real production code.
-<6> You can ensure that, when a widget is added, the HTTP response code is `201 CREATED`.
-<7> You can also ensure that the widget is in the repository, with the correct properties.
+<3> The actual test, everything in this method is the logic for your test.
+<4> Obtain references to bean instances in the running application with `.getBean()`.
+<5> Using the `RestClient`, make HTTP requests, specifying the header, body, etc.
+<6> Verify that the HTTP response code is `201 CREATED`.
+<7> Verify that the widget is in the repository, with the correct properties.
 
-This is just the test itself, without any of the setup.
-The setup has two parts.
-First, you need to define a "test" application, describe what is included and what should be replaced.
+// <1> This is the application context of the application you are testing.
+// You will have to wire it up manually, requiring a lot of boilerplate code.
+// <2> The `RestClient` is the HTTP client we will be using to make HTTP calls to the test instance of our application.
+// Like the `ConfigurableApplicationContext` above, you will have to point it at the application under test, manually.
+// <3> This is actual test, everything in this method is the logic for your test.
+// <4> Using `.getBean()`, you can obtain references to bean instances in the running application, to interact with them.
+// These can be production classes like `WidgetRepository`, or special-purpose stubs, like the stub implementation of `WidgetValidator`.
+// <5> Using the `RestClient`, you can make actual HTTP requests, specifying the header, body, etc, as you would in real production code.
+// <6> You can ensure that, when a widget is added, the HTTP response code is `201 CREATED`.
+// <7> You can also ensure that the widget is in the repository, with the correct properties.
+
+
+This is just the testing logic itself.
+A few observations:
+
+- You will need to write a lot of boilerplate code just to hook up the `ApplicationContext` and `RestClient` fields of the test class, in the "setup" phase of the test.
+You need to specify which beans go into the application context, and you need to know the URL at which the running application can be reached in order to use the rest client.
+- You can access beans programmatically through the `ApplicationContext`, but not using the familiar Spring Boot idioms.
+This allows you to interact with live instances of your beans, such as the `WidgetRepository`, or to configure your fake objects to return pre-determined responses, such as the `WidgetValidator`.
+- The HTTP requests you make need to match real-world HTTP requests, with the correct headers, body, etc.
+It is essentially close to production code, with no syntactic sugar for testing.
+
+The test as is cannot run on its own, and you need to write some boilerplate code.
+There are two parts to the setup.
+First, you need to define a "test" application, by describing what is included from your production code, and what beans should be replaced by test-specific classes.
 Then, you need to start and stop this application, and connect your tests to it.
 In an ideal word, you would just write another class and annotate it with `@SpringBootApplication`.
 But this wouldn't work here, because it would conflict with your production main class.
@@ -134,37 +151,41 @@ This quickly leads to complicated configurations, like so:
 include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tags=content;!class-members;!before-after;!test;!ignored]
 ----
 
-<1> While you can't use `@SpringBootApplication`, you can still benefit from the usual Spring Boot auto-configuration with the appropriate annotation.
-<2> You can also turn on annotation-based configuration, which picks up all your `@Component`, `@RestController`, etc, classes.
-However, you need to exclude a few things from this discovery:
-<3> You need to exclude the main `@SpringBootApplication` so that only this configuration is picked up.
-<4> Specifically for this test, we want to avoid discovering the `WidgetValidator`, so we exclude it.
-<5> Then you provide your own stub implementation of `WidgetValidator`.
+<1> Enable Spring Boot auto-configuration
+<2> Turn on annotation-based configuration, which picks up all your `@Component`, `@RestController`, etc, classes.
+Configure it to pick up a narrow scope.
+<3> Provide own stub implementation of `WidgetValidator`.
+
+This shows the complexity of dealing with a "test-only" application, that is close to the real production application but not quite.
+Specifically, you need to exclude the `@SpringBootApplication` main class, so that you control exactly what goes into your test.
+Otherwise, the default Spring Boot behavior would kick in and bring in more thant what you need.
+You need to replace the `WidgetValidator` with a test implementation, in two phases: exclude the production code from component scanning, and include your own bean, so that only one instance is loaded in the test application.
 
 While this describes the application you want to test, it does not start it per se.
-To do so, you need to configure some setup code, and the associated teardown code:
+To do so, you need to configure some setup code, and the associated teardown code to stop the application
 
 [source,java]
 ----
 include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tags=content;!configuration;!test;!ignored]
 ----
 
-<1> The configuration is loaded into a `SpringApplicationBuilder`.
-You also use it to override properties from the default `application.properties` file that is in your production code.
+<1> The configuration is loaded into a `SpringApplicationBuilder`, along with some properties overriding the default `application.properties` from your production code.
 <2> The `RestClient` for the test suite is built after capturing the port of the running application.
 <3> After the test suite is finished, the application is stopped.
 
-This is quite a complicated config for such a simple application.
-To write such tests, you need deep knowledge of Spring.
-You will also need to pay attention to dependencies and how you configure them.
+With these three parts, configuration, setup, and test, you are able to run tests on a running application, swapping the `WidgetValidator` for a fake.
+This whole setup is already quite complicated, even for such a simple application.
+To effectively write such tests, you need good familiarity with the Spring framework, and if you go down this [path] you will run into many side effects that are specific to testing scenarios.
 All in all, it is far from the delightful Spring Boot user experience that we've grown accustomed to!
+Luckily, Spring Boot also has helpful capabilities in tests.
 
 == Removing  the toil: a typical `@SpringBootTest`
 
 In the world of Spring Boot, things "just work" out of the box.
-You can enhance configuration by a simple, annotation-driven.
-Of course, the Spring portfolio covers testing, and the Boot programming model extends to writing tests as well.
-Chances are, if you picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but look somewhat like this:
+You can enhance configuration and add your own components with a just a few annotations.
+Of course, the Spring portfolio covers testing, and the Boot programming model extends to writing tests.
+Chances are, if you have picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but in a much simpler form.
+They may look somewhat like this:
 
 [source,java]
 ----
@@ -172,13 +193,13 @@ include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/wid
 ----
 
 <1> A single annotation declares this as a test of your Spring Boot application.
-You can pass custom properties inline, to customize the application.
-<2> You can use annotations to add testing capabilities to the application.
-When you use `@AutoconfigureMockMvc`, you can access a `MockMvc` instance in your tests, and use that to talk to the running application without worrying about the URI or the port.
-<3> You can access the beans in the running instance using a familiar `@Autowired` annotation.
-<4> You can replace any bean by a mock with a simple annotation, without having to exclude the production class yourself.
-These replacement instances are Mockito-based mocks.
+Customize the application properties inline.
+<2> Add testing capabilities through annotations With `@AutoconfigureMockMvc`, you can access a `MockMvc` instance in your tests to connect to the application.
+<3> Access the beans in the running instance through `@Autowired` annotation.
+<4> Replace beans instances directly by using `@MockitoBean`.
 
+The configuration above is much clearer than the complicated config class we wrote in the previous section.
+Using the usual annotation-driven programming model, you can access beans in your application, register or swap beans.
 The code for the actual test does not differ much:
 
 [source,java]
