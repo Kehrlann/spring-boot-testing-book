@@ -219,11 +219,11 @@ You do not need to touch lower-lever Spring abstractions like the `ApplicationCo
 You do not even need to write setup or teardown methods.
 It puts the focus on your test code: you declare what differs from the normal configuration, and which parts of the application stack you want to interact with, and Spring and Boot take care of the rest for you.
 
-== Bootstrapping the tests: spring-boot-starter-tests
+== Your test toolkit: `spring-boot-starter-tests`
 
 When you create a new project using the Spring Initializr, better known as https://start.spring.io , no matter which projects you select from the dropdown list, you get two dependencies included.
 Of course, the first one is Spring Boot, in the form of `org.springframework.boot:spring-boot-starter`.
-But every project also comes with Spring Boot Starter Test, in the "test" scope of your project.
+But every project also comes with Spring Boot Starter Tests, in the "test" scope of your project.
 With Maven:
 
 [source,xml]
@@ -258,8 +258,9 @@ It includes all the important libraries for running tests.
 <2> The JUnit platform launcher is required to discover and run JUnit tests in Gradle.
 In maven, this is automatically handled by the Surefire plugin.
 
-The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach, it contains a curated list of dependencies that will make writing tests easier.
+The Spring Boot Starter Tests project is the testing version of the Spring Boot "batteries included" approach, it contains a curated list of dependencies that will make writing tests easier.
 Using your build tool of choice, you can inspect the project for dependencies:
+
 - With Maven: `./mvnw dependency:tree -Dscope=test`
 - With Gradle: `./gradlew dependencies --configuration testCompileClasspath`
 
@@ -271,7 +272,7 @@ Looking for the root dependency of `org.springframework.boot:spring-boot-starter
 testCompileClasspath - Compile classpath for source set 'test'.
 +--- org.springframework.boot:spring-boot-starter-web -> 3.4.2 <1>
 
-<omitted>
+... omitted ...
 
 \--- org.springframework.boot:spring-boot-starter-test -> 3.4.2 <2>
      +--- org.springframework.boot:spring-boot-starter:3.4.2 (*)
@@ -280,24 +281,28 @@ testCompileClasspath - Compile classpath for source set 'test'.
      |    \--- org.springframework:spring-test:6.2.2
      |         \--- org.springframework:spring-core:6.2.2 (*)
 
-<omitted>
+... omitted ...
 ----
 
 <1> These dependencies are your "production" dependencies, which are also required for your tests.
 <2> Everything under `org.springframework.boot:spring-boot-starter-test` are the dependencies that Spring Boot Test pulls
 
 When inspecting `org.springframework.boot:spring-boot-starter-test`, you will see quite a few dependencies.
-Here is a non-exhaustive list:
+Some are the Spring goodies we've seen above, like `MockitoBean`, but many more dependencies are tools that will help you write better tests.
+Here is a non-exhaustive list of the "goodies" you'll find in the toolkit:
+
 - Everything in the `org.springframework` and `org.springframework.boot` groups are Spring-specific testing utilities.
-For example, this is where you will find the `@SpringBootTest` annotation.
+For example, `org.springframework.boot:spring-boot-test` is where you will find the `@SpringBootTest` annotation.
 - JUnit, the testing framework, with `org.junit.jupiter:junit-jupiter`.
 This is where you will find your `@Test` annotation.
 JUnit is the most popular testing framework in Java, no other framework even comes close.
 For advanced JUnit usage, please refer to chapter 8, "Creating reusable test abstractions with JUnit".
-- Two assertion libarires, Hamcrest (`org.hamcrest:hamcrest`) and AssertJ (`org.assertj:assertj-core`).
-With these, you can write assertions that explain what your test expects, for exemple "When I add one widget, I expect the widget count to be 5" is expressed in code `assertThat(widgetCount).isEqualTo(5)`.
+- Two assertion libraries, Hamcrest (`org.hamcrest:hamcrest`) and AssertJ (`org.assertj:assertj-core`).
+With these, you can write assertions that explain what your test expects to be true.
+For example after "When I add one widget", you want to express "I expect the widget count to be 5".
+With AssertJ, you would write in code: `assertThat(widgetCount).isEqualTo(5)`.
 When the assertions are not fulfilled, the assertion framework throws a nice, human-readable exception.
-Hamcrest is the "historical" library, while AssertJ has a more "modern" take on assertions.
+Hamcrest is the "historical" library, and AssertJ has a more "modern" take on assertions.
 In this book, all of our assertions will be written with AssertJ.
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 - One "mocking" library, Mockito, with `org.mockito:mockito-core`.
