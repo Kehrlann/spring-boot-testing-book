@@ -315,6 +315,7 @@ To learn more, please refer to chapter 10, "Writing elegant tests with Spring Bo
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
 With these dependencies, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
+In the following chapters, you will learn to make good use of them.
 
 == What you will learn in this book
 
@@ -326,7 +327,7 @@ There are many great publications, but you could pick either _Spring In Action, 
 As it often is the case with Spring Boot, the first few steps are deceptively simple.
 You can achieve a lot very quickly, without needing much context on how Boot works under the hood.
 The second goal of this book is to make you familiar with the lesser-known aspects of testing Spring applications, and guide you around the pitfalls of doing only "the basics".
-You will learn the fundamentals, how the magic `@SpringBootApplication` works and what are the costs associated with it, and how to work around limitations.
+You will learn the fundamentals, how the magic `@SpringBootTest` works and what are the costs associated with it, and how to work around limitations.
 
 In part 3, we will discuss the testing libraries that are bundled with Spring Boot Test in more detail.
 While you may use those libraries on a daily basis, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
@@ -335,6 +336,6 @@ While you may use those libraries on a daily basis, you might not know the full 
 
 - There exists a spectrum of types of tests, ranging from focused unit tests to external, black-box end-to-end tests.
 - While the Spring Framework is versatile enough to allow to write tests somewhere in the middle of that spectrum, it would require some non-trivial amount of boilerplate.
-- Spring Boot Test offers a packaged solution to avoid that boilerplate.
-- It also provides you with familiar programming paradigms to write your tests, such as configuring your application through annotations.
-- It comes with "batteries included" and bundles all the core libraries used in a test suite: test runner, assertions and mocking, plus a few useful extras.
+- Spring Boot Test offers a packaged solution to avoid that boilerplate, and write what we will call "Integration Tests".
+- Spring Boot also provides you with familiar programming paradigms to write your tests, such as configuring your application through annotations.
+- Spring Boot Stater Tests comes with "batteries included" and bundles all the core libraries used in a test suite: test runner, assertions and mocking, plus a few useful extras.
