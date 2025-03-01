@@ -1,0 +1,37 @@
+= Testing a "Hello World" application
+:source-highlighter: rouge
+:icons: font
+:tabsize: 2
+
+[.normal]
+Intro placeholder
+
+== Getting up and running from start.spring.io
+
+xx
+
+== Creating a sample application and adding our first tests
+
+xx
+
+== Decoupling from external dependencies with mocks
+
+xx
+
+== Factoring common setup with JUnit
+
+xx
+
+== A word of caution: when NOT to use `@SpringBootTest`
+
+xx
+
+// ### 2. Testing a Spring “Hello world”
+//
+// In this chapter, we will work through a simple example, and showcase some of the testing features bundled in your Spring application when you create it on the Spring Initializr website at [https://start.spring.io](https://start.spring.io)
+//
+// 1. Getting up and running with code from start.spring.io
+// 2. Creating a sample application and adding our first tests
+// 3. Decoupling from external dependencies with mocks
+// 4. Factoring common setup with JUnit
+// 5. Deciding when (not) to use @SpringBootTest
