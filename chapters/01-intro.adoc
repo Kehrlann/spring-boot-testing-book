@@ -115,18 +115,6 @@ include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/wid
 <6> Verify that the HTTP response code is `201 CREATED`.
 <7> Verify that the widget is in the repository, with the correct properties.
 
-// <1> This is the application context of the application you are testing.
-// You will have to wire it up manually, requiring a lot of boilerplate code.
-// <2> The `RestClient` is the HTTP client we will be using to make HTTP calls to the test instance of our application.
-// Like the `ConfigurableApplicationContext` above, you will have to point it at the application under test, manually.
-// <3> This is actual test, everything in this method is the logic for your test.
-// <4> Using `.getBean()`, you can obtain references to bean instances in the running application, to interact with them.
-// These can be production classes like `WidgetRepository`, or special-purpose stubs, like the stub implementation of `WidgetValidator`.
-// <5> Using the `RestClient`, you can make actual HTTP requests, specifying the header, body, etc, as you would in real production code.
-// <6> You can ensure that, when a widget is added, the HTTP response code is `201 CREATED`.
-// <7> You can also ensure that the widget is in the repository, with the correct properties.
-
-
 This is just the testing logic itself.
 A few observations:
 
