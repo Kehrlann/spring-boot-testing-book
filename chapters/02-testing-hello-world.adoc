@@ -10,7 +10,11 @@ Intro placeholder
 
 xx
 
-== Creating a sample application and adding our first tests
+== Creating a sample application and adding our first test
+
+xx
+
+== Accessing context dependencies
 
 xx
 
