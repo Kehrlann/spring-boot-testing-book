@@ -4,7 +4,10 @@
 MAKEFLAGS += --silent
 
 html: chapters/*.adoc
-	asciidoctor --destination-dir html/ chapters/*.adoc
+	asciidoctor \
+	    --destination-dir html/ \
+	    --require ./asciidoctor/remove_formatter_comments.rb --trace \
+	    chapters/*.adoc
 
 .PHONY: watch
 watch:
