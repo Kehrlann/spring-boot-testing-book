@@ -1,4 +1,4 @@
-= Testing Spring Boot applications
+= The value of Spring Boot-specific test tooling
 :source-highlighter: rouge
 :icons: font
 :tabsize: 2
