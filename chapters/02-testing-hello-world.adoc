@@ -1,16 +1,36 @@
-= Testing a "Hello World" application
+= Testing a Spring Boot "Hello World" application
 :source-highlighter: rouge
 :icons: font
 :tabsize: 2
 
 [.normal]
-Intro placeholder
+When you create a project on Spring Initializr, also known as https://start.spring.io, you get testing libraries bundled in, as we mentioned in the previous chapter.
+There is also one test file, already written, bundled in your project.
+But it contains a single test method, which is empty, and the only thing it validates is that the application can start.
+This has value in and on itself.
+With Spring, you can write declarative code that express your dependency graph, and any error in your setup, such as a circular dependency, will go unnoticed until you actually run the application.
+Similarly, with Spring Boot, the convention-over-configuration programming model enables certain features by adding properties, and configuration errors are only discovered when the application starts.
+Having a test that runs the application will verify that the app starts at a click of a button... and it is the most Spring Boot can do: the only thing Spring Initializr knows about your application is that it is a Boot application.
+Having this test file makes it easy to add your own tests, without too much to decide: the next logical step is to add another method to this test file, and start from there.
 
-== Getting up and running from start.spring.io
+It's a good start, but where do you go from here?
+When writing "integration" tests, there a few key points that structure how your test suite will look like:
 
-xx
+- What is the API your test uses, how does it interact with your code?
+- How do you verify that the state is consistent with the actions of the user?
+- How do you keep you factor in the inevitable repetition that comes from test cases?
+- Lastly, and most importantly: how do you avoid reaching out to dependencies outside of the scope of your code, such as external web services?
 
-== Creating a sample application and adding our first test
+In this chapter, we will look at a very basic application, and work through what Spring Boot Test has to offer to answer these questions.
+
+== Getting up and running: a sample application
+
+Before you add tests, you need _something_ to test.
+Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
+
+// TODO: continue here
+
+== Adding your first test
 
 xx
 
@@ -18,11 +38,11 @@ xx
 
 xx
 
-== Decoupling from external dependencies with mocks
+== Factoring common setup with JUnit
 
 xx
 
-== Factoring common setup with JUnit
+== Decoupling from external dependencies with mocks
 
 xx
 
