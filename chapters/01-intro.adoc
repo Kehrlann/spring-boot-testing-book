@@ -166,6 +166,17 @@ This whole setup is already quite complicated, even for such a simple applicatio
 To effectively write such tests, you need good familiarity with the Spring framework, and if you go down this [path] you will run into many side effects that are specific to testing scenarios.
 All in all, it is far from the delightful Spring Boot user experience that we've grown accustomed to!
 Luckily, Spring Boot also has helpful capabilities in tests.
+This is where Spring Boot Test comes in.
+
+[NOTE]
+--
+There is no such thing as an official "Spring Boot Test" project.
+Both the Spring Framework and Spring Boot have test-specific affordances.
+Some of the other Spring projects also have test helpers, such as Security, Batch, GraphQL, etc.
+Lastly, Spring Boot comes with some testing dependencies bundled in.
+
+Throughout the book, I will refer to this whole testing ecosystem as "Spring Boot Test".
+--
 
 == Removing  the toil: a typical `@SpringBootTest`
 
