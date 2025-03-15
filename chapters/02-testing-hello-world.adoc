@@ -19,7 +19,7 @@ When writing "integration" tests, there a few key points that structure how your
 - What is the API your test uses, how does it interact with your code?
 - How do you verify that the state is consistent with the actions of the user?
 - How do you keep you factor in the inevitable repetition that comes from test cases?
-- Lastly, and most importantly: how do you avoid reaching out to dependencies outside of the scope of your code, such as external web services?
+- Lastly, and most importantly: how do you avoid reaching out to dependencies outside the scope of your code, such as external web services?
 
 In this chapter, we will look at a very basic application, and work through what Spring Boot Test has to offer to answer these questions.
 
@@ -27,8 +27,24 @@ In this chapter, we will look at a very basic application, and work through what
 
 Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
+This book is about writing tests, so we will not be explaining how to build the applications we test.
+You will find them at **TODO**.
 
-// TODO: continue here
+For this example we will use a simple application that displays the weather and temperature for cities.
+The user can select the cities they want in their dashboard, and the weather is fetched in real time from https://open-meteo.com.
+
+[NOTE]
+The applications in this book are example applications and are not meant to be production-grade apps.
+As such, there might be shortcuts taken here and there, and some best practices may be overlooked.
+Please take them with a grain of salt.
+
+Here's what the application looks like:
+
+image::../images/ch2-fig2.png[]
+
+The architecture is fairly basic.
+
+
 
 == Adding your first test
 
