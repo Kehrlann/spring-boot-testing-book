@@ -29,6 +29,7 @@ Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
 This book is about writing tests, so we will not be explaining how to build the applications we test.
 You will find them at **TODO**.
+You need Java 21, the latest LTS version, to run the examples.
 
 For this example we will use a simple application that displays the weather and temperature for cities.
 The user can select the cities they want in their dashboard, and the weather is fetched in real time from https://open-meteo.com.
@@ -38,17 +39,60 @@ The applications in this book are example applications and are not meant to be p
 As such, there might be shortcuts taken here and there, and some best practices may be overlooked.
 Please take them with a grain of salt.
 
+First, get the source code at: **TODO**.
+
+Then run the application:
+
+----
+./mvnw spring-boot:run
+----
+
+In this mode, the application uses weather data from the Open-Meteo API.
+If you'd like the application to run locally, you can use a "fake" API that returns random weather, by running it with the `local` profile:
+
+----
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+----
+
 Here's what the application looks like:
 
 image::../images/ch2-fig2.png[]
 
-The architecture is fairly basic.
+The user can type a city of their choice in the input box below "add a new city".
+The input box auto-completes using an HTML `<datalist>` element on the page, with all 5000 available cities loaded when the page is loaded.
+When they click the "Add City" button, the selected city is added to the cards below, and displays the temperature, wind speed and weather at the location.
+Cards are order by city name.
+The user can click a "remove" button do un-select a city.
 
+On the technical side, this application was created wit the Spring Initalizr at https://start.spring.io.
+The following dependencies are included:
 
+[source,xml]
+----
+include::../samples/ch2/weather/pom.xml[tags=dependencies;!ignored]
+----
+// TODO: callouts
+
+On the architecture side, nothing out of the extraordinary:
+
+image::../images/ch2-fig3.png[]
+
+There a single `@Controller`, passing HTTP requests to a single `@Service`.
+The service aggregates results from three components:
+
+- The first is a `CityRepository` which contain the list of known cities with their latitude and longitude.
+They are displayed in the auto-complete box in the "add a new city" section of the website.
+- The `SelectionRepository` contains the list of cities that the user has selected.
+For each item in this database table, they a card is displayed on the page.
+- The `WeatherService` returns weather data given latitude and longitude coordinates.
+By default, the implementation is the `OpenMeteoWeatherService`, makes HTTP calls to the Open-Meteo API.
+Note that, when using the `local` profile, the  `RandomWeatherService` will be loaded instead, but we'll leave this out of the scope for now.
+
+[NOTE]
+Take the time to run the application and try it out.
+Familiarity with the concepts will make the tests much easier to write.
 
 == Adding your first test
-
-xx
 
 == Accessing context dependencies
 
