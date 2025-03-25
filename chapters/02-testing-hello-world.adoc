@@ -71,7 +71,12 @@ The following dependencies are included:
 ----
 include::../samples/ch2/weather/pom.xml[tags=dependencies;!ignored]
 ----
-// TODO: callouts
+
+<1> Spring WebMvc to serve HTTP requests.
+<2> Spring Data to store data in a database.
+<3> H2 as an in-memory SQL database.
+
+There is no security in the application, and no user management: it is assumed there is a single user.
 
 On the architecture side, nothing out of the extraordinary:
 
@@ -92,7 +97,19 @@ Note that, when using the `local` profile, the  `RandomWeatherService` will be l
 Take the time to run the application and try it out.
 Familiarity with the concepts will make the tests much easier to write.
 
+== Running the base test
+
+As we mentioned earlier in the chapter, when you generate a project with Spring Initializr, you get an empty test.
+
+[source,java]
+----
+include::../samples/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
+----
+
+You can run
+
 == Adding your first test
+
 
 == Accessing context dependencies
 
