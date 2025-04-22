@@ -7,6 +7,7 @@
 ## Chapter 1
 
 - [ ] List of testing books? https://www.manning.com/books/effective-software-testing
+- [ ] Mental-Model with a diagram
 
 ## Chapter 2
 
