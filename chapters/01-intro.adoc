@@ -164,7 +164,17 @@ include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/wid
 With these three parts, configuration, setup, and test, you are able to run tests on a running application, swapping the `WidgetValidator` for a fake.
 This whole setup is already quite complicated, even for such a simple application.
 To effectively write such tests, you need good familiarity with the Spring framework, and if you go down this [path] you will run into many side effects that are specific to testing scenarios.
-All in all, it is far from the delightful Spring Boot user experience that we've grown accustomed to!
+
+To recap everything you need to think about:
+
+- Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
+- Replacing beans selectively, for example to avoid connecting to external systems.
+- Interacting with the running application using low level APIs, for example to obtain the port of the running server, or accessing certain beans in the application context.
+- Managing the lifecycle of the application in your tests, by starting and stopping it at appropriate times.
+
+== Removing  the toil: a typical `@SpringBootTest`
+
+The example from the previous section is far from the delightful Spring Boot user experience that we've grown accustomed to!
 Luckily, Spring Boot also has helpful capabilities in tests.
 This is where Spring Boot Test comes in.
 
@@ -177,8 +187,6 @@ Lastly, Spring Boot comes with some testing dependencies bundled in.
 
 Throughout the book, I will refer to this whole testing ecosystem as "Spring Boot Test".
 --
-
-== Removing  the toil: a typical `@SpringBootTest`
 
 In the world of Spring Boot, things "just work" out of the box.
 You can enhance configuration and add your own components with a just a few annotations.
