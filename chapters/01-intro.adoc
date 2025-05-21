@@ -72,10 +72,10 @@ It includes everything required to run tests.
 The starter pulls many useful test dependencies into the "test" part of your project, broadly divided into two categories.
 
 First, everything under `org.springframework` is Spring-specific tooling, created and maintained by the Spring team and community.
-It contains code to simplify testing Spring and Spring Boot applications.
+It contains code specifically designed to simplify testing Spring and Spring Boot applications.
 For example, it contains the `SpringExtension`, a JUnit extension that simplifies the lifecycle management of Spring applications by starting and stopping the Spring `ApplicationContext`, and allows you to easily configure and access Spring beans within your tests.
-It also contains the `@SpringBootTest` annotation, which automatically detects your Spring Boot application's configuration classes, and allows you to modify it through simple annotations.
-The goal is this book is to help you make good use
+Another example: the well-known `@SpringBootTest` annotation, which automatically detects your Spring Boot application's configuration classes, and allows you to modify it through simple annotations.
+These testing classes are the connective tissue between your application code and your test code.
 
 The second broad category contains a few testing utilities that are not specific to Spring.
 Just like in your production code, Spring Boot provides a list of curated dependencies that are useful in the most common scenarios.
@@ -103,13 +103,38 @@ To learn more, please refer to chapter 10, "Writing elegant tests with Spring Bo
 - And a few other utilities, such as XMLUnit for checking properties on XML, JSONassert for checking properties on JSON, Awaitility for waiting on asynchronous conditions.
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
+These utilities are not related to Spring, and can be used in all your tests, included your "business logic" tests that do not involve Spring.
+
 With the Spring testing dependencies plus the utilities listed above, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
 In the following chapters, you will learn to make good use of them.
 
 [NOTE]
-Some projects in the Spring portfolio have their own testing utilities, such as Security, Batch, GraphQL, etc.
-Spring Boot testing does not add those utilities to your project.
-However, when you create a project using the Spring Initializr (https://start.spring.io/), the appropriate testing dependencies will also be added to your build file as you select Spring projects.
+====
+To visualize the dependencies that `spring-boot-starter-test` brings, you can use your build tool of choice.
+
+- With Maven: `./mvnw dependency:tree -Dscope=test`
+- With Gradle: `./gradlew dependencies --configuration testCompileClasspath`
+
+Both commands will show you a tree-like representation of your dependencies.
+Looking for the root dependency of `org.springframework.boot:spring-boot-starter-test`, you should see something like:
+
+[source]
+----
+testCompileClasspath - Compile classpath for source set 'test'.
++--- org.springframework.boot:spring-boot-starter-web -> 3.4.2
+
+... omitted ...
+
+\--- org.springframework.boot:spring-boot-starter-test -> 3.4.2
+     +--- org.springframework.boot:spring-boot-starter:3.4.2 (*)
+     +--- org.springframework.boot:spring-boot-test:3.4.2
+     |    +--- org.springframework.boot:spring-boot:3.4.2 (*)
+     |    \--- org.springframework:spring-test:6.2.2
+     |         \--- org.springframework:spring-core:6.2.2 (*)
+
+... omitted ...
+----
+====
 
 == The challenges of testing Spring Boot applications
 
