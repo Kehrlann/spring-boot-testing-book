@@ -9,6 +9,14 @@ html: chapters/*.adoc
 	    --require ./asciidoctor/remove_formatter_comments.rb --trace \
 	    chapters/*.adoc
 
+pdf: chapters/*.adoc
+	asciidoctor-pdf \
+	    --destination-dir pdf/ \
+	    --attribute pdf-theme=manning \
+	    --require asciidoctor-mathematical \
+	    --require ./asciidoctor/remove_formatter_comments.rb --trace \
+	    chapters/*.adoc
+
 .PHONY: watch
 watch:
 	ls chapters/*.adoc | entr $(MAKE) html
