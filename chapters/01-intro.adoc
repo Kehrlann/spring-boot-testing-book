@@ -206,11 +206,20 @@ You would also face specific testing challenges managing multiple configurations
 
 Let's image a world where Spring Test tooling does not exist.
 What would it take to create and run these integration tests?
+To make sense of the code you would need to write, let's examine an example.
+
+The application is a fairly simple app, responsible for handling Widgets.
+Users interact with it through a `@RestController`, and data is ultimately stored in `@WidgetRepository`.
+The `WidgetValidator` service represents an external service, used to validate Widgets before they are stored.
+It has complex logic, and is difficult to run on a developer machine, so you want to avoid running it locally.
+
+[#ch1-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.A very simple application we would like to test. The WidgetValidator needs to be stubbed out in our tests.
+image::ch01_f003_garniermoiroux.png[]
 
 The first challenge is to configure the "test application".
 Spring Boot gives you automatic configuration through the `@SpringBootApplication` on your main class.
-For example, it discovers the `@Component` that represents your external service by scanning the classpath.
-It adds the appropriate `DataSource` by examining your database drivers.
+For example, it discovers the `@Service WidgetValidator` that represents your external service by scanning the classpath.
 To avoid triggering this behavior, you cannot rely on `@SpringBootApplication`, and instead need to assemble the appropriate auto-configurations, along with your custom test-related configuration.
 Even for a simple use-case, where we replace a single bean, the amount of configuration required to make it work quickly gets out of control.
 Furthermore, writing such configuration requires advanced knowledge in Spring, without Spring Boot.
@@ -224,7 +233,7 @@ include::../samples/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/wid
 
 Second, you need to manage the lifecycle of the "test application" manually.
 You need to start the application before the tests, and to shut it down once the tests have completed.
-While this is fairly straightforward, it means repetitive boilterplate set-up and tear-down code.
+While this is fairly straightforward, it means repetitive boilerplate set-up and tear-down code.
 But it begs the surprisingly complex question: when exactly do you start a "test application"?
 Starting a Boot usually takes a few seconds or tens of seconds.
 If you have a thousand tests, paying the startup costs a thousand times would mean your tests now take hours to run.
@@ -271,10 +280,8 @@ This is where Spring Boot Test comes in.
 In the world of Spring Boot, things "just work" out of the box.
 You can enhance configuration and add your own components with just a few annotations.
 Because testing is such a foundational requirement in modern software engineering, the Spring portfolio covers testing, and the Boot programming model extends to writing tests.
-Chances are, if you have picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above, but in a much simpler form.
-
-To showcase
-They may look somewhat like this:
+Chances are, if you have picked up this book, you are already using Spring Boot, and you've written tests that achieve the same result as above with the Widget application, but in a much simpler form.
+Your tests may look somewhat like this:
 
 [source,java]
 ----
@@ -289,7 +296,7 @@ Customize the application properties inline.
 
 The configuration above is much clearer than the complicated config class we wrote in the previous section.
 Using the usual annotation-driven programming model, you can access beans in your application, register or swap beans.
-The code for the actual test does not differ much:
+The code for the actual test does not differ much, but has nice utility methods with MockMvc:
 
 [source,java]
 ----
@@ -321,7 +328,7 @@ The second goal of this book is to make you familiar with the lesser-known aspec
 You will learn the fundamentals, how the magic `@SpringBootTest` works and what are the costs associated with it, and how to work around limitations.
 
 In part 3, we will discuss the testing libraries that are bundled with Spring Boot Test in more detail.
-While you may use those libraries on a daily basis, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
+While you may use those libraries daily, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
 
 == Summary
 
