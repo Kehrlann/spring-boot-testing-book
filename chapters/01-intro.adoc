@@ -104,7 +104,11 @@ To learn more, please refer to chapter 10, "Writing elegant tests with Spring Bo
 - And a few other utilities, such as XMLUnit for checking properties on XML, JSONassert for checking properties on JSON, Awaitility for waiting on asynchronous conditions.
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
-These utilities are not related to Spring, and can be used in all your tests, included your "business logic" tests that do not involve Spring.
+These utilities are not related to Spring, and can be used in all your tests, including in your "business logic" tests that do not involve Spring.
+
+[#ch1-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.The Spring Boot Test contents, and how they interact with your production code and test code. The plain arrows represent imperative calls to some code, such as executing a method: the utilities are used directly. The dotted arrows represent annotation-based programming, where configuration is expressed declaratively, and the Spring testing machinery itself discovers the configuration and executes methods. This is the case for example when you use `@SpringBootTest`: you do not call a method to start the application.
+image::ch01_f001_garniermoiroux.png[]
 
 With the Spring testing dependencies plus the utilities listed above, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
 In the following chapters, you will learn to make good use of them.
