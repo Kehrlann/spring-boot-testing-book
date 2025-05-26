@@ -23,35 +23,36 @@ This chapter covers
 
 Testing applications and verifying that they have the intended behavior is an unavoidable aspect of the development lifecycle.
 This is true for all types of applications, web, mobile, desktop or embedded, whether they're written in Java, in Javascript, in Erlang or in COBOL.
-And if you, as a developer, don't test explicitly, someone will.
-Hopefully, that someone is a colleague who is part of your software development process, and not your end-users.
+And even if you, as a developer, don't test explicitly, someone will.
+Hopefully, that someone is a colleague who is part of your software development process, not your end-users "testing in production".
 
 In any serious software engineering project, automating at least part of these tests is table stakes.
-You do not want to be clicking buttons manually everytime you make a change.
+You do not want to be manually verifying behavior, making HTTP requests and clicking buttons, every time you make a change.
 If you picked up this book, chances are you have already implemented extensive testing yourself, and you do not need to be convinced that you should, in fact, write tests.
 
-In the case of a regular web application, whether it was developed using Spring Boot or some other technology, there are many types of tests you can write.
+In the case of a regular web application, whether it was developed using Spring Boot or any other technology, there are many types of tests you can write.
 They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: those are unit tests.
 On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, with all its many dependencies, and execute a dedicated "testing" program against this running app.
-Those are sometimes called integration tests, or end-to-end tests.
+Those are sometimes called end-to-end tests.
 And there is a whole continuum of test types in between.
 Each "testing level" has its own advantages and drawbacks, as well as specific tooling associated to it.
 
-In this chapter, we will discuss the tools that Spring and Spring Boot can offer to simplify testing.
+In this chapter, we will discuss the tools that Spring and Spring Boot offer to simplify testing.
 You will discover where on the testing spectrum these tools shine, and how they outperform manually crafting those tests.
 
 [NOTE]
 This book is not a general-purpose book on tests.
-It is focused on Spring applications, and assumes passing familiarity with testing.
-There are countless resources both in print and online.
+It is focused on Spring applications, and assumes passing familiarity with writing and executing automated tests.
 If you have never written a test before, you should get familiar with those resources before focusing on Spring-specific content.
+There are countless resources both in print and online.
+For Java developers, a good starting point is _Pragmatic Unit Testing in Java with JUnit, Third Edition_, by Jeff Langr (The Pragmatic Programmers, 2024).
 
 == What's "Spring Boot Testing"?
 
 There is no such thing as an official "Spring Boot Test" project.
 However, the Spring Boot project has a "starter" dependency specifically used for testing, called `spring-boot-starter-test`.
-When you create a new project using the Spring Initializr, better known as https://start.spring.io , no matter which projects you select from the dropdown list, you get this starter as a dependency.
-The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach, it contains a curated list of dependencies that will make writing tests easier.
+When you create a new project using the Spring Initializr, better known as https://start.spring.io , no matter which projects you select from the dropdown list, you get this starter as a dependency and an example test that uses the `@SpringBootTest` annotation.
+The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach: it contains a curated list of dependencies that will make writing tests easier, with dedicated tooling.
 
 [#ch1-listing-pom-xml, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .The spring-boot-starter-test dependency in the pom.xml a typical Boot project
@@ -67,20 +68,25 @@ The Spring Boot Starter Test project is the testing version of the Spring Boot "
 </dependencies>
 ----
 
-<1> The dependencies from spring-boot-starter-test are in the maven `test` scope, and will not be available in your production code.
+<1> The dependencies from spring-boot-starter-test are in the maven `test` scope, and will not be available in for use in your application code.
 It includes everything required to run tests.
 
 The starter pulls many useful test dependencies into the "test" part of your project, broadly divided into two categories.
 
-First, everything under `org.springframework` is Spring-specific tooling, created and maintained by the Spring team and community.
+First, every dependency in the `org.springframework` and `org.springframework.boot` groups is Spring-specific tooling, created and maintained by the Spring team, with contributions from the Spring community.
 It contains code specifically designed to simplify testing Spring and Spring Boot applications.
-For example, it contains the `SpringExtension`, a JUnit extension that simplifies the lifecycle management of Spring applications by starting and stopping the Spring `ApplicationContext`, and allows you to easily configure and access Spring beans within your tests.
-Another example: the well-known `@SpringBootTest` annotation, which automatically detects your Spring Boot application's configuration classes, and allows you to modify it through simple annotations.
-These testing classes are the connective tissue between your application code and your test code.
+This is where you will find, for example:
 
-The second broad category contains a few testing utilities that are not specific to Spring.
+- The `SpringExtension`, a JUnit extension that adds Spring-related behavior to JUnit.
+It simplifies the lifecycle management of Spring applications by starting and stopping the Spring `ApplicationContext`, and allows you to easily configure and access Spring beans within your tests.
+- The well-known `@SpringBootTest` annotation, which automatically detects your Spring Boot application's configuration classes and makes your code ready for testing.
+
+These testing classes are the connective tissue between your application code and your test code, and make your *Spring* code easier to test.
+In your code, you typically use them with annotation, rather than imperative calls: you put `@SpringBootTest` on your test classes and Spring does the lifecycle management for you, no need to write `SpringBootTest.run(...)`.
+
+The second category of dependencies contains testing utilities that are not specific to Spring.
 Just like in your production code, Spring Boot provides a list of curated dependencies that are useful in the most common scenarios.
-It manages dependency versions to ensure that all these libraries work well together, and integrate without a hitch with your Spring code.
+It manages dependency versions to ensure that all these libraries work well together, and that they integrate without a hitch with your Spring code.
 Here is a non-exhaustive list of the "goodies" you'll find in the toolkit:
 
 - JUnit, the testing framework, with `org.junit.jupiter:junit-jupiter`.
@@ -96,26 +102,29 @@ Hamcrest is the "historical" library, and AssertJ has a more "modern" take on as
 In this book, all of our assertions will be written with AssertJ.
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 - One "mocking" library, Mockito, with `org.mockito:mockito-core`.
-Mocking allows you to easily create "fake" objects that have the same API as your classes.
-This is useful for replacing classes.
-For example, when you want to disconnect your tests from external dependencies such as databases, or when you want to treat some subset of your object graph as a black box that returns pre-determined results.
+Mocking allows you to easily create "fake" objects that have the same API as your classes, and customize their behavior.
+This is useful for replacing classes with complex business logic.
+For example, when you want to disconnect your tests from external dependencies such as databases or remote services and APIs, or when you want to treat some subset of your object graph as a black box that returns pre-determined results.
 You can add behavior ("when the user calls widgetService.count(), return 5") as well as verifications ("verify that the emailService.sendEmail() was called once, with email user@example.com").
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 - And a few other utilities, such as XMLUnit for checking properties on XML, JSONassert for checking properties on JSON, Awaitility for waiting on asynchronous conditions.
 To learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
 These utilities are not related to Spring, and can be used in all your tests, including in your "business logic" tests that do not involve Spring.
+You use them imperatively, for example by calling `Awaitility.await().until(() -> { /* ... */ });` or `assertThat(someResult).isEqualTo(42);`.
+
+Tying it all together:
 
 [#ch1-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.The Spring Boot Test contents, and how they interact with your production code and test code. The plain arrows represent imperative calls to some code, such as executing a method: the utilities are used directly. The dotted arrows represent annotation-based programming, where configuration is expressed declaratively, and the Spring testing machinery itself discovers the configuration and executes methods. This is the case for example when you use `@SpringBootTest`: you do not call a method to start the application.
+.The Spring Boot Starter Test contents, and how they interact with your production code and test code. The plain arrows represent imperative calls, such as executing a method: the utilities are used directly. The dotted arrows represent annotation-based programming, where configuration is expressed declaratively, and the Spring testing machinery itself discovers the configuration and executes its own internal methods to start and stop the application. For example, this is the case when you use `@SpringBootTest`: you do not call a method to start the application.
 image::ch01_f001_garniermoiroux.png[]
 
-With the Spring testing dependencies plus the utilities listed above, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
+With the Spring testing dependencies plus the utilities bundled in the starter, you have standard, powerful building blocks at your disposal to write the vast majority of tests you will need.
 In the following chapters, you will learn to make good use of them.
 
 [NOTE]
 ====
-To visualize the dependencies that `spring-boot-starter-test` brings for your self, you can use your build tool of choice.
+To visualize the dependencies that `spring-boot-starter-test` brings for yourself, you can use your build tool of choice.
 
 - With Maven: `./mvnw dependency:tree -Dscope=test`
 - With Gradle: `./gradlew dependencies --configuration testCompileClasspath`
@@ -136,12 +145,15 @@ testCompileClasspath - Compile classpath for source set 'test'.
      |    +--- org.springframework.boot:spring-boot:3.4.2 (*)
      |    \--- org.springframework:spring-test:6.2.2
      |         \--- org.springframework:spring-core:6.2.2 (*)
+     +--- org.springframework.boot:spring-boot-test-autoconfigure:3.4.2
 
 ... omitted ...
 ----
 
-Everything in the tree below `org.springframework.boot:spring-boot-starter-test` are the dependencies that this starter brings.
+Everything in the tree below `org.springframework.boot:spring-boot-starter-test` are the dependencies that this starter brings, such as `org.springframework.boot:spring-boot-test` or `org.springframework.boot:spring-boot-test-autoconfigure`.
 ====
+
+In this book, we will loosely use the expression "Spring Boot Test" to refer to tests written using the tools in `spring-boot-starter-test`, and using the patterns associated with these tools.
 
 == When to use Spring-specific tooling
 
@@ -158,7 +170,7 @@ This, in turn, allows you to create test suites that verify that every line of c
 A failure is a sign of an issue in your production code.
 - You can mock dependencies and simulate complex error conditions with relative ease.
 
-However, their narrow focus on classes or methods comes with an important caveat: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly.
+However, their narrow focus on classes or methods comes with an important limitation: they will not give you full confidence that the program as a whole behaves correctly, that the components interact in the expected ways, and that you have used the framework correctly.
 For example, using raw unit tests, it is not straightforward to verify that a Spring `@ControllerAdvice` is triggered when your users perform a web request with certain parameters.
 
 Unit tests are designed for fast feedback loops, so you do not want to run a Spring context or worse, a full Spring app, that may take multiple seconds to start.
