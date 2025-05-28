@@ -1,0 +1,7 @@
+# Outputs
+pdf/
+html/
+
+# Editors
+.fleet
+.idea
