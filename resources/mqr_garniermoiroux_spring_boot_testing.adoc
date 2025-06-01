@@ -1,0 +1,36 @@
+= MQR: Spring Boot Testing in Action
+
+== Reader description
+
+This book is for Spring Boot developers who build application as part of their day-to-day job.
+They hold a senior to tech-lead level position.
+They write automated tests to verify the behavior of their apps before pushing to production, and they might already use some of the tools Spring Boot has to offer for testing (`@SpringBootTest`, `@MockBean`, ...).
+They are not familiar with how the Spring TestContext framework works under the hood, and may have issues on big projects where their test suites are very slow.
+
+== Pre-requisites
+
+* Java
+** Has intermediate to advanced knowledge of the Java programming language.
+** Has intermediate to advanced Object-Oriented Programming.
+** Can compile and run java applications on their local machine.
+** Uses java build tools daily, either Maven or Gradle.
+** Understands basic dependency management.
+* Spring and Spring Boot
+** Has intermediate knowledge of the Spring Framework: knows how to create beans, use dependency injection, configure an application through properties.
+** Has intermediate knowledge of Spring Boot: can create Spring Boot apps from Spring Initializr, use autoconfiguration to enable features in their app, override the default Spring Boot configuration.
+** Has at least skimmed the reference documentation of one or more of the Spring projects.
+** Has debugged Spring applications using their IDE and Spring logging.
+* Unit testing in Java
+** Has basic understanding of unit testing.
+** Can write and run unit tests using JUnit and the test runner of their choice (their IDE, a build tool, ...)
+** Has basic exposure to Spring-specific tooling (`@SpringBootTest`).
+** May have basic exposure to some of the libraries bundled in `spring-boot-starter-test` (Mockito, assertJ, ...)
+
+== Takeaways
+
+* Write for multiple scenarios of web-based applications, such as a REST API, a server-rendered HTML site or a website with moderate use of Javascript.
+* Build efficient test suites, by testing subsets of the application where it makes sense but without over-reliance on test slices.
+* Write tests with the security layer of their application.
+* Write tests for their configuration classes and properties, including validation.
+* Debug test issues, such as test pollution or slow tests.
+* Effectively use the whole portfolio of testing libraries that spring-boot-starter-test bundles.
