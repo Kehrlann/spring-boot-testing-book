@@ -19,12 +19,3 @@ pdf: manuscript/*.adoc
 
 code:
 	cp -R /Users/dgarnier/github/kehrlann/spring-boot-testing-book-samples/ code
-
-.PHONY: watch
-watch:
-	ls manuscript/*.adoc | entr $(MAKE) html
-
-
-.PHONY: server
-serve:
-	npx http-server html/
