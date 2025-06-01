@@ -5,3 +5,6 @@ html/
 # Editors
 .fleet
 .idea
+
+# Misc
+.DS_Store
