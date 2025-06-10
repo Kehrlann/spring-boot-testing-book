@@ -27,7 +27,7 @@ If you picked up this book, chances are you have already implemented extensive t
 
 Because it is such a foundational requirement in modern software engineering, many projects in the Spring portfolio cover testing.
 These, of course, include both Spring Framework and Spring Boot.
-Spring Framework brings the familiar declarative programming model to your test code, with annotations such as `@Autowired` or `@TestConfiguration`, .
+Spring Framework brings the familiar declarative programming model to your test code, with annotations such as `@Autowired` or `@TestConfiguration`.
 As for Spring Boot, it extends its core values of "convention over configuration" to tests, and enables you to set up tests without having to write complex, dedicated configuration.
 Spring Boot also curates a list of test-focused dependencies, offering most of the tools you need to write tests, and ensures all the versions of these libraries work well together and integrate well with Spring code.
 
@@ -153,7 +153,7 @@ In this book, when we use "Spring Boot Test", we will be referring to tests writ
 
 For any given application, whether it was developed using Spring Boot or any other technology, there are many types of tests you can write.
 They can be very low-level, centered on tiny pieces of business logic, focusing on a few classes or methods: those are unit tests.
-They are extremely fast to run, very stable and very predictive, but they have a very narrow focus and do not give confidence that the system functions as a whole.
+They are deterministic, specific, and extremely fast to run, but they have a very narrow focus and do not give confidence that the system functions as a whole.
 On the other end of the spectrum, you can deploy your application in a dedicated test or staging environment, with all its many dependencies, and execute a dedicated "testing" program against this running app.
 Those are sometimes called end-to-end tests.
 They ensure that the system works as expected from the highest level, from the user's perspective, but they are slower, more difficult to set up, and more fragile.
