@@ -16,6 +16,3 @@ pdf: manuscript/*.adoc
 	    --require asciidoctor-mathematical \
 	    --require ./resources/remove_formatter_comments.rb --trace \
 	    $^
-
-code:
-	cp -R /Users/dgarnier/github/kehrlann/spring-boot-testing-book-samples/ code
