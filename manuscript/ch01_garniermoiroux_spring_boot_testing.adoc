@@ -61,7 +61,7 @@ The Spring Boot Starter Test project is the testing version of the Spring Boot "
 
 <1> The dependencies are in the `test` scope
 
-The starter pulls many useful test dependencies into the `test` scope of your project, as show on <<ch1-listing-pom-xml>>.
+The starter pulls many useful test dependencies into the `test` scope of your project, as show on listing <<ch1-listing-pom-xml>>.
 This means they cannot be used by your main application code, sometimes referred to as "production" code.
 
 The libraries you get from the starter are broadly divided into two categories.
@@ -106,7 +106,7 @@ To learn more, please refer to chapter 10, "Writing elegant tests with Spring Bo
 These utilities are not related to Spring, and can be used in all your tests, including in your "business logic" tests that do not involve Spring.
 You use them imperatively, for example by calling `Awaitility.await().until(() -> { /* ... */ });` or `assertThat(someResult).isEqualTo(42);`.
 
-Tying it all together in <<ch1-figure-01>>:
+Tying it all together in figure <<ch1-figure-01>>:
 
 [#ch1-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The Spring Boot Starter Test contents, and how they interact with your production code and test code. The plain arrows represent imperative calls, such as executing a method: the utilities are used directly. The dotted arrows represent annotation-based programming, where configuration is expressed declaratively, and the Spring testing machinery itself discovers the configuration and executes its own internal methods to start and stop the application. For example, this is the case when you use `@SpringBootTest`: you do not call a method to start the application.
@@ -162,7 +162,7 @@ And there is a whole continuum of test types in between.
 Spring Boot tests shine somewhere in the middle, for what I'd call "Integration Tests".
 The term is not universally accepted, so it is worth defining it in the context of this book.
 Integration tests typically involve many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
-They may cover your entire application, and include some external dependencies such as a database, but not your entire system with its many dependencies. <<ch1-figure-02>> shows where Spring Boot tests are most useful.
+They may cover your entire application, and include some external dependencies such as a database, but not your entire system with its many dependencies. Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
 
 [#ch1-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The testing spectrum. On one end, unit tests that involve one or a few classes, and no Spring-specific code. On the other end, there are full-blown end-to-end tests, that may involve many complex components, that need tooling beyond the context of Spring. In between those two ends, there is a whole category of "integration tests".
@@ -239,7 +239,7 @@ Users interact with the application by making HTTP requests.
 The API is therefore exposed through a Spring REST Controller, `WidgetController`, and data is ultimately stored in a repository, `WidgetRepository`.
 The `WidgetValidator` service represents an external service, used to validate Widgets before they are stored.
 It has complex logic, and is difficult to run on a developer machine, so you want to avoid running it locally.
-A simple class diagram in <<ch1-figure-03>> shows the dependency graph of these components.
+A simple class diagram in figure <<ch1-figure-03>> shows the dependency graph of these components.
 
 [#ch1-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The architecture of the application we would like to test. Arrows represent the data flowing through the system. The WidgetValidator cannot be used in tests, and needs to be replaced by a stub.
@@ -255,7 +255,7 @@ To avoid triggering this auto-discovery behavior, you cannot rely on the simple 
 Instead, you need to create a custom configuration class, with your test-related configuration as well as the appropriate autoconfiguration that Spring Boot brings, while excluding configurations that are not relevant.
 Even for a simple use-case, where we replace a single bean, the amount of configuration required to make it work quickly gets out of control.
 And writing it requires advanced knowledge of Spring Framework, without Spring Boot.
-An example of what such configuration would look like is available in <<ch1-listing-testconfiguration>>.
+An example of what such configuration would look like is available in listing <<ch1-listing-testconfiguration>>.
 The exact content of the configuration is not relevant, but shows how much knowledge and effort would need to go into test-specific configuration, here with five distinct annotations.
 
 [#ch1-listing-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -285,7 +285,7 @@ And lastly, with your "test application" running, you will probably end up copy-
 For example, the `RestTemplate` API for making HTTP requests is very versatile, and covers a wide range of production use-cases.
 But when calling into your test application, most requests will look the same, and you will probably not need the flexibility.
 So you will likely write utility methods, possibly different per project, that every new engineer on the team will need to learn.
-In <<ch1-listing-resttemplate>>, we show the code required to send an HTTP `POST` request, with a content type of `application/x-www-form-urlencoded`.
+In listing <<ch1-listing-resttemplate>>, we show the code required to send an HTTP `POST` request, with a content type of `application/x-www-form-urlencoded`.
 It requires using the verbose `LinkedMultiValueMap` class, and possibly a `RequestEntity`.
 These obscure the meaning of the test, and would be better wrapped in some utility, where you could call, say `post("uri", requestBody)`.
 
@@ -320,7 +320,7 @@ Luckily, Spring Boot does have helpful capabilities in tests.
 In the world of Spring Boot, things "just work" out of the box.
 You can enhance configuration and add your own components with just a few annotations.
 This also applies to your test code.
-Writing tests for the Widget application from <<ch1-section3>> requires much less code, and may look somewhat like <<ch1-listing-test-configuration>>.
+Writing tests for the Widget application from <<ch1-section3>> requires much less code, and may look somewhat like the code in listing <<ch1-listing-test-configuration>>.
 
 [#ch1-listing-test-configuration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A typical Spring Boot test configuration.
@@ -340,7 +340,7 @@ With the `@SpringBootTest` annotation, you declare this a test of your entire Sp
 With `@Autowired`, you can access beans in the application context to perform actions or verifications.
 Replacing a production bean with a test-specific mock can be done with a single `@MockitoBean` annotation.
 The code for the test itself would not be very different in both cases.
-However, by leveraging `MockMvc` you can use nice utility methods, as shown in <<ch1-listing-test-method>>.
+However, by leveraging `MockMvc` you can use nice utility methods, as shown in listing <<ch1-listing-test-method>>.
 For example, you can set the body of the request by simply using `.param("key", "value")`.
 Similarly, you can use `.andExpect(status().isCreated())` to verify that the return code of the HTTP request is `201 Created`.
 
