@@ -1,27 +1,42 @@
-= Testing a Spring Boot "Hello World" application
-:source-highlighter: rouge
-:icons: font
+= Spring Boot Testing In Action
+:chapter: 2
+:sectnums:
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: {chapter} - 1
+:leveloffset: 1
+:imagesdir: ../images/ch02/
+:table-number:
+:figure-number:
+:listing-number:
 :tabsize: 2
 
-[.normal]
+[#ch2_title, reftext={chapter}, caption='{chapter}']
+= Testing a Spring Boot "Hello World" application
+
+This chapter covers:
+
+* Interacting with your application inside a `@SpringBootTest`
+* Decoupling from external dependencies with mocks
+* Factoring common setup with JUnit
+* Deciding when (not) to use `@SpringBootTest`
+
 When you create a project on Spring Initializr, also known as https://start.spring.io, you get testing libraries bundled in, as we mentioned in the previous chapter.
 There is also a single test file bundled in your project, ready to execute.
 It contains a single test method, which is empty, and the only thing it validates is that the application can start.
-This has value in and on itself.
-With Spring, you can write declarative code that express your dependency graph, and any error in your setup, such as a circular dependency, will go unnoticed until you actually run the application.
-Similarly, with Spring Boot, the convention-over-configuration programming model enables certain features by adding properties, and configuration errors are only discovered when the application starts.
-Having a test that runs the application will verify that the app starts at a click of a button... and it is the most Spring Boot can do: the only thing Spring Initializr knows about your application is that it is a Boot application.
-Having this test file makes it easy to add your own tests, without too much to decide: the next logical step is to add another method to this test file, and start from there.
+This has value in and on itself, as it validates your Spring dependency graph, and your Spring Boot properties.
+Having this test file also makes it easy to add your own tests, without too much to decide: the next logical step is to add another method to this test file.
 
 It's a good start, but where do you go from here?
-When writing "integration" tests, there a few key points that structure how your test suite will look like:
+When writing "integration" tests, there are a few key points that structure how your test suite will look like.
+You need some specific code to interact with your test application, and perform actions such as HTTP requests.
+Then you will want to check the result of your actions, through return values and the internal state of the test application.
+If there are dependencies outside the scope of your code, you must avoid using those and replace them with some test-specific code.
+And, as you add tests and your test suite grows in size and complexity, it will call for some reuse to keep the sprawl under control.
 
-- What is the API your test uses, how does it interact with your code?
-- How do you verify that the state is consistent with the actions of the user?
-- How do you keep you factor in the inevitable repetition that comes from test cases?
-- Lastly, and most importantly: how do you avoid reaching out to dependencies outside the scope of your code, such as external web services?
-
-In this chapter, we will look at a very basic application, and work through what Spring Boot Test has to offer to answer these questions.
+In this chapter, we will look at a very basic application and work through what Spring Boot Test has to offer to address all those needs.
+While we will not go deep on any of the particular solutions, we will paint a broad picture of what the structure of a Spring Boot Test is, and what the basic building blocks look like in practice.
 
 == Getting up and running: a sample application
 
