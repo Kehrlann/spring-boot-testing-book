@@ -22,12 +22,19 @@ import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+// tag::annotations[]
+@SpringBootTest // <1>
+@AutoConfigureMockMvc // <2>
+// end::annotations[]
+// tag::class[]
 class ExampleTests {
 
-	@Autowired
-	private MockMvcTester mvc;
+	// end::class[]
+	// tag::mockmvctester[]
+	@Autowired // <3>
+	private MockMvcTester mvc; // <3>
+
+	// end::mockmvctester[]
 
 	@Autowired
 	private SelectionRepository selectionRepository;
@@ -46,24 +53,33 @@ class ExampleTests {
 
 	}
 
+	// tag::first-test[]
 	@Test
 	void indexPageLoads() {
 		//@formatter:off
-		var response = mvc.get()
+		// 1. Arrange
+		// We do not need to set up anything in particular
+
+		// 2. Act
+		var response = mvc.get() // <4>
 				.uri("/")
 				.exchange();
-		assertThat(response)
+
+		// 3. Assert
+		assertThat(response) // <4>
 				.hasStatus(HttpStatus.OK)
 				.bodyText()
 				.contains("<h1>Weather App</h1>");
 		//@formatter:on
 	}
+	// end::first-test[]
 
 	@Test
 	void addSelectedCity() {
+		// TODO: 2. accessing context
 		//@formatter:off
 		var response = mvc.post()
-				.uri("/city/add")
+				.uri("/api/city")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{\"cityName\": \"Paris\"}")
 				.exchange();
@@ -95,6 +111,7 @@ class ExampleTests {
 
 	@Test
 	void selectUnknown() {
+		// TODO: 4. JUnit
 		var response = selectCity("Foobar");
 
 		assertThat(response).hasStatus(HttpStatus.BAD_REQUEST);
@@ -104,6 +121,7 @@ class ExampleTests {
 
 	@Test
 	void selectTwice() {
+		// TODO: 4. JUnit
 		selectCity("Bogotá");
 		selectCity("Bogotá");
 
@@ -112,10 +130,11 @@ class ExampleTests {
 
 	@Test
 	void getWeather() {
+		// TODO: 3. mocks
 		when(weatherService.getCurrentWeather(anyDouble(), anyDouble())).thenReturn(new WeatherData(22.6, 0, 1));
 		selectCity("Paris");
 
-		var response = mvc.get().uri("/weather").accept(MediaType.APPLICATION_JSON).exchange();
+		var response = mvc.get().uri("/api/weather").accept(MediaType.APPLICATION_JSON).exchange();
 		assertThat(response).hasStatus(HttpStatus.OK);
 
 		assertThat(response).bodyJson()
@@ -131,7 +150,7 @@ class ExampleTests {
 		selectCity("Beijing");
 		selectCity("Paris");
 
-		var response = mvc.get().uri("/weather").accept(MediaType.APPLICATION_JSON).exchange();
+		var response = mvc.get().uri("/api/weather").accept(MediaType.APPLICATION_JSON).exchange();
 		assertThat(response).hasStatus(HttpStatus.OK);
 
 		assertThat(response).bodyJson()
@@ -147,7 +166,7 @@ class ExampleTests {
 		selectCity("Tokyo");
 		selectCity("Quito");
 
-		var response = mvc.get().uri("/weather").accept(MediaType.APPLICATION_JSON).exchange();
+		var response = mvc.get().uri("/api/weather").accept(MediaType.APPLICATION_JSON).exchange();
 		assertThat(response).hasStatus(HttpStatus.OK);
 
 		assertThat(response).bodyJson()
@@ -160,8 +179,8 @@ class ExampleTests {
 	void deleteCity() {
 		selectCity("Paris");
 
-		var response = mvc.post()
-			.uri("/city/delete")
+		var response = mvc.delete()
+			.uri("/api/city")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("{\"cityName\": \"Paris\"}")
 			.exchange();
@@ -172,10 +191,13 @@ class ExampleTests {
 
 	private MvcTestResult selectCity(String cityName) {
 		return mvc.post()
-			.uri("/city/add")
+			.uri("/api/city")
 			.contentType(MediaType.APPLICATION_JSON)
 			.content("{\"cityName\": \"" + cityName + "\"}")
 			.exchange();
 	}
 
+	// tag::class[]
+
 }
+// end::class[]
