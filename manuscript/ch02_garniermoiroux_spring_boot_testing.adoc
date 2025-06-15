@@ -42,12 +42,12 @@ While we will not go deep on any of the particular solutions, we will paint a br
 
 Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
-This book is about writing tests, so we will not be explaining how to build the applications we test.
+This book is about writing tests, so we will not be explaining how to build the applications you will test.
 Instead, you can download the test applications at **<TODO: LINK TO SAMPLES>**.
 To run them, you will need Java 21, the latest LTS version.
 
 Before we start discussing, let's get familiar with the application under test.
-For this example, we will use a simple web page that displays the weather and temperature for cities.
+For this example, you will use a simple web page that displays the weather and temperature for cities.
 The user can select the cities they want to display in their dashboard, and the weather is fetched in real time from https://open-meteo.com.
 
 NOTE: The applications in this book are demo apps, and are not meant to be production-grade.
@@ -173,17 +173,73 @@ So let's write our first test, that actually interacts with the application.
 == Adding your first test
 
 Before diving deep into the features of our application, let's ensure that it responds to HTTP requests on the index page, or `/`, and that it displays _something_.
-This tells you that there is an actual `/` endpoint, and that it renders an HTML page.
+This tells you that there is an actual `/` endpoint, and that it does, indeed, render an HTML page.
+To do so, you need to make HTTP calls to your application.
+Spring has useful tools for making this easy, as show in listing <<ch2-listing-first-test>>.
 
 [#ch2-listing-first-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mockmvctester;first-test]
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mock-mvc-tester;first-test]
 ----
+
+<1> The test is a Spring Boot Test.
+<2> Make `MockMvcTester` available in the test method.
+<3> Use `MockMvcTester` to make an HTTP request.
+<4> Verify the data from the response.
+
+There is a lot to unpack in this test.
+First, the class is annotated with `@SpringBootTest`, just like the previous test.
+This means that, before running any of the tests in this class, a test application will be started, based on your `@SpringBootApplication` class.
+
+Second is the presence of `@AutoConfigureMockMvc`, which makes a `MockMvcTester` bean available in your test.
+That class is a utility class that allows you to make requests targeting the test application.
+Notice that you can ignore the host and port where the app runs on when making HTTP requests: you only specify the method and path, in this case `GET /`.
+Also notice that it has a nice fluent API, which is both simple and very explicit.
+
+Lastly, a word on the structure of the test method itself: most of our tests will be written in some form of the classic "Arrange/Act/Assert", or "Given/When/Then".
+This is a common way to write tests, spelling out three parts:
+
+* **Arrange:** Set up the data and code you need to run your tests.
+In the previous example, there's nothing in particular to set up
+* **Act:** Run the action or set of actions you want to test.
+Here, we are fetching the index page of the application.
+* **Assert:** Verify that the action has the intended result or consequence.
+Here, we ensure the response to the request is `HTTP 200`, and that the returned page contains an HTML header with "Weather App".
+To do this, we use the AssertJ assertion library, which integrates nicely with Spring's `MockMvcTester`.
 
 == Accessing context dependencies
 
-xx
+The previous test was fairly simple, and did not exercise any weather-related features in our application.
+It was a read-only test, and did not add any data to the database.
+Let's create a test that exercises a database write, by selecting a city.
+To write such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: maybe that name is somewhere else on the page.
+In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
+But let's start simple, and check what that the database does indeed contain the city we have added, as show in listing <<ch2-listing-context-dependencies>>.
+
+[#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
+----
+
+1. Access the repository bean from the test app.
+2. Use the repository to ensure data was added.
+
+Any Spring bean from your application under test is exposed to your Spring Boot Tests, through field injection with the usual `@Autowired` annotation.
+In this case, you can use the `SelectionRepository` from the data-access layer, to check what data is present in the database when the `POST` request is made.
+In this example, the usage is fairly trivial.
+But if you have access to the whole application context, you can imagine many use-cases accessing beans and using them directly.
+This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it.
+
+Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
+I suggest wrapping the `POST` request and exposes it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
+
+[#ch2-listing-select-city, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java,indent=0]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
+----
 
 == Factoring common setup with JUnit
 
