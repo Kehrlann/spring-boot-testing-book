@@ -38,6 +38,7 @@ And, as you add tests and your test suite grows in size and complexity, it will 
 In this chapter, we will look at a very basic application and work through what Spring Boot Test has to offer to address all those needs.
 While we will not go deep on any of the particular solutions, we will paint a broad picture of what the structure of a Spring Boot Test is, and what the basic building blocks look like in practice.
 
+[#ch2-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Our test subject: sample application
 
 Before you add tests, you need _something_ to test.
@@ -110,6 +111,7 @@ By default, the implementation is the `OpenMeteoWeatherService`, makes HTTP call
 IMPORTANT: Take the time to run the application and try it out.
 Knowing how it works will make the tests much easier to write.
 
+[#ch2-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the Spring-provided test
 
 NOTE: We assume in this chapter that you know how to run tests.
@@ -170,6 +172,7 @@ This is the same as trying to run the application and noticing the error.
 But the whole point of writing integration tests is to check the business logic of your application!
 So let's write our first test, that actually interacts with the application.
 
+[#ch2-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Adding your first test
 
 Before diving deep into the features of our application, let's ensure that it responds to HTTP requests on the index page, or `/`, and that it displays _something_.
@@ -208,6 +211,7 @@ Here, we are fetching the index page of the application.
 Here, we ensure the response to the request is `HTTP 200`, and that the returned page contains an HTML header with "Weather App".
 To do this, we use the AssertJ assertion library, which integrates nicely with Spring's `MockMvcTester`.
 
+[#ch2-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Accessing context dependencies
 
 The previous test was fairly simple, and did not exercise any weather-related features in our application.
@@ -241,14 +245,65 @@ I suggest wrapping the `POST` request and exposes it nicely in a `selectCity` ut
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
 ----
 
+[#ch2-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Factoring common setup with JUnit
 
-xx
+Now, imagine you want to add a test that shows that a city can only be present a single time in the selection database, and that there is no duplication.
+The structure of the test is fairly simple: add the same city twice, and ensure that there is only one entry in the database.
+Using our `selectCity(...)` help method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
 
+[#ch2-listing-no-duplicates, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java,indent=0]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=no-duplicates]
+----
+
+Running this test by itself works.
+But if all the tests in the file, it will run both `noDuplicates` and  `addSelectedCity` test from section <<ch2-section-4>>, which both add a city.
+And both expect there to be a single city in the database, so at least one of them is going to fail.
+There are multiple ways to fix this issue.
+You could order the tests, and expect one city, then two cities in the second test, etc.
+That's additional context that you would need to keep in mind while writing tests, and you would not be able to run them independently anymore: each test depends on the previous test to run to succeed.
+You could also count the number of cities at the beginning of each test and ensure it increases by 1, but that's more code to read to understand the goal of a specific method.
+Or you could ensure that the database is empty before running each test, for example by calling `selectionRepository.deleteAll()` at the beginning of each test.
+This works fine, but you need to remember to add it to every test, and as your suite grows, so does the duplication.
+
+Fortunately, you can fold common setup code with JUnit, resulting in listing <<ch2-listing-before-each>>'s method, which will be executed before every test.
+
+[#ch2-listing-before-each, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java,indent=0]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=before-each]
+----
+
+With this, each test starts with a clean slate and can make independent assertions on state and data.
+Running the whole file should now pass, and running each method independently still works.
+By force of habit, "before each" methods are often called `setUp()`, which was a requirement in JUnit 3 and earlier.
+In modern versions of JUnit, you can have as many `@BeforeEach`-annotated methods as you want, and you can use any name you want.
+
+NOTE: To learn more about JUnit, and get an overview of useful features, refer to chapter 8, "Creating reusable test abstractions with JUnit".
+
+[#ch2-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Decoupling from external dependencies with mocks
 
-xx
+So far, none of the tests we have written make use of the external Open-Meteo API, represented by the `WeatherService` class.
+But gathering weather data is a core feature of our application!
+Let's write a test that ensures that our application returns the correct data.
+To avoid parsing the HTML page to find the data we care about, we will use the JSON API that the application provides.
+It should return a response that looks something like this: `{"cityName": "<SOME CITY>", "temperature": <SOME TEMPERATURE>}`.
+Putting it all together, we can write listing <<ch2-listing-weather-data>>.
 
+[#ch2-listing-weather-data, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java,indent=0]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=weather-data;!weather-data-mock]
+----
+
+The structure is familiar: ensure that the city is selected (arrange), call the `/api/weather` endpoint (act), and verify that the result has the correct values (assert).
+The assertion here uses `MockMvcTester` 's support for AssertJ, and some JSON-compatible extensions.
+With that, you can easily compare JSON structures and avoid the usual issues of string-based comparisons, such as order or spacing.
+
+[#ch2-section-7, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == A word of caution: when NOT to use `@SpringBootTest`
 
 xx
