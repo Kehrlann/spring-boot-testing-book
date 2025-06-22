@@ -301,19 +301,91 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 
 The structure is familiar: ensure that the city is selected (arrange), call the `/api/weather` endpoint (act), and verify that the result has the correct values (assert).
 The assertion here uses `MockMvcTester` 's support for AssertJ, and some JSON-compatible extensions.
-With that, you can easily compare JSON structures and avoid the usual issues of string-based comparisons, such as order or spacing.
+With that, you can easily compare JSON structures and avoid the usual issues of string-based comparisons, such as the order of properties, or the exact spacing and new lines.
+
+While this test looks reasonable, it will only pass when the reported temperature is _exactly_ 22.6 degrees.
+That's a problem!
+You could, of course, rework the test to assert that "a temperature value" is returned, in a number format.
+Maybe you could even ensure that it's within a reasonable range, say -30 to +50 Celsius, but this would mean more code, and the method would be harder to understand.
+And if you did this, you would have another class of issues, that stem from relying on an external system for running your tests.
+If the API provider goes down, the test fails every time, even if you have error-handling code.
+If the network is unstable, your test becomes flakey, less deterministic, and therefore less useful.
+Running your tests would eat up in your daily API calls quotas.
+And you'd add tens or hundreds of milliseconds of latency to every test.
+Generally, it's considered bad practice to call out to external services during tests, unless you're doing end-to-end testing.
+Instead, you should be providing an alternative implementation, that you can program, and that returns predictable results, often called "stubs" or "mocks".
+Spring Boot Starter Test brings the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly in Spring Boot tests.
+We can replace beans the application context with a mock, and configure it to return the results that we want, as show in listing <<ch2-listing-mocks>>.
+
+[#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java,indent=0]
+----
+include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=mockito-bean;weather-data;!weather-data-assertions]
+----
+
+<1> Replace the bean by a mock.
+<2> Configure the mock for usage.
+
+Using the `@MockitoBean` annotation, we tell Spring that we want to replace the "production" implementation by a mock implementation.
+We can any method on this mock to return pre-defined results: in this case, something that tells us the temperature is 22.6 degrees, for any city.
+The assertions remain the same and have been omitted.
+The test is now decoupled from the external dependency, making it deterministic and predictive.
+
+NOTE: To learn more about mocking and stubbing, refer to chapter 3, "Getting familiar with the Spring testing framework".
+For more insights about Mockito and its features, refer to chapter 10, Writing elegant tests with Spring Boot’s bundled testing libraries
 
 [#ch2-section-7, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == A word of caution: when NOT to use `@SpringBootTest`
 
-xx
+This book is all about Spring Boot Test, and you will see the `@SpringBootTest` across many examples.
+When the application is small enough, such as with our weather application example here, testing everything through Spring Boot Tests is reasonable.
+However, the bigger the application, the more complex the features, the harder it is to test it in its entirety through integration tests.
+You will need to introduce unit tests, focused on smaller pieces of logic.
+As we've discussed in chapter 1, at that level, you should not be running a Boot application to verify behavior.
 
-// ### 2. Testing a Spring “Hello world”
-//
-// In this chapter, we will work through a simple example, and showcase some of the testing features bundled in your Spring application when you create it on the Spring Initializr website at [https://start.spring.io](https://start.spring.io)
-//
-// 1. Getting up and running with code from start.spring.io
-// 2. Creating a sample application and adding our first tests
-// 3. Decoupling from external dependencies with mocks
-// 4. Factoring common setup with JUnit
-// 5. Deciding when (not) to use @SpringBootTest
+Imagine that our weather is much more complex, and has a full "travel recommendation" engine, taking many parameters into account to suggest some holiday plans, such as travel type and cost, lodging costs, weather history averages, user preferences, etc.
+The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up 8 different data sources for each case, with subtle variations for each.
+It is simpler to break the problem into simpler chunks, that you can reason about independently.
+For example, one `@Service WeatherScoringSerivce` class generates an aggregate score based on weather history, and user preferred temperature ranges.
+For testing all the possible variations, you would write unit tests.
+To give you an idea of what those tests could look like, see listing <<ch2-unit-test>>.
+
+[#ch2-unit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[source,java]
+----
+@Test
+void temperatureHistoryAboveAcceptableRange() {
+  var data = WeatherHistoryData
+      .withDataPoint(2022, 6, TemperatureRange.min(12).max(32))
+      .withDataPoint(2023, 6, TemperatureRange.min(9).max(24))
+      .withDataPoint(2024, 6, TemperatureRange.min(10).max(23));
+  var userPrefs = UserPreferences
+      .acceptableRange(5, 30)
+      .preferredRange(15, 25);
+  // Omitted: configure mocks to return data above
+  var weatherService = new WeatherScoringService(
+          mockWeatherService,
+          mockUserPreferenceRepository
+  );
+
+  var score = weatherScoringService.score("Paris", 6);
+
+  assertThat(score).isEqualTo(0);
+}
+----
+
+This is a perfect example of tests that you should not make into Spring Boot Tests.
+It focuses entirely on a simple feature with complex behavior, in this case "weather scoring".
+You do not need to set a full dependency tree of mock for hotel prices, train comparison, etc.
+By keeping it decoupled from the rest of the application, it keeps it straight to the point, easy to reason about, and easy to duplicate to test for other things: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
+
+[#ch2-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Summary
+
+- Spring projects generated on https://start.spring.io provide you with a single test, which is a great place to start writing your own integration tests.
+- A `@SpringBootTest` automatically finds your main class annotated with `@SpringBootApplication`, runs it, and makes it available in your test code.
+- `MockMvcTester` is a test utility to test the HTTP endpoints of your application, whether they return HTML or JSON.
+- With JUnit, the test framework offered by Spring Boot Tests, you can reuse your setup code.
+- With Spring Boot Test's Mockito integration, you can replace beans in your application and stub out external services.
+- The `@SpringBootTest` should not be used for all kinds of tests.
+When you want to test complex features with many variables, unit tests are better suited to the task.
