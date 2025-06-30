@@ -4,7 +4,7 @@
 :figure-caption: Figure {chapter}
 :listing-caption: Listing {chapter}
 :table-caption: Table {chapter}
-:sectnumoffset: {chapter} - 1
+:sectnumoffset: 1
 :leveloffset: 1
 :imagesdir: ../images/ch02/
 :table-number:
@@ -18,22 +18,22 @@
 This chapter covers:
 
 * Interacting with your application inside a `@SpringBootTest`
-* Decoupling from external dependencies with mocks
 * Factoring common setup with JUnit
+* Decoupling from external dependencies with mocks
 * Deciding when (not) to use `@SpringBootTest`
 
 When you create a project on Spring Initializr, also known as https://start.spring.io, you get testing libraries bundled in, as we mentioned in the previous chapter.
-There is also a single test file bundled in your project, ready to execute.
-It contains a single test method, which is empty, and the only thing it validates is that the application can start.
+There is also a test file in the zip file containing your project, ready to execute.
+It contains a single test method, which is empty, and the only thing it verifies is that the application can start.
 This has value in and on itself, as it validates your Spring dependency graph, and your Spring Boot properties.
-Having this test file also makes it easy to add your own tests, without too much to decide: the next logical step is to add another method to this test file.
+Having this test file also makes it easy to add your own tests, without having too much to decide: the next, obvious step is to add another method to this test file.
 
 It's a good start, but where do you go from here?
-When writing "integration" tests, there are a few key points that structure how your test suite will look like.
+When writing "integration" tests, there are a few key points that structure what your test suite will look like.
 You need some specific code to interact with your test application, and perform actions such as HTTP requests.
 Then you will want to check the result of your actions, through return values and the internal state of the test application.
-If there are dependencies outside the scope of your code, you must avoid using those and replace them with some test-specific code.
-And, as you add tests and your test suite grows in size and complexity, it will call for some reuse to keep the sprawl under control.
+If there are dependencies outside the scope of your code, you must avoid using those and replace them with some test-specific implementation.
+And, as you add tests and your test suite grows in size and complexity, it require some reuse to keep the sprawl under control.
 
 In this chapter, we will look at a very basic application and work through what Spring Boot Test has to offer to address all those needs.
 While we will not go deep on any of the particular solutions, we will paint a broad picture of what the structure of a Spring Boot Test is, and what the basic building blocks look like in practice.
@@ -43,7 +43,7 @@ While we will not go deep on any of the particular solutions, we will paint a br
 
 Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
-This book is about writing tests, so we will not be explaining how to build the applications you will test.
+This book is about writing tests, so we will not be explaining how to build the applications we will use as examples for our tests.
 Instead, you can download the test applications at **<TODO: LINK TO SAMPLES>**.
 To run them, you will need Java 21, the latest LTS version.
 
@@ -51,9 +51,9 @@ Before we start discussing, let's get familiar with the application under test.
 For this example, you will use a simple web page that displays the weather and temperature for cities.
 The user can select the cities they want to display in their dashboard, and the weather is fetched in real time from https://open-meteo.com.
 
-NOTE: The applications in this book are demo apps, and are not meant to be production-grade.
+NOTE: The applications in this book are demo apps, and are not meant to be production-grade quality.
 As such, there might be shortcuts taken here and there, and some best practices may be overlooked.
-Please take them with a grain of salt.
+Please take the implementation of those apps with a grain of salt.
 
 First, get the source code at: **<TODO: LINK TO SAMPLES>**.
 
@@ -64,7 +64,7 @@ Then run the application, for example by running the Maven wrapper command:
 ----
 
 In this mode, the application uses weather data from the Open-Meteo API.
-If you'd like the application to run locally, you can use a "fake" API that returns random weather, by running it with the `local` profile:
+If you'd like the application to run locally without relying on an external API, you can use a "fake" API that returns random weather, by running it with the `local` profile:
 
 ----
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
@@ -77,48 +77,48 @@ The general aspect of the application is rendered in figure <<ch2-figure-01>>.
 .A screenshot of the application under test.
 image::ch02_f001_garniermoiroux.png[]
 
-The user can type a city of their choice in the input box below "add a new city".
+The user can type the name of a city of their choice in the input box below "add a new city".
 The input box auto-completes using an HTML `<datalist>` element on the page, with all 5000 available cities loaded when the page is loaded.
 When they click the "Add City" button, the selected city is added to the cards below, and displays the temperature, wind speed and weather at the location.
 Cards are ordered by city name.
 The user can click a "remove" button to un-select a city.
 
-On the technical side, it is a simple server-rendered HTML website, with has a few JSON API endpoints, a backing SQL datastore, and no user management or security of any kind.
+On the technical side, the application is a simple server-rendered HTML website, with has a few JSON API endpoints, a backing SQL datastore, and no user management or security of any kind.
 The following dependencies are included:
 
 * `spring-boot-starter-web` for serving web requests
-* `spring-boot-starter-thyemleaf` for rendering the application
+* `spring-boot-starter-thymeleaf` for rendering the application
 * `spring-boot-starter-data-jpa` for storing and retrieving data
 * `com.h2database:h2` is the backing in-memory database for the application
 
-On the architecture side, nothing out of the extraordinary, as show in figure <<ch2-figure-02>>.
+On the architecture side, the class diagram is straightforward and resembles that of many Spring Boot applications, as shown in figure <<ch2-figure-02>>.
 
 // TODO: rework caption
 
 [#ch2-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.The architecture of the application under test. On the left side, the `@Controller` is the entrypoint to the application. On the right side are external systems that the application connects to. In between are the classes that hold your application logic.
+.The architecture of the application under test. On the left side, the `@Controller` is the entrypoint to the application. On the right side are external systems that the application connects to. In between are the classes that hold your application logic. Solid arrows represent code dependencies and dashed arrows external connections.
 image::ch02_f002_garniermoiroux.png[]
 
-There a single `@Controller`, passing HTTP requests to a single `@Service`.
-The service aggregates results from three components, that represent external services, either a database or a REST API.
+There a single `@Controller`, parsing HTTP requests, validating data, and then calling into a single `@Service`.
+That class aggregates results from three components, that represent external services, either a database or a REST API.
 The first is the `CityRepository`, which contain the list of known cities with their latitude and longitude.
 They are displayed in the auto-complete box in the "add a new city" section of the website.
 The second is the `SelectionRepository`, which contains the list of cities that the user has selected.
 For each item in this database table, there is a "city weather" card is displayed on the page.
-Lastly, the `WeatherService` returns weather data given latitude and longitude coordinates.
-By default, the implementation is the `OpenMeteoWeatherService`, makes HTTP calls to the Open-Meteo API with GPS coordinates, and returns weather data.
+Lastly, the `WeatherService` returns weather data based on latitude and longitude coordinates, which is used to populate the weather cards.
+The default implementation, `OpenMeteoWeatherService`, makes HTTP calls to the Open-Meteo API with GPS coordinates, and returns weather data.
 
-IMPORTANT: Take the time to run the application and try it out.
+IMPORTANT: Take the time to run the application, try it out and see for yourself!
 Knowing how it works will make the tests much easier to write.
 
 [#ch2-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the Spring-provided test
 
 NOTE: We assume in this chapter that you know how to run tests.
-If you do not, please refer to Appendix A: Running tests in this book.
+If you do not, please refer to Appendix A: Running tests.
 
-When you generate a project with Spring Initializr, your project should contain a single, empty test, as show in listing <<ch2-listing-empty-test>>.
-That test is in the file called `WeatherApplicationTests`.
+When you generate a project with Spring Initializr, your project contains a single, empty test, as shown in listing <<ch2-listing-empty-test>>.
+In this example, the test is in `WeatherApplicationTests.java`.
 
 [#ch2-listing-empty-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java]
@@ -129,7 +129,7 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 <1> The annotation turns the class is a Spring Boot integration test.
 <2> Annotated methods contain your test code
 
-When you execute this test, should pass.
+When you execute this test, it should pass.
 Before running the test, the application under test is started: the `@SpringBootTest` annotation detects your app's configuration, and runs it.
 This is visible in the logs: you should see a Spring banner and the usual application logs, like so:
 
@@ -147,9 +147,9 @@ This is visible in the logs: you should see a Spring banner and the usual applic
 ... then the rest of the application logs ...
 ----
 
-The test itself has no code, so it does not test any specific feature.
-The only thing it tells you that the application can start: this means, for example, that the dependency graph of the application is correct and does not have cycles, and that the properties in `application.yml` are valid.
-That is the only thing that Spring can infer from your project: Spring does not know about your business logic!
+The test itself has no code, so it does not exercise any specific feature.
+The only thing it tells you that the application can start: this means, for example, that the dependency graph of the application is correct and does not have missing beans, and that the properties in `application.yml` are valid.
+That is the only thing that Spring can infer from your project: Spring Boot does not know anything about your business logic!
 To watch the test fail, you can add an invalid property, for example, `server.port: foobar`, and try to re-run the test.
 It should throw an error, and you should see the failure in the logs:
 
@@ -168,17 +168,17 @@ Failed to bind properties under 'server.port' to java.lang.Integer:
     Reason: failed to convert java.lang.String to java.lang.Integer (caused by java.lang.NumberFormatException: For input string: "foobar")
 ----
 
-This is the same as trying to run the application and noticing the error.
+This is the same as trying to run the program on your machine, and noticing the error.
 But the whole point of writing integration tests is to check the business logic of your application!
-So let's write our first test, that actually interacts with the application.
+So, with that in mind, let's write our first test, specific to this particular app.
 
 [#ch2-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Adding your first test
 
-Before diving deep into the features of our application, let's ensure that it responds to HTTP requests on the index page, or `/`, and that it displays _something_.
-This tells you that there is an actual `/` endpoint, and that it does, indeed, render an HTML page.
+Before diving deep into the features of this weather dashboard website, let's ensure that the Spring Boot application responds to HTTP requests on the index page, or `/`, and that it displays _something_.
+This tells you that have created the appropriate mapping for the `/` path, and that it does, indeed, render an HTML page.
 To do so, you need to make HTTP calls to your application.
-Spring has useful tools for making this easy, as show in listing <<ch2-listing-first-test>>.
+This is such a common scenario that Spring has specialized utility classes for this, as shown in listing <<ch2-listing-first-test>>.
 
 [#ch2-listing-first-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java]
@@ -192,34 +192,37 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 <4> Verify the data from the response.
 
 There is a lot to unpack in this test.
-First, the class is annotated with `@SpringBootTest`, just like the previous test.
-This means that, before running any of the tests in this class, a test application will be started, based on your `@SpringBootApplication` class.
+First, the class is annotated with `@SpringBootTest`, just like the example in the previous section.
+This means that, before running any of the methods in this class, a test application will be started, based on your `@SpringBootApplication` class.
 
 Second is the presence of `@AutoConfigureMockMvc`, which makes a `MockMvcTester` bean available in your test.
-That class is a utility class that allows you to make requests targeting the test application.
+It is a utility class that allows you to make requests targeting the test application.
 Notice that you can ignore the host and port where the app runs on when making HTTP requests: you only specify the method and path, in this case `GET /`.
-Also notice that it has a nice fluent API, which is both simple and very explicit.
+Also notice that it has a nice fluent API, which reads well and keeps the intent clear by only showing what is necessary to make such a request.
 
 Lastly, a word on the structure of the test method itself: most of our tests will be written in some form of the classic "Arrange/Act/Assert", or "Given/When/Then".
 This is a common way to write tests, spelling out three parts:
 
 * **Arrange:** Set up the data and code you need to run your tests.
-In the previous example, there's nothing in particular to set up
-* **Act:** Run the action or set of actions you want to test.
+In the previous example, there's nothing in particular to set up, so this step is empty.
+* **Act:** Run the action or set of actions that trigger the behavior you want to verify.
 Here, we are fetching the index page of the application.
 * **Assert:** Verify that the action has the intended result or consequence.
-Here, we ensure the response to the request is `HTTP 200`, and that the returned page contains an HTML header with "Weather App".
+Here, we ensure the response to the request is `HTTP 200`, and that the HTML page it returns contains a header with the words "Weather App".
 To do this, we use the AssertJ assertion library, which integrates nicely with Spring's `MockMvcTester`.
+
+NOTE: To learn more about MockMvcTester, refer to chapter 4, "Testing web applications".
+To ramp up on AssertJ, refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
 [#ch2-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Accessing context dependencies
 
-The previous test was fairly simple, and did not exercise any weather-related features in our application.
-It was a read-only test, and did not add any data to the database.
-Let's create a test that exercises a database write, by selecting a city.
-To write such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: maybe that name is somewhere else on the page.
+The previous test was extremely simple, and did not demonstrate any weather-related features in our application, one that we would describe in detail in a "user story".
+It was a read-only test, one that does not add any data to the database.
+Let's create a test that exercises a database write, by selecting a city with another HTTP request.
+To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: for example, that city name is somewhere else on the page and the test would pass even if no city was selected.
 In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
-But let's start simple, and check what that the database does indeed contain the city we have added, as show in listing <<ch2-listing-context-dependencies>>.
+But let's start simple, and instead of worrying about HTML structure, let's check what that the database does indeed contain the city we have added, as shown in listing <<ch2-listing-context-dependencies>>.
 
 [#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java]
@@ -228,13 +231,13 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 ----
 
 1. Access the repository bean from the test app.
-2. Use the repository to ensure data was added.
+2. Query the repository to ensure data was added.
 
-Any Spring bean from your application under test is exposed to your Spring Boot Tests, through field injection with the usual `@Autowired` annotation.
-In this case, you can use the `SelectionRepository` from the data-access layer, to check what data is present in the database when the `POST` request is made.
-In this example, the usage is fairly trivial.
+Any Spring bean from the test application is exposed to your test code, through field injection with the usual `@Autowired` annotation.
+In this case, you can use the `SelectionRepository` from the data-access layer to check what data is present in the database when the `POST` request is made.
+Here, the usage is fairly trivial.
 But if you have access to the whole application context, you can imagine many use-cases accessing beans and using them directly.
-This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it.
+This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it before trying to query the app for data.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
 I suggest wrapping the `POST` request and exposes it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
@@ -315,7 +318,7 @@ And you'd add tens or hundreds of milliseconds of latency to every test.
 Generally, it's considered bad practice to call out to external services during tests, unless you're doing end-to-end testing.
 Instead, you should be providing an alternative implementation, that you can program, and that returns predictable results, often called "stubs" or "mocks".
 Spring Boot Starter Test brings the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly in Spring Boot tests.
-We can replace beans the application context with a mock, and configure it to return the results that we want, as show in listing <<ch2-listing-mocks>>.
+We can replace beans the application context with a mock, and configure it to return the results that we want, as shown in listing <<ch2-listing-mocks>>.
 
 [#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java,indent=0]
