@@ -6,7 +6,9 @@ MAKEFLAGS += --silent
 html: manuscript/*.adoc
 	asciidoctor \
 	    --destination-dir html/ \
-	    --require ./resources/remove_formatter_comments.rb --trace \
+	    --require ./resources/remove_formatter_comments.rb \
+	    --require ./resources/sectnumoffset-treeprocessor.rb \
+	    --trace \
 	    $^
 
 pdf: manuscript/*.adoc
@@ -14,5 +16,7 @@ pdf: manuscript/*.adoc
 	    --destination-dir pdf/ \
 	    --attribute pdf-theme=manning \
 	    --require asciidoctor-mathematical \
-	    --require ./resources/remove_formatter_comments.rb --trace \
+	    --require ./resources/remove_formatter_comments.rb \
+	    --require ./resources/sectnumoffset-treeprocessor.rb \
+	    --trace \
 	    $^
