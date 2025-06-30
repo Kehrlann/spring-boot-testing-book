@@ -236,7 +236,7 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 Any Spring bean from the test application is exposed to your test code, through field injection with the usual `@Autowired` annotation.
 In this case, you can use the `SelectionRepository` from the data-access layer to check what data is present in the database when the `POST` request is made.
 Here, the usage is fairly trivial.
-But if you have access to the whole application context, you can imagine many use-cases accessing beans and using them directly.
+But if you have access to the whole application context, you can imagine many use-cases involving accessing beans and using them directly.
 This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it before trying to query the app for data.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
@@ -251,9 +251,9 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 [#ch2-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Factoring common setup with JUnit
 
-Now, imagine you want to add a test that shows that a city can only be present a single time in the selection database, and that there is no duplication.
+Now, imagine you want to add a test that shows that a city can only be present a single time in the selection database, that there are no duplicates.
 The structure of the test is fairly simple: add the same city twice, and ensure that there is only one entry in the database.
-Using our `selectCity(...)` help method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
+Using our `selectCity(...)` helper method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
 
 [#ch2-listing-no-duplicates, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java,indent=0]
@@ -262,14 +262,15 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 ----
 
 Running this test by itself works.
-But if all the tests in the file, it will run both `noDuplicates` and  `addSelectedCity` test from section <<ch2-section-4>>, which both add a city.
-And both expect there to be a single city in the database, so at least one of them is going to fail.
+But if you run all the tests in the file, JUnit will execute both `noDuplicates` and  `addSelectedCity` test from section <<ch2-section-4>>.
+They both add a city, and expect that there is a single entry in the database.
+But the second test that runs will now find two cities, and will fail.
 There are multiple ways to fix this issue.
-You could order the tests, and expect one city, then two cities in the second test, etc.
-That's additional context that you would need to keep in mind while writing tests, and you would not be able to run them independently anymore: each test depends on the previous test to run to succeed.
+You could order the tests, and expect one city in the first test, then two cities in the second test, etc.
+That's additional context that you would need to keep in mind while writing tests, and you would not be able to run them independently anymore: each test depends on running the previous test to succeed.
 You could also count the number of cities at the beginning of each test and ensure it increases by 1, but that's more code to read to understand the goal of a specific method.
-Or you could ensure that the database is empty before running each test, for example by calling `selectionRepository.deleteAll()` at the beginning of each test.
-This works fine, but you need to remember to add it to every test, and as your suite grows, so does the duplication.
+Or you could ensure that the database is empty before running each test, for example by calling `selectionRepository.deleteAll()` at the beginning of every test.
+This works fine, but you need to remember to add the cleanup every time, and as your suite grows, so does the duplication: you will end up big chunks of cleanup code, repeated multiple times.
 
 Fortunately, you can fold common setup code with JUnit, resulting in listing <<ch2-listing-before-each>>'s method, which will be executed before every test.
 
@@ -279,10 +280,10 @@ Fortunately, you can fold common setup code with JUnit, resulting in listing <<c
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=before-each]
 ----
 
-With this, each test starts with a clean slate and can make independent assertions on state and data.
+With this, each test starts with a clean slate and can make independent assertions on the state and data in the database.
 Running the whole file should now pass, and running each method independently still works.
 By force of habit, "before each" methods are often called `setUp()`, which was a requirement in JUnit 3 and earlier.
-In modern versions of JUnit, you can have as many `@BeforeEach`-annotated methods as you want, and you can use any name you want.
+In modern versions of JUnit, you can have as many `@BeforeEach`-annotated methods as you want, and you can use any name you find descriptive.
 
 NOTE: To learn more about JUnit, and get an overview of useful features, refer to chapter 8, "Creating reusable test abstractions with JUnit".
 
@@ -291,8 +292,8 @@ NOTE: To learn more about JUnit, and get an overview of useful features, refer t
 
 So far, none of the tests we have written make use of the external Open-Meteo API, represented by the `WeatherService` class.
 But gathering weather data is a core feature of our application!
-Let's write a test that ensures that our application returns the correct data.
-To avoid parsing the HTML page to find the data we care about, we will use the JSON API that the application provides.
+Let's write a test that ensures that our weather dashboard the correct information.
+To avoid parsing the HTML page to find the exact elements we want to verify, let's take a shortcut and use the JSON API that the application provides.
 It should return a response that looks something like this: `{"cityName": "<SOME CITY>", "temperature": <SOME TEMPERATURE>}`.
 Putting it all together, we can write listing <<ch2-listing-weather-data>>.
 
@@ -303,22 +304,22 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 ----
 
 The structure is familiar: ensure that the city is selected (arrange), call the `/api/weather` endpoint (act), and verify that the result has the correct values (assert).
-The assertion here uses `MockMvcTester` 's support for AssertJ, and some JSON-compatible extensions.
-With that, you can easily compare JSON structures and avoid the usual issues of string-based comparisons, such as the order of properties, or the exact spacing and new lines.
+The assertion here uses `MockMvcTester` 's support for AssertJ, with its JSON-specific extensions.
+With that utility, you can easily compare JSON structures and avoid the usual issues of string-based comparisons, such as the order of properties, or the exact spacing and new lines.
 
 While this test looks reasonable, it will only pass when the reported temperature is _exactly_ 22.6 degrees.
 That's a problem!
 You could, of course, rework the test to assert that "a temperature value" is returned, in a number format.
 Maybe you could even ensure that it's within a reasonable range, say -30 to +50 Celsius, but this would mean more code, and the method would be harder to understand.
-And if you did this, you would have another class of issues, that stem from relying on an external system for running your tests.
+And even if you did this, you would still have to deal with a whole class of issues, that stem from relying on an external system in your tests.
 If the API provider goes down, the test fails every time, even if you have error-handling code.
 If the network is unstable, your test becomes flakey, less deterministic, and therefore less useful.
-Running your tests would eat up in your daily API calls quotas.
+And your tests would eat up in your daily API calls quotas.
 And you'd add tens or hundreds of milliseconds of latency to every test.
-Generally, it's considered bad practice to call out to external services during tests, unless you're doing end-to-end testing.
-Instead, you should be providing an alternative implementation, that you can program, and that returns predictable results, often called "stubs" or "mocks".
+Generally, it's considered bad practice to call out to external services during tests, unless you're doing end-to-end, full-system testing.
+Instead, you should be providing an alternative implementation, that you can program, and that returns predictable results, often called a "stub" or a "mock".
 Spring Boot Starter Test brings the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly in Spring Boot tests.
-We can replace beans the application context with a mock, and configure it to return the results that we want, as shown in listing <<ch2-listing-mocks>>.
+We can replace beans the application context with a mock, and configure it to return predictable results, as shown in listing <<ch2-listing-mocks>>.
 
 [#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java,indent=0]
@@ -330,26 +331,26 @@ include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weath
 <2> Configure the mock for usage.
 
 Using the `@MockitoBean` annotation, we tell Spring that we want to replace the "production" implementation by a mock implementation.
-We can any method on this mock to return pre-defined results: in this case, something that tells us the temperature is 22.6 degrees, for any city.
+We can configure any method on this mock to return pre-defined results: in this case, something that tells us the temperature is 22.6 degrees, for any city.
 The assertions remain the same and have been omitted.
 The test is now decoupled from the external dependency, making it deterministic and predictive.
 
 NOTE: To learn more about mocking and stubbing, refer to chapter 3, "Getting familiar with the Spring testing framework".
-For more insights about Mockito and its features, refer to chapter 10, Writing elegant tests with Spring Boot’s bundled testing libraries
+For more insights about Mockito and its features, refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
 [#ch2-section-7, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == A word of caution: when NOT to use `@SpringBootTest`
 
-This book is all about Spring Boot Test, and you will see the `@SpringBootTest` across many examples.
+This book is all about Spring Boot Test, and you will see the `@SpringBootTest` annotation across many examples.
 When the application is small enough, such as with our weather application example here, testing everything through Spring Boot Tests is reasonable.
 However, the bigger the application, the more complex the features, the harder it is to test it in its entirety through integration tests.
 You will need to introduce unit tests, focused on smaller pieces of logic.
 As we've discussed in chapter 1, at that level, you should not be running a Boot application to verify behavior.
 
 Imagine that our weather is much more complex, and has a full "travel recommendation" engine, taking many parameters into account to suggest some holiday plans, such as travel type and cost, lodging costs, weather history averages, user preferences, etc.
-The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up 8 different data sources for each case, with subtle variations for each.
-It is simpler to break the problem into simpler chunks, that you can reason about independently.
-For example, one `@Service WeatherScoringSerivce` class generates an aggregate score based on weather history, and user preferred temperature ranges.
+The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up N separate data sources for each case, with subtle variations for each.
+It is simpler to break the problem into smaller chunks that you can reason about independently.
+For example, we could introduce one `@Service WeatherScoringSerivce` class that generates an aggregate score based on weather history, and user preferred temperature ranges.
 For testing all the possible variations, you would write unit tests.
 To give you an idea of what those tests could look like, see listing <<ch2-unit-test>>.
 
@@ -378,7 +379,7 @@ void temperatureHistoryAboveAcceptableRange() {
 ----
 
 This is a perfect example of tests that you should not make into Spring Boot Tests.
-It focuses entirely on a simple feature with complex behavior, in this case "weather scoring".
+It focuses entirely on a single feature with complex behavior, in this case "weather scoring".
 You do not need to set a full dependency tree of mock for hotel prices, train comparison, etc.
 By keeping it decoupled from the rest of the application, it keeps it straight to the point, easy to reason about, and easy to duplicate to test for other things: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
 
@@ -390,5 +391,5 @@ By keeping it decoupled from the rest of the application, it keeps it straight t
 - `MockMvcTester` is a test utility to test the HTTP endpoints of your application, whether they return HTML or JSON.
 - With JUnit, the test framework offered by Spring Boot Tests, you can reuse your setup code.
 - With Spring Boot Test's Mockito integration, you can replace beans in your application and stub out external services.
-- The `@SpringBootTest` should not be used for all kinds of tests.
+- The `@SpringBootTest` annotation should not be used for all kinds of tests.
 When you want to test complex features with many variables, unit tests are better suited to the task.
