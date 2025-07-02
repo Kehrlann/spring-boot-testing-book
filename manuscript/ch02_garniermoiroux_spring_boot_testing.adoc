@@ -33,9 +33,9 @@ When writing "integration" tests, there are a few key points that structure what
 You need some specific code to interact with your test application, and perform actions such as HTTP requests.
 Then you will want to check the result of your actions, through return values and the internal state of the test application.
 If there are dependencies outside the scope of your code, you must avoid using those and replace them with some test-specific implementation.
-And, as you add tests and your test suite grows in size and complexity, it require some reuse to keep the sprawl under control.
+And, as you add tests and your test suite grows in size and complexity, it requires some reuse to keep the sprawl under control.
 
-In this chapter, we will look at a very basic application and work through what Spring Boot Test has to offer to address all those needs.
+Now, let's look at a very basic application and work through what Spring Boot Test has to offer to address all those needs.
 While we will not go deep on any of the particular solutions, we will paint a broad picture of what the structure of a Spring Boot Test is, and what the basic building blocks look like in practice.
 
 [#ch2-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -81,9 +81,9 @@ The user can type the name of a city of their choice in the input box below "add
 The input box auto-completes using an HTML `<datalist>` element on the page, with all 5000 available cities loaded when the page is loaded.
 When they click the "Add City" button, the selected city is added to the cards below, and displays the temperature, wind speed and weather at the location.
 Cards are ordered by city name.
-The user can click a "remove" button to un-select a city.
+The user can click a "remove" button to unselect a city.
 
-On the technical side, the application is a simple server-rendered HTML website, with has a few JSON API endpoints, a backing SQL datastore, and no user management or security of any kind.
+On the technical side, the application is a simple server-rendered HTML website, which has a few JSON API endpoints, a backing SQL datastore, and no user management or security of any kind.
 The following dependencies are included:
 
 * `spring-boot-starter-web` for serving web requests
@@ -92,8 +92,6 @@ The following dependencies are included:
 * `com.h2database:h2` is the backing in-memory database for the application
 
 On the architecture side, the class diagram is straightforward and resembles that of many Spring Boot applications, as shown in figure <<ch2-figure-02>>.
-
-// TODO: rework caption
 
 [#ch2-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The architecture of the application under test. On the left side, the `@Controller` is the entrypoint to the application. On the right side are external systems that the application connects to. In between are the classes that hold your application logic. Solid arrows represent code dependencies and dashed arrows external connections.
@@ -104,7 +102,7 @@ That class aggregates results from three components, that represent external ser
 The first is the `CityRepository`, which contain the list of known cities with their latitude and longitude.
 They are displayed in the auto-complete box in the "add a new city" section of the website.
 The second is the `SelectionRepository`, which contains the list of cities that the user has selected.
-For each item in this database table, there is a "city weather" card is displayed on the page.
+For each item in this database table, there is a "city weather" card displayed on the page.
 Lastly, the `WeatherService` returns weather data based on latitude and longitude coordinates, which is used to populate the weather cards.
 The default implementation, `OpenMeteoWeatherService`, makes HTTP calls to the Open-Meteo API with GPS coordinates, and returns weather data.
 
@@ -230,8 +228,8 @@ But let's start simple, and instead of worrying about HTML structure, let's chec
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
 ----
 
-1. Access the repository bean from the test app.
-2. Query the repository to ensure data was added.
+<1> Access the repository bean from the test app.
+<2> Query the repository to ensure data was added.
 
 Any Spring bean from the test application is exposed to your test code, through field injection with the usual `@Autowired` annotation.
 In this case, you can use the `SelectionRepository` from the data-access layer to check what data is present in the database when the `POST` request is made.
@@ -240,7 +238,7 @@ But if you have access to the whole application context, you can imagine many us
 This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it before trying to query the app for data.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
-I suggest wrapping the `POST` request and exposes it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
+I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
 
 [#ch2-listing-select-city, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 [source,java,indent=0]
@@ -292,7 +290,7 @@ NOTE: To learn more about JUnit, and get an overview of useful features, refer t
 
 So far, none of the tests we have written make use of the external Open-Meteo API, represented by the `WeatherService` class.
 But gathering weather data is a core feature of our application!
-Let's write a test that ensures that our weather dashboard the correct information.
+Let's write a test that ensures that our weather dashboard displays the correct information.
 To avoid parsing the HTML page to find the exact elements we want to verify, let's take a shortcut and use the JSON API that the application provides.
 It should return a response that looks something like this: `{"cityName": "<SOME CITY>", "temperature": <SOME TEMPERATURE>}`.
 Putting it all together, we can write listing <<ch2-listing-weather-data>>.
@@ -311,7 +309,7 @@ While this test looks reasonable, it will only pass when the reported temperatur
 That's a problem!
 You could, of course, rework the test to assert that "a temperature value" is returned, in a number format.
 Maybe you could even ensure that it's within a reasonable range, say -30 to +50 Celsius, but this would mean more code, and the method would be harder to understand.
-And even if you did this, you would still have to deal with a whole class of issues, that stem from relying on an external system in your tests.
+And even if you did this, you would still have to deal with a whole class of issues that stem from relying on an external system in your tests.
 If the API provider goes down, the test fails every time, even if you have error-handling code.
 If the network is unstable, your test becomes flakey, less deterministic, and therefore less useful.
 And your tests would eat up in your daily API calls quotas.
@@ -367,21 +365,30 @@ void temperatureHistoryAboveAcceptableRange() {
       .acceptableRange(5, 30)
       .preferredRange(15, 25);
   // Omitted: configure mocks to return data above
-  var weatherService = new WeatherScoringService(
-          mockWeatherService,
-          mockUserPreferenceRepository
-  );
+  var weatherService = new WeatherScoringService(  // <1>
+          mockWeatherService,  // <1>
+          mockUserPreferenceRepository  // <1>
+  );  // <1>
 
-  var score = weatherScoringService.score("Paris", 6);
+  var score = weatherScoringService.score("Paris", 6); // <2>
 
   assertThat(score).isEqualTo(0);
 }
 ----
 
+<1> Create the class under test with `new`
+<2> Call the instance methods directly
+
 This is a perfect example of tests that you should not make into Spring Boot Tests.
-It focuses entirely on a single feature with complex behavior, in this case "weather scoring".
-You do not need to set a full dependency tree of mock for hotel prices, train comparison, etc.
-By keeping it decoupled from the rest of the application, it keeps it straight to the point, easy to reason about, and easy to duplicate to test for other things: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
+It is a "business domain" test, which focuses entirely on a single feature with complex behavior, in this case "weather scoring".
+You do not need to set a full dependency tree of mocks for hotel prices, train comparison, etc.
+By keeping the Service under test decoupled from the rest of the application, it keeps the test straight to the point, easy to reason about, and easy to duplicate to test for other things: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
+In terms of code, this setup means you can simply create the Service by calling `new` and passing dependencies to the constructor explicitly, without relying on the Spring "Inversion of Control" container and its autowiring capabilities.
+By calling methods directly, you do not need HTTP-specific tooling such as `MockMvcTester`.
+Lastly, since you are mocking all services and repositories, the test does not require a data layer or a database abstraction.
+By not using any of the Spring features, your test is much leaner, does not require a lot of setup and is easier to maintain.
+And, crucially, it does not start a Spring Boot app, so you get the results in milliseconds rather than seconds.
+So, before you reach for the `@SpringBootTest` annotation, take a pause, and decide whether you are writing an integration test, that requires Spring-specific tooling, or just a simple unit test.
 
 [#ch2-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
