@@ -212,6 +212,9 @@ To do this, we use the AssertJ assertion library, which integrates nicely with S
 NOTE: To learn more about MockMvcTester, refer to chapter 4, "Testing web applications".
 To ramp up on AssertJ, refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
 
+Now that we have a full test, albeit very basic, we have a foundation we can build on.
+Let's expand our scope and start testing actual features that are implemented in our Spring beans.
+
 [#ch2-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Accessing context dependencies
 
@@ -246,10 +249,14 @@ I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` u
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
 ----
 
+With this, we have a method, with an explicit name, which we can reuse in our tests to better express our intent.
+But writing methods is not the only way to encapsulate behavior!
+When it comes to test code specifically, JUnit, the framework we use, has its own affordances for reducing code duplication and encouraging reuse.
+
 [#ch2-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Factoring common setup with JUnit
 
-Now, imagine you want to add a test that shows that a city can only be present a single time in the selection database, that there are no duplicates.
+Imagine you want to add a test that shows that a city can only be present a single time in the selection database, that there are no duplicates.
 The structure of the test is fairly simple: add the same city twice, and ensure that there is only one entry in the database.
 Using our `selectCity(...)` helper method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
 
