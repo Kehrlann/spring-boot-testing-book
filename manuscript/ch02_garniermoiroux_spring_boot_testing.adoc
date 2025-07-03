@@ -383,13 +383,13 @@ void temperatureHistoryAboveAcceptableRange() {
 }
 ----
 
-<1> Create the class under test with `new`
-<2> Call the instance methods directly
+<1> Create object under test with the `new` keyword
+<2> Call instance methods directly
 
 This is a perfect example of tests that you should not make into Spring Boot Tests.
 It is a "business domain" test, which focuses entirely on a single feature with complex behavior, in this case "weather scoring".
-You do not need to set a full dependency tree of mocks for hotel prices, train comparison, etc.
-By keeping the Service under test decoupled from the rest of the application, it keeps the test straight to the point, easy to reason about, and easy to duplicate to test for other things: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
+You do not need to carefully create a full dependency tree of mocks for hotel prices, train comparison, etc.
+By keeping the Service under test decoupled from the rest of the application, it keeps the test straight to the point, easy to reason about, and easy to duplicate for all your other test cases: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
 In terms of code, this setup means you can simply create the Service by calling `new` and passing dependencies to the constructor explicitly, without relying on the Spring "Inversion of Control" container and its autowiring capabilities.
 By calling methods directly, you do not need HTTP-specific tooling such as `MockMvcTester`.
 Lastly, since you are mocking all services and repositories, the test does not require a data layer or a database abstraction.
