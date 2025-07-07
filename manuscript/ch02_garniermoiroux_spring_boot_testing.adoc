@@ -119,6 +119,7 @@ When you generate a project with Spring Initializr, your project contains a sing
 In this example, the test is in `WeatherApplicationTests.java`.
 
 [#ch2-listing-empty-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.The test bundled in a Spring Initialzr-based project.
 [source,java]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
@@ -179,6 +180,7 @@ To do so, you need to make HTTP calls to your application.
 This is such a common scenario that Spring has specialized utility classes for this, as shown in listing <<ch2-listing-first-test>>.
 
 [#ch2-listing-first-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Verifying that the application responds to HTTP queries.
 [source,java]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mock-mvc-tester;first-test]
@@ -226,6 +228,7 @@ In a more advanced use-case, we would parse the page to ensure that the correct 
 But let's start simple, and instead of worrying about HTML structure, let's check what that the database does indeed contain the city we have added, as shown in listing <<ch2-listing-context-dependencies>>.
 
 [#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Validating that users can select a city.
 [source,java]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
@@ -244,6 +247,7 @@ Since one of the foundational features of our application is selecting which cit
 I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
 
 [#ch2-listing-select-city, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A helper function for city selection.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
@@ -261,6 +265,7 @@ The structure of the test is fairly simple: add the same city twice, and ensure 
 Using our `selectCity(...)` helper method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
 
 [#ch2-listing-no-duplicates, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Verify that there are not duplicates in the list of selected cities.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=no-duplicates]
@@ -280,6 +285,7 @@ This works fine, but you need to remember to add the cleanup every time, and as 
 Fortunately, you can fold common setup code with JUnit, resulting in listing <<ch2-listing-before-each>>'s method, which will be executed before every test.
 
 [#ch2-listing-before-each, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Cleanup the repository before every test.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=before-each]
@@ -303,6 +309,7 @@ It should return a response that looks something like this: `{"cityName": "<SOME
 Putting it all together, we can write listing <<ch2-listing-weather-data>>.
 
 [#ch2-listing-weather-data, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Ensure that weather data is available in the API.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=weather-data;!weather-data-mock]
@@ -327,6 +334,7 @@ Spring Boot Starter Test brings the Mockito dependency, and the Spring framework
 We can replace beans the application context with a mock, and configure it to return predictable results, as shown in listing <<ch2-listing-mocks>>.
 
 [#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Replace a bean in the application context by a mock.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=mockito-bean;weather-data;!weather-data-assertions]
@@ -360,6 +368,7 @@ For testing all the possible variations, you would write unit tests.
 To give you an idea of what those tests could look like, see listing <<ch2-unit-test>>.
 
 [#ch2-unit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A sample domain test without Spring-specific testing tools.
 [source,java]
 ----
 @Test
