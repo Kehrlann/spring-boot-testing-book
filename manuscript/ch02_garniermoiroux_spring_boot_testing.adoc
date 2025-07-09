@@ -112,9 +112,6 @@ Knowing how it works will make the tests much easier to write.
 [#ch2-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the Spring-provided test
 
-NOTE: We assume in this chapter that you know how to run tests.
-If you do not, please refer to Appendix A: Running tests.
-
 When you generate a project with Spring Initializr, your project contains a single, empty test, as shown in listing <<ch2-listing-empty-test>>.
 In this example, the test is in `WeatherApplicationTests.java`.
 

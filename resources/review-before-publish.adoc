@@ -6,6 +6,7 @@
 
 == Chapter 2
 
-- Appendix A - running a test?
 - Need Java 21, latest LTS -> Java 25?
 - Review Spring banner version
+
+== Appendix A - running a test
