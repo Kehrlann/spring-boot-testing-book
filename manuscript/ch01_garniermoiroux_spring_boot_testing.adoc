@@ -162,7 +162,8 @@ And there is a whole continuum of test types in between.
 Spring Boot tests shine somewhere in the middle, for what I'd call "Integration Tests".
 The term is not universally accepted, so it is worth defining it in the context of this book.
 Integration tests typically involve many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
-They may cover your entire application, and include some external dependencies such as a database, but not your entire system with its many dependencies. Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
+They may cover your entire application, and include some external dependencies such as a database, but not your entire system with its many dependencies.
+Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
 
 [#ch1-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The testing spectrum. On one end, unit tests that involve one or a few classes, and no Spring-specific code. On the other end, there are full-blown end-to-end tests, that may involve many complex components, that need tooling beyond the context of Spring. In between those two ends, there is a whole category of "integration tests".
@@ -309,7 +310,7 @@ To recap, everything you would to think about if there was not dedicated Spring 
 - Interacting with the running application using low level APIs, for example to access certain beans in the application context, or to get the port of the running server.
 - Optionally, writing utility classes to make tests less verbose.
 
-NOTE: If you would like to see a full example of such tests, check out **<TODO: LINK TO SAMPLES>**.
+NOTE: If you would like to see a full example of such tests, check out the samples at https://github.com/Kehrlann/spring-boot-testing-book-samples/, specifically in the `ch1/widget` directory.
 
 [#ch1-section4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Removing the toil: a typical `@SpringBootTest`
