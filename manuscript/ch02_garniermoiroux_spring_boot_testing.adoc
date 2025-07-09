@@ -44,7 +44,7 @@ While we will not go deep on any of the particular solutions, we will paint a br
 Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
 This book is about writing tests, so we will not be explaining how to build the applications we will use as examples for our tests.
-Instead, you can download the test applications at **<TODO: LINK TO SAMPLES>**.
+Instead, you can download the test applications at https://github.com/Kehrlann/spring-boot-testing-book-samples/.
 To run them, you will need Java 21, the latest LTS version.
 
 Before we start discussing, let's get familiar with the application under test.
@@ -55,7 +55,7 @@ NOTE: The applications in this book are demo apps, and are not meant to be produ
 As such, there might be shortcuts taken here and there, and some best practices may be overlooked.
 Please take the implementation of those apps with a grain of salt.
 
-First, get the source code at: **<TODO: LINK TO SAMPLES>**.
+First, get the source code in the samples in the `ch2/weather` directory, or directly from https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch2/weather.
 
 Then run the application, for example by running the Maven wrapper command:
 
