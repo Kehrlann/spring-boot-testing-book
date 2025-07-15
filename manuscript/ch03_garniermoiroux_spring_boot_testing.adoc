@@ -13,7 +13,7 @@
 :tabsize: 2
 
 [#ch3_title, reftext={chapter}, caption='{chapter}']
-= Getting familiar with the Spring testing framework
+= Configuring and running an application for testing
 
 This chapter covers:
 
@@ -23,18 +23,18 @@ This chapter covers:
 * Stubbing and mocking dependencies
 * Caching the application context between tests
 
-When you annotate a test class with `@SpringBootTest`, it automatically detects your application's configuration, manages its lifecycle, and allows you to change its configuration.
+When you annotate a test class with `@SpringBootTest`, it automatically detects your application's configuration, configures and optimizes it for a testing scenario, manages its lifecycle, and makes it accessible in your tests.
 
 But how does that work?
 
 // TODO
 
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== The `@SpringBootTest` annotation
+== The `@SpringBootTest` annotation in detail
 
 The `@SpringBootTest` gives you a hint in its name: it is intended with Spring Boot, not with regular Spring applications.
 But Spring has testing capabilities for apps too, without Boot, and Boot builds upon it.
-If you look at the source code `@SpringBootTest`, you'll see it's actually a meta-annotation, that brings in other annotations.
+If you look at the source code of this annotation, simplified for you in listing <<ch3-listing-springboottest>>, you'll see it's actually a meta-annotation, that brings in other annotations.
 
 [#ch3-listing-springboottest, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Simplified code for @SpringBootTest extension.
@@ -44,15 +44,17 @@ If you look at the source code `@SpringBootTest`, you'll see it's actually a met
 @BootstrapWith(SpringBootTestContextBootstrapper.class) // <2>
 public @interface SpringBootTest {
 
-	String[] properties() default {}; // <3>
+  // Below are generic Spring configuration options, exposed by @SpringBootTest
+  String[] properties() default {}; // <3>
 
-	String[] args() default {}; // <3>
+  Class<?>[] classes() default {}; // <3>
 
-	Class<?>[] classes() default {}; // <3>
+  // Below are Spring Boot specific configuration options
+  WebEnvironment webEnvironment() default WebEnvironment.MOCK; // <3>
 
-	WebEnvironment webEnvironment() default WebEnvironment.MOCK; // <3>
+  UseMainMethod useMainMethod() default UseMainMethod.NEVER; // <3>
 
-	UseMainMethod useMainMethod() default UseMainMethod.NEVER; // <3>
+  String[] args() default {}; // <3>
 
 }
 ----
@@ -60,6 +62,18 @@ public @interface SpringBootTest {
 <1> A Spring-provided JUnit extension
 <2> Configuration for the SpringExtension
 <3> Configuration for @SpringBootTest
+
+By using `@SpringBootTest`, you automatically register the JUnit `SpringExtension` with your test class, through the `@ExtendWith` annotation.
+It is the glue that ties your tests to the Spring parts in your application.
+It is responsible for managing the lifecycle of the test application in sync with the lifecycle of the test.
+JUnit have hooks that allow you to execute code at different points in the lifecycle, for example "before every test in the class", "after all the tests in the class have run", "after the test class' instance has been constructed".
+The Spring extension takes advantage of this, and detects when it should start a test app.
+It also modifies the test class at runtime, to inject values into fields, or parameters in test methods - this is what happens when you use `@Autowired` or `@MockBean` in a test.
+Lastly, it detects the context in which the test is run, and uses that information to configure the test application.
+For example, it detects other annotations present on the test class to decide to, say, add a Spring profile, some properties, other configuration classes.
+
+and making it accessible to tests via e.g. `@Autowired` annotations.
+
 
 // - Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
 // - Replacing beans selectively, for example to avoid connecting to external systems.
