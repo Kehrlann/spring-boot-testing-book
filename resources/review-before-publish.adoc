@@ -9,4 +9,8 @@
 - Need Java 21, latest LTS -> Java 25?
 - Review Spring banner version
 
+== Chapter 3
+
+- Fix TOC
+
 == Appendix A - running a test
