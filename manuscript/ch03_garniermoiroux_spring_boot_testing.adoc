@@ -27,7 +27,7 @@ When you annotate a test class with `@SpringBootTest`, it automatically detects 
 
 But how does that work?
 
-// TODO
+// TODO: intro paragraph
 
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == The `@SpringBootTest` annotation in detail
@@ -79,10 +79,10 @@ Although it is fairly advanced material, I encourage you to take the time to at 
 
 As is signaled in the name, `@SpringBootTest` is about testing Spring _Boot_ applications, not plain Spring apps.
 Using the primitives in the Spring TestContext framework, it tailors the experience to Spring Boot, starting with the `SpringBootTestContextBootstrapper`.
-That class is responsible for detecting your "production" application and its configuration, and using that to create a test app.
+That class is responsible for detecting your "production" application and its configuration, and using that to create the Spring `ApplicationContext` for the test applications.
 It also applies test-specific configuration, like not running a full web-server unless specifically required.
 
-It also provides direct configuration hooks in the annotation itself, so you can add configuration properties, use the main method or not, turn off web capabilities.
+It also provides direct configuration hooks in the annotation itself, so you can add configuration properties, use the main method or not, or turn off web support.
 
 // - Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
 // - Replacing beans selectively, for example to avoid connecting to external systems.
@@ -90,6 +90,10 @@ It also provides direct configuration hooks in the annotation itself, so you can
 // - Interacting with the running application using low level APIs, for example to access certain beans in the application context, or to get the port of the running server.
 // - Optionally, writing utility classes to make tests less verbose.
 
+[#ch3-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Configuring the application under test
+
+Spring offers many hooks to configure the application under test.
 
 [#ch3-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
