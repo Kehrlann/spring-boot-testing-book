@@ -50,7 +50,6 @@ It also provides a few configuration options so you can tweak the default test a
 For example, you can disable the web capabilities by using `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)`.
 To understand how it achieves all those things, you can peek under the cover and look at the code of the annotation.
 I've simplified it for you in listing <<ch3-listing-springboottest>>.
-You'll see it's actually a meta-annotation, that brings in other annotations.
 
 [#ch3-listing-springboottest, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Simplified code for @SpringBootTest extension.
@@ -79,36 +78,23 @@ public @interface SpringBootTest {
 <2> Configuration for the SpringExtension
 <3> Configuration for @SpringBootTest
 
-// TODO: rework
+As you see, it's a meta-annotation: it brings in other annotations.
+The first interesting bit is `@ExtendWith(...)`, which registers a JUnit extension.
+It allows you to add custom code to run on the lifecycle of a test, for example "after each test" or "when the test class is created".
+In this case, it registers the `SpringExtension`.
+This is the important class, the glue between your tests and your Spring application.
+It does most of the heavy lifting for Spring Boot Tests.
+It is the entrypoint into the Spring "TestContext" framework, which is responsible for putting together a test app, running it before a test is executed and shutting it down after, and making it available to the test class through `@Autowired` annotations.
+The second annotation, `@BootstrapWith(...)`, is a TestContext annotation, which specifies how to create a Spring app from your own configuration.
+In this case, it uses Spring Boot specific setup, which detects your `@SpringBootApplication` on your main class, and marginally adjusts the configuration to make it a "test app".
+For example, it does not run an embedded web server by default.
+The last notable elements are the annotation parameters.
+Those are detected by the `SpringBootTestContextBootstrapper`, which uses the values to further modify the configuration of the test app before running it.
+For example, you can instruct Spring Boot Tests to _not_ start a web server, or to use the main method of the app.
 
-But Spring has testing capabilities for apps too, without Boot, and Boot builds upon it.
-
-By using `@SpringBootTest`, you automatically register the JUnit `SpringExtension` with your test class, through the `@ExtendWith` annotation.
-It is the glue that ties your tests to the Spring parts in your application.
-It is responsible for managing the lifecycle of the test application in sync with the lifecycle of the test.
-JUnit have hooks that allow you to execute code at different points in the lifecycle, for example "before every test in the class", "after all the tests in the class have run", "after the test class' instance has been constructed".
-The Spring extension takes advantage of this, and detects when it should start a test app.
-It also modifies the test class at runtime, to inject values into fields, or parameters in test methods - this is what happens when you use `@Autowired` or `@MockBean` in a test.
-Lastly, it detects the context in which the test is run, and uses that information to configure the test application.
-One of the way it does this is by detecting annotations present on the test class.
-For example, the `@ActiveProfile` annotation which adds a Spring profile to the test app, or the `@TestPropertySource` which sets properties.
-
-NOTE: All the Spring Framework utilities for testing are grouped under the "Spring TextContext Framework" within Spring.
-It has a rich feature set, that goes way beyond Spring Boot apps.
+NOTE: All the Spring Framework utilities for testing are grouped under the "Spring TextContext Framework" within Spring Framework.
+It has a very rich feature set, that goes way beyond Spring Boot apps.
 Although it is fairly advanced material, I encourage you to take the time to at least skim the reference documentation, available at https://docs.spring.io/spring-framework/reference/testing/testcontext-framework.html, with a focus on the first few sections.
-
-As is signaled in the name, `@SpringBootTest` is about testing Spring _Boot_ applications, not plain Spring apps.
-Using the primitives in the Spring TestContext framework, it tailors the experience to Spring Boot, starting with the `SpringBootTestContextBootstrapper`.
-That class is responsible for detecting your "production" application and its configuration, and using that to create the Spring `ApplicationContext` for the test applications.
-It also applies test-specific configuration, like not running a full web-server unless specifically required.
-
-It also provides direct configuration hooks in the annotation itself, so you can add configuration properties, use the main method or not, or turn off web support.
-
-// - Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
-// - Replacing beans selectively, for example to avoid connecting to external systems.
-// - Managing the lifecycle of the application in your tests, by starting and stopping it at appropriate times.
-// - Interacting with the running application using low level APIs, for example to access certain beans in the application context, or to get the port of the running server.
-// - Optionally, writing utility classes to make tests less verbose.
 
 [#ch3-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Configuring the application under test
