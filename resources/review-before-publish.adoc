@@ -2,6 +2,7 @@
 
 == Chapter 1
 
+- Does the reader understand what an "application context" is ?
 - Section 1.5 -> Spring in Action, Sixth Edition ... maybe seventh edition?
 
 == Chapter 2
