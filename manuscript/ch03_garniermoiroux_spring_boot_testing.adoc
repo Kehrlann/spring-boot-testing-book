@@ -93,13 +93,75 @@ Those are detected by the `SpringBootTestContextBootstrapper`, which uses the va
 For example, you can instruct Spring Boot Tests to _not_ start a web server, or to use the main method of the app.
 
 NOTE: All the Spring Framework utilities for testing are grouped under the "Spring TextContext Framework" within Spring Framework.
-It has a very rich feature set, that goes way beyond Spring Boot apps.
+It has a large feature set, that goes way beyond Spring Boot apps.
 Although it is fairly advanced material, I encourage you to take the time to at least skim the reference documentation, available at https://docs.spring.io/spring-framework/reference/testing/testcontext-framework.html, with a focus on the first few sections.
+
+With that, the `@SpringBootTest` annotation is the one-stop shop for configuring, managing and accessing an app for your integration tests.
+Let's start by configuring the application.
 
 [#ch3-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Configuring the application under test
 
-Spring offers many hooks to configure the application under test.
+The Spring TestContext framework offers many hooks to configure the application under test, but we won't go into the details in this book.
+After all, we're testing Spring Boot apps, and in the vast majority of cases, all you need is covered by the `@SpringBootTest` annotation.
+
+=== Changing configuration properties
+
+The first thing that you can do is modify properties directly in the annotation, in many different ways.
+Imagine you have the following properties in your application, with some defaults set in the `application.properties` file, represented in listing <<ch3-listing-properties>>.
+
+[#ch3-listing-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.application.properties
+[source,properties]
+----
+include::../code/ch3/configuration/src/main/resources/application.properties[]
+----
+
+To override the values, you can use the `properties` parameter of the annotation, either with an array of properties, shown in listing <<ch3-listing-properties-array>>, or with a single Java text block, shown in listing <<ch3-listing-properties-textblock>>.
+
+[#ch3-listing-properties-array, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Overriding properties with the `@SpringBootTest` annotation
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-array;!ignored]
+----
+
+[#ch3-listing-properties-textblock, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Overriding properties using a java text block
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-textblock;!ignored]
+----
+
+Both cases will produce the same result: they will override the value of `demo.value` and `demo.message`.
+Any property that is not explicitly set, such as  `demo.active`, will keep the default value resolved from Spring Boot properties.
+
+WARNING: YAML properties are not supported in the `properties` parameter.
+
+While convenient, it may become unwieldy if you have a big chunk of configuration you'd like to declare in your test.
+To do that, you could, instead, rely on a custom profile.
+
+=== Activating a profile
+
+TODO
+
+=== Adding configuration through a `@TestConfiguration` class
+
+TODO
+
+=== Configuring the application from scratch
+
+TODO - split in a different section?
+
+[#ch3-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Stubbing out dependencies by using mocks
+
+TODO
+
+[#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Speeding up tests by reusing the ApplicationContext between tests
+
+TODO
 
 [#ch3-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary

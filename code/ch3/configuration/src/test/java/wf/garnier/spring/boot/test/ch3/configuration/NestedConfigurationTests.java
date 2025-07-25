@@ -1,29 +1,36 @@
 package wf.garnier.spring.boot.test.ch3.configuration;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class TestConfigurationTests {
+class NestedConfigurationTests {
 
 	@Test
-	void thing(@Autowired List<Thing> things) {
+	void things(@Autowired List<Thing> things) {
 		assertThat(things).map(Thing::name)
-			.containsExactlyInAnyOrder("bean-one", "bean-two", "testconfig", "configuration-test-package");
+			.containsExactly("nested-configuration-bean")
+			.doesNotContain("bean-one", "bean-two");
 	}
 
-	@TestConfiguration
+	@Test
+	void properties(@Autowired Optional<DemoProperties> demoProperties) {
+		assertThat(demoProperties).isEmpty();
+	}
+
+	@Configuration
 	static class TestConfig {
 
 		@Bean
 		Thing testConfigThing() {
-			return new Thing("testconfig");
+			return new Thing("nested-configuration-bean");
 		}
 
 	}

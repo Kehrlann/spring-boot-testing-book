@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DemoApplicationTests {
 
 	@Test
-	void contextLoads(@Autowired List<Thing> things) {
+	void things(@Autowired List<Thing> things) {
 		var names = things.stream().map(Thing::name);
 		assertThat(names).containsExactlyInAnyOrder("bean-one", "bean-two", "configuration-test-package");
 	}
