@@ -68,8 +68,8 @@ class PropertiesTests {
 	}
 	// end::properties-textblock[]
 
-	// tag::properties-profile[]
 	@Nested
+	// tag::properties-profile[]
 	@SpringBootTest
 	@ActiveProfiles("test")
 	class CustomProfileTests {
