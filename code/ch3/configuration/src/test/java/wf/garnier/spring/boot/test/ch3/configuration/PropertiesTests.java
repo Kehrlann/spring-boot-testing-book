@@ -68,11 +68,13 @@ class PropertiesTests {
 	}
 	// end::properties-textblock[]
 
+	// tag::properties-profile[]
 	@Nested
 	@SpringBootTest
 	@ActiveProfiles("test")
 	class CustomProfileTests {
 
+		// ... your test code ...
 		// tag::ignored[]
 		@Autowired
 		DemoProperties demoProperties;
@@ -85,5 +87,6 @@ class PropertiesTests {
 		// end::ignored[]
 
 	}
+	// end::properties-profile[]
 
 }

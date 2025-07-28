@@ -143,7 +143,29 @@ To do that, you could, instead, rely on a custom profile.
 
 === Activating a profile
 
-TODO
+Spring supports adding the `@Profile` annotation on bean definitions to express that some beans are to be loaded when a given profile is active.
+A profile is activated using a system property, for example `spring.profiles.active="prod,france"` turns on profiles "prod" and "france".
+Additionally, Spring Boot will pick properties files with the profile name, such as `application-prod.properties` or `application-france.yml`.
+If you would like to override many properties in your tests, you can group them in a test-specific properties file, and give it a profile name, such as "test".
+Be sure to add it to `src/test/resources`, so that it is never picked up by your production code.
+Then add the profile in your tests, as shown in listing <<ch3-listing-profile>>.
+
+[#ch3-listing-profile, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using a profile in tests
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-profile;!ignored]
+----
+
+With this, the "test" profile is applied to the test app, and Spring Boot will read the `src/test/resources/application-test.properties` file (YAML works, too!), and use it to override properties.
+It will also pick up any bean that is annotated with `@Profile("test")`.
+But in practice, you should not add test-specific code to your production app!
+Those features could be turned on by mistake in a live environment, likely to cause bugs and unintended behavior.
+Remember: we've added the properties file in `src/test/resources`.
+To add beans to test scenarios without touching your production code, Spring Boot Tests has a specific annotation: `@TestConfiguration`.
+
+NOTE: It is acceptable to use `@ActiveProfile` to turn on certain production features selectively.
+For example, imagine you have an optional "Signle Sign On" feature behind an `sso` profile, and you only want to turn it on in some subset of tests.
 
 === Adding configuration through a `@TestConfiguration` class
 
