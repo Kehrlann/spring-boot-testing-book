@@ -162,14 +162,53 @@ It will also pick up any bean that is annotated with `@Profile("test")`.
 But in practice, you should not add test-specific code to your production app!
 Those features could be turned on by mistake in a live environment, likely to cause bugs and unintended behavior.
 Remember: we've added the properties file in `src/test/resources`.
+// TODO: rework
 To add beans to test scenarios without touching your production code, Spring Boot Tests has a specific annotation: `@TestConfiguration`.
 
-NOTE: It is acceptable to use `@ActiveProfile` to turn on certain production features selectively.
-For example, imagine you have an optional "Signle Sign On" feature behind an `sso` profile, and you only want to turn it on in some subset of tests.
+NOTE: It is acceptable to use `@ActiveProfiles` to turn on certain production features selectively.
+For example, imagine you have an optional "Signle Sign On" feature behind an `sso` profile, and you only want to turn it on in some subset of tests, you can use `@ActiveProfiles("sso")`.
 
-=== Adding configuration through a `@TestConfiguration` class
+// TODO: what about @TestPropertySources?
 
-TODO
+// TODO: split?
+=== Adding configuration with `@Configuration` and `@TestConfiguration`
+
+If you would like to add test-specific beans, there are two possibilities.
+First, you can create a `@Configuration` class in your test directory.
+If it is located in the same package as your Spring Boot main class, or any sub-package, they will be added to the configuration of the test application.
+Let's examine a concrete example, with the file structure represented in listing <<ch3-listing-file-structure>>.
+
+[#ch3-listing-file-structure, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Project file structure for custom configurations
+----
+src
+├─ main
+│  └─ java
+│     └─ com
+│        └─ example
+│           ├─ DemoApplication.java <1>
+│           ├─ ProductionConfiguration.java
+│           └─ ... more production code ...
+└─ test
+   └─ java
+      └─ com
+         └─ example
+         │  ├─ MainTestConfiguration.java <2>
+         │  ├─ nested
+         │  │ └─ NestedTestConfiguration.java <2>
+         │  └─ ... your tests ...
+         └─ notincluded
+            └─ ExcludedConfiguration.java <3>
+----
+
+<1> The main class
+<2> These configuration files will be included
+<3> This will not be included in the test app
+
+In this setup, the app's main class, `DemoApplication`, is in the package `com.example`.
+Since it is a `@SpringBootApplication`, component scanning is active: Spring Boot will find every `@Configuration`, `@Component`, `@Repository`, ..., included in `com.example` and its sub-packages.
+When the tests are compiled, the classpath will contain `com.example.ProductionConfiguration` from the production code, but also `com.example.MainTestConfiguration`, `com.example.nested.NestedTestConfiguration`, `com.notincluded.ExcludedConfiguration`, as well as your test classes.
+In that case, both `MaintTestConfiguration` and `NestedTestConfiguration` are under `com.example.*`, and will be considered part of the "test app's" configuration.
 
 === Configuring the application from scratch
 
