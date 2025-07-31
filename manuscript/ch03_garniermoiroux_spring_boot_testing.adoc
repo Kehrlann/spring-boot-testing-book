@@ -272,6 +272,19 @@ In that case, your test app may contain many more beans than you expected.
 To avoid those issues, you must structure your code in a way that is composable, and avoid using a single giant configuration class that pulls the entire universe in your application.
 
 Of course, if you want this test application to start, all the beans in `ThingConfiguration` must have access to their full dependency graph.
+If they rely on beans defined outside the scope of this configuration class, the app cannot start.
+You can visualize the issue in figure <<ch3-figure-01>>.
+
+[#ch3-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows represent the configuration classes in which beans are defined, and the solid arrows represent dependencies. Through the GreenThing class, our test has dependencies on components outside its scope.
+image::ch03_f001_garniermoiroux.png[]
+
+In this example, both the `RedThing` and `PinkThing` beans have all the dependencies they need to be wired up.
+But the `GreenThing` does not respect the boundaries of our test, and needs components defined outside our scope.
+To fix the issue, we need to provide `YellowGizmo` and a `BlueWidget`.
+We could make the scope of our test bigger by adding more entries to `classes = {...}`, but it defeats the entire purpose of this exercise, and we might need to pull our dependencies' dependencies, sometimes multiple levels deep.
+Alternatively, we could write a custom `@TestConfiguration` and provide just the beans we need, and provide some stub implementations instead of the real classes.
+For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework has all the tooling you need!
 
 [#ch3-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Stubbing out dependencies by using mocks
