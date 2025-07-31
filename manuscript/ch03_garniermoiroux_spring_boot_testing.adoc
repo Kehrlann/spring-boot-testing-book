@@ -105,6 +105,7 @@ Let's start by configuring the application.
 The Spring TestContext framework offers many hooks to configure the application under test, but we won't go into the details in this book.
 After all, we're testing Spring Boot apps, and in the vast majority of cases, all you need is covered by the `@SpringBootTest` annotation.
 
+[#ch3-section-2-changing-configuration-props, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Changing configuration properties
 
 The first thing that you can do is modify properties directly in the annotation, in many different ways.
@@ -141,6 +142,7 @@ WARNING: YAML properties are not supported in the `properties` parameter.
 While convenient, it may become unwieldy if you have a big chunk of configuration you'd like to declare in your test.
 To do that, you could, instead, rely on a custom profile.
 
+[#ch3-section-2-activating-a-profile, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Activating a profile
 
 Spring supports adding the `@Profile` annotation on bean definitions to express that some beans are to be loaded when a given profile is active.
@@ -171,6 +173,7 @@ For example, imagine you have an optional "Signle Sign On" feature behind an `ss
 // TODO: what about @TestPropertySources?
 
 // TODO: split?
+[#ch3-section-2-adding-configuration, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Adding configuration with `@Configuration` and `@TestConfiguration`
 
 If you would like to add test-specific beans, there are two possibilities.
@@ -209,10 +212,66 @@ In this setup, the app's main class, `DemoApplication`, is in the package `com.e
 Since it is a `@SpringBootApplication`, component scanning is active: Spring Boot will find every `@Configuration`, `@Component`, `@Repository`, ..., included in `com.example` and its sub-packages.
 When the tests are compiled, the classpath will contain `com.example.ProductionConfiguration` from the production code, but also `com.example.MainTestConfiguration`, `com.example.nested.NestedTestConfiguration`, `com.notincluded.ExcludedConfiguration`, as well as your test classes.
 In that case, both `MaintTestConfiguration` and `NestedTestConfiguration` are under `com.example.*`, and will be considered part of the "test app's" configuration.
+But there's one big caveat with this approach: every single `@SpringBootTest` will pick up this config class.
+It is useful, but there are cases you want to modify the config for a subset of tests.
+While you could hack your way around with different packages or custom exclude rules for component scanning, Spring Boot Test has just the right tool for you: `@TestConfiguration`.
+It works like a regular Spring configuration, but you have to enable it explicitly.
+The first possibility is to nest the class inside your test, like in listing <<ch3-listing-nested-testconfiguration>>.
 
+[#ch3-listing-nested-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Nested `@TestConfiguration`
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=nested-testconfiguration;!ignored]
+----
+
+In this example, all beans defined within the `TestConfig` class will be added to the test app for the `NestedConfigTests`.
+
+WARNING: Do not nest a `@Configuration` class in your tests.
+It overrides the entire configuration of the app, similar to what we'll do in section <<ch3-section-2-configuring-from-scratch>> below.
+
+If you would like to re-use the `@TestConfiguration` class across test files, you can extract it in its own top-level class, and import it explicitly, as shown in listing <<ch3-listing-import-testconfiguration>>.
+
+[#ch3-listing-import-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Example imported `@TestConfiguration`
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=import-testconfiguration;!ignored]
+----
+
+<1> A class annotated with `@TestConfiguration`
+
+This proves useful when you have a subset of tests with similar configurations, but you'd like to split them up across multiple test files.
+
+So far, we've seen how to make a test application and add custom, test-specific bean to the default "production" configuration.
+But for a big application, your typical multi-module monolith, starting the full app might be "expensive" and take a long time. `@SpringBootTest` has a dedicated parameter for that very specific use-case: `classes=`.
+
+[#ch3-section-2-configuring-from-scratch, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Configuring the application from scratch
 
-TODO - split in a different section?
+We have mentioned in xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-7[chapter 2] that, when you just want to test a few classes, you may not need `@SpringBootTest`.
+Specifically, if you want to test a `FooService` that has a dependency on a `BarService` and a `FooRepository`, you do not need Spring to do the auto-wiring for you.
+In some cases, though, you do need a bit of Spring machinery.
+Maybe you want to have Spring parse `properties` files for you, perform data validation, or activate `@Conditional` annotations on your beans, without booting the full production app.
+In that case, you can configure a much smaller application context while retaining the bulk of Spring Boot features, as shown in listing <<ch3-listing-classes>>.
+
+[#ch3-listing-classes, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using the `classes = {...}` parameter
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=classes;!ignored]
+----
+
+<1> List the classes you want to include
+
+By using `classes = { ThingConfiguration.class }`, we ensure that only the beans in `ThingConfiguration` will be loaded, and nothing from your custom code.
+The classes can be either `@Configuration` classes containing beans, or direct beans themselves, annotated with `@Component`, `@Service`, `@Repository`, etc.
+Since Spring Boot auto-configurations are loaded from your main application class annotated with `@SpringBootApplication`, they are not included here, and will not be loaded either.
+Please note that if your `ThingConfiguration` has annotations which triggers other classes being present, such as `@Import`, `@ComponentScan`, `@EnableConfigurationProperties`, etc, those annotations will be triggered.
+In that case, your test app may contain many more beans than you expected.
+To avoid those issues, you must structure your code in a way that is composable, and avoid using a single giant configuration class that pulls the entire universe in your application.
+
+Of course, if you want this test application to start, all the beans in `ThingConfiguration` must have access to their full dependency graph.
 
 [#ch3-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Stubbing out dependencies by using mocks
