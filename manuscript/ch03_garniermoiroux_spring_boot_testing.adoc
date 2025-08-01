@@ -32,6 +32,8 @@ Or maybe you would like to split your integration tests by logical "module", and
 We'll explore all the different ways you can configure the test application, from changing a few properties to manually selecting which components are loaded in your test application.
 And you will learn the tradeoffs associated with customizing the application under test.
 
+// TODO: reference sample
+
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == The `@SpringBootTest` annotation in detail
 
@@ -343,7 +345,8 @@ To replace beans where there is only one instance of the given type, such as the
 When there are multiple beans in your app, to tell Spring Boot Test which exact bean to replace, you can specify the name of the target, in the annotation.
 There's one last feature that we won't explore here, the `@MockitoSpyBean` annotation.
 It is exactly what it says on the tin: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
-It's important to note that even Mockito discourages the use of spies, _in their reference documentation_!
+Why aren't we using this feature here?
+It's generally accepted that spies should rarely be used, as Mockito warns... _in their very own reference documentation_!
 
 [QUOTE,Mockito reference documentation,https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#13]
 ____
