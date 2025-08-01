@@ -15,3 +15,11 @@
 - Fix TOC
 
 == Appendix A - running a test
+
+== All
+
+* Encourage readers to go read the java doc.
+* Code:
+** format
+** add license to all code files
+** Ensure license file present
