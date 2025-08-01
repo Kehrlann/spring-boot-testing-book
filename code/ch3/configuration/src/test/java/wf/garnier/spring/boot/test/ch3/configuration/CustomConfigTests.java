@@ -11,6 +11,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.convention.TestBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -25,9 +27,15 @@ class CustomConfigTests {
 
 		// ... your test code ...
 		// tag::ignored[]
+		@MockitoBean
+		Gizmo gizmo;
+
+		@MockitoBean(name = "blueWidget")
+		Widget blueWidget;
+
 		@Test
 		void things(@Autowired List<Thing> things) {
-			assertThat(things).map(Thing::name).containsOnly("bean-one", "bean-two");
+			assertThat(things).map(Thing::name).containsOnly("red", "pink", "green");
 		}
 
 		@Test
@@ -43,9 +51,16 @@ class CustomConfigTests {
 	@SpringBootTest(classes = { ThingConfiguration.class })
 	class CustomClassesAndNestedTests {
 
+		// ... your test code ...
+		@MockitoBean
+		Gizmo gizmo;
+
+		@MockitoBean(name = "blueWidget")
+		Widget blueWidget;
+
 		@Test
 		void things(@Autowired List<Thing> things) {
-			assertThat(things).map(Thing::name).containsOnly("bean-one", "bean-two");
+			assertThat(things).map(Thing::name).containsOnly("red", "pink", "green");
 		}
 
 		@Test
@@ -59,7 +74,7 @@ class CustomConfigTests {
 
 			@Bean
 			public Thing three() {
-				return new Thing("nested-test-bean");
+				return new Thing("silver");
 			}
 
 		}
@@ -68,12 +83,55 @@ class CustomConfigTests {
 
 	@Nested
 	@SpringBootTest
+	class ReplaceBeanTests {
+
+		@TestBean
+		Thing greenThing;
+
+		static Thing greenThing() {
+			return new Thing("emerald");
+		}
+
+		@Test
+		void things(@Autowired List<Thing> things) {
+			assertThat(things).map(Thing::name).contains("emerald").doesNotContain("green");
+		}
+
+	}
+
+	@Nested
+	// tag::mockitobean-testbean[]
+	@SpringBootTest(classes = { ThingConfiguration.class })
+	class MockitoAndTestBeanTests {
+
+		@MockitoBean(name = "blueWidget") // <1>
+		Widget blueWidget;
+
+		@TestBean
+		Gizmo gizmo; // <2>
+
+		static Gizmo gizmo() { // <2>
+			return new Gizmo("test");
+		}
+
+		// ... your test code ...
+		// tag::ignored[]
+		@Test
+		void contextLoads() {
+		}
+		// end::ignored[]
+
+	}
+	// end::mockitobean-testbean[]
+
+	@Nested
+	@SpringBootTest
 	class NestedConfigurationTests {
 
 		// Only the nested "TestConfig" is picked up
 		@Test
 		void things(@Autowired List<Thing> things) {
-			assertThat(things).map(Thing::name).containsOnly("nested-test-bean");
+			assertThat(things).map(Thing::name).containsOnly("silver");
 		}
 
 		@Test
@@ -86,7 +144,7 @@ class CustomConfigTests {
 
 			@Bean
 			public Thing three() {
-				return new Thing("nested-test-bean");
+				return new Thing("silver");
 			}
 
 		}
@@ -101,7 +159,7 @@ class CustomConfigTests {
 		// The "CustomConfiguration" is added to the nested "TestConfig"
 		@Test
 		void things(@Autowired List<Thing> things) {
-			assertThat(things).map(Thing::name).containsOnly("nested-test-bean", "configuration-test-package");
+			assertThat(things).map(Thing::name).containsOnly("silver", "orange");
 		}
 
 		@Test
@@ -114,7 +172,7 @@ class CustomConfigTests {
 
 			@Bean
 			public Thing three() {
-				return new Thing("nested-test-bean");
+				return new Thing("silver");
 			}
 
 		}
@@ -130,7 +188,7 @@ class CustomConfigTests {
 		// configuration
 		@Test
 		void things(@Autowired List<Thing> things) {
-			assertThat(things).map(Thing::name).containsOnly("bean-one", "bean-two", "configuration-test-package");
+			assertThat(things).map(Thing::name).containsOnly("red", "pink", "green", "orange");
 		}
 
 		@Test

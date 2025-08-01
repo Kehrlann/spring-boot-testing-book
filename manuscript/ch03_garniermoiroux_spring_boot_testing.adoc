@@ -284,17 +284,84 @@ But the `GreenThing` does not respect the boundaries of our test, and needs comp
 To fix the issue, we need to provide `YellowGizmo` and a `BlueWidget`.
 We could make the scope of our test bigger by adding more entries to `classes = {...}`, but it defeats the entire purpose of this exercise, and we might need to pull our dependencies' dependencies, sometimes multiple levels deep.
 Alternatively, we could write a custom `@TestConfiguration` and provide just the beans we need, and provide some stub implementations instead of the real classes.
-For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework has all the tooling you need!
+For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework has all the tooling you need: mock beans and test beans.
 
 [#ch3-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Stubbing out dependencies by using mocks
 
-TODO
+Let's build up on the example from the previous section <<ch3-section-2-configuring-from-scratch>>.
+If we ran a Spring Boot Test with just the `ThingConfiguration` class, it would fail with the usual Spring Boot message:
+
+----
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Parameter 0 of method greenThing in wf.garnier.spring.boot.test.ch3.configuration.ThingConfiguration required a bean of type 'wf.garnier.spring.boot.test.ch3.configuration.Gizmo' that could not be found.
+----
+
+We want to write a test for our class, but our `GreenThing` depends on the `YellowGizmo` and `BlueWidget`.
+To provide those, we have two main options: mockito beans and test beans, both present in listing <<ch3-listing-mockitobean-testbean>>.
+
+[#ch3-listing-mockitobean-testbean, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Providing beans with `@MockitoBean` and `@TestBean`
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=mockitobean-testbean;!ignored]
+----
+
+<1> Replace the `blueWidget` bean with a mock
+<2> Replace the Gizmo bean, and use a factory method with a matching name to create the instance
+
+In this example, the dependencies for our `GreenThing` bean are fulfilled, and the application starts.
+We provide the missing beans by two ways.
+First, the blue widget is a `@MockitoBean`.
+That means that the instance of that bean will not be a real implementation, but instead will be a Mockito mock.
+By default, it has no behavior and provides default values to every method call, most often just a `null`, essentially acting as a "test dummy".
+This is perfect when you only need it to satisfy a dependency without needing to actually use it in your tests.
+If you actually exercise its code and need to return specific values, you can always program it and setup your own "canned" response.
+Since this is a mock, you can technically also run behavior verifications, asking questions such as "was this method called, with value 42?", but I'd argue that this is probably misguided in this case.
+We're testing a subset of our application, and only providing a few patches here and there to make it start.
+If you want to test deep behavior integration, you'll probably want to run a full `@SpringBootTest`.
+Note, in this specific example, that since our app has multiple instances of the `Widget` bean, and relies on bean names for auto-wiring, we provide a name in the annotation itself to differentiate it from the `blackWidget`.
+The second way to provide a bean is to use a `@TestBean` annotation, which we do for the gizmo bean.
+This is not a mock, but instead any instance that you decide to provide.
+The only thing you need to do is create a static "factory" method of the same name, and in that method, apply anything you want to create your test bean.
+While this is a little bit more verbose than using Mockito beans, it allows you to provide any code without having to use any of the Mockito apis "when this then return that".
+If you need a test stub with hardcoded set of responses, or a test fake with test-specific behavior, this is the annotation that you would use.
+
+NOTE: If you work with Spring Boot version prior to 3.4, you might encounter `@MockBean` annotations.
+It achieves the same result as `@MockitoBean`: it is an earlier implementation, that to be a Spring Boot-only feature.
+In 3.4, these features were implemented in Spring Framework itself, renamed, and deprecated in Spring Boot.
+
+In this example, we have created beans that were _missing_ in the context of our test application.
+But with these annotations, it is also possible to replace beans entirely.
+We saw an example of this in the previous chapter, in section xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-6[2.6] when we replaced the "Weather Service" by a stub implementation.
+To replace beans where there is only one instance of the given type, such as the `Gizmo` in our example, you need to register a `@MockitoBean` or `@TestBean` of the same type as your replacement target.
+When there are multiple beans in your app, to tell Spring Boot Test which exact bean to replace, you can specify the name of the target, in the annotation.
+There's one last feature that we won't explore here, the `@MockitoSpyBean` annotation.
+It is exactly what it says on the tin: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
+It's important to note that even Mockito discourages the use of spies, _in their reference documentation_!
+
+[QUOTE,Mockito reference documentation,https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#13]
+____
+Real spies should be used **carefully and occasionally**, for example when dealing with legacy code.
+____
+
+NOTE: To learn more about Mockito, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
+
+And with that, you now know most of the configuration hooks for creating a test app.
+Powerful as they are, all these tools and abstractions do come at a cost, which might unacceptably slow down your test suites.
+To help you navigate the tradeoffs, let's take a look at the impact they have.
 
 [#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Speeding up tests by reusing the ApplicationContext between tests
 
 TODO
+
+// TODO: a word on meta-annotations and @MockitoBeans
 
 [#ch3-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
