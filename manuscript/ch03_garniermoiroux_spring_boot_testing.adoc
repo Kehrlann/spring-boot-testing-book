@@ -362,7 +362,42 @@ To help you navigate the tradeoffs, let's take a look at the impact they have.
 [#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Speeding up tests by reusing the ApplicationContext between tests
 
-TODO
+When you have multiple test files, and they all have different configurations, they produce different test apps, or, more precisely, different Spring `ApplicationContext`, each with specific properties and profiles, or even different beans.
+As a result, each of these test apps need to be started separately before the test in which they are used.
+But starting a Spring application may take anywhere between 100ms for very small projects to tens of seconds for much larger use-cases, and the memory and CPU usage spikes on startup.
+For your test suites to be fast, you need to minimize the number of test apps starting.
+Fortunately, the Spring TestContext framework is here to help you by caching the `ApplicationContext` between tests!
+
+Consider the small, toy Spring application in listing <<ch3-listing-slowapp>>.
+
+[#ch3-listing-slowapp, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A Boot app that starts slowly
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplication.java[tags=code;!ignored]
+----
+
+<1> Takes 3 seconds to start up
+
+In this app, we introduce a deliberately "slow" bean, by sleeping for 3 seconds.
+This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure like hibernate scanning entities.
+If we write tests for such an application, even if it does nothing, it will take 3 seconds to start up.
+But if we write a second test class with the exact same configuration, the test will run instantly.
+We can see it in action in listing <<ch3-listing-slowapp-test>>.
+
+[#ch3-listing-slowapp-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Tests for our slow application
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplicationTests.java[tags=slow-tests;!ignored]
+----
+
+<1> Tell JUnit the order in which tests should run
+
+// TODO: continue here
+
+NOTE: We've hardcoded the order in which our tests run.
+It is not best practice but helps us reason about when the app starts.
 
 // TODO: a word on meta-annotations and @MockitoBeans
 
