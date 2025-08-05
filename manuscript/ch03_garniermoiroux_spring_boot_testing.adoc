@@ -362,6 +362,8 @@ To help you navigate the tradeoffs, let's take a look at the impact they have.
 [#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Speeding up tests by reusing the ApplicationContext between tests
 
+=== Using the Spring ContextCache
+
 When you have multiple test files, and they all have different configurations, they produce different test apps, or, more precisely, different Spring `ApplicationContext`, each with specific properties and profiles, or even different beans.
 As a result, each of these test apps need to be started separately before the test in which they are used.
 But starting a Spring application may take anywhere between 100ms for very small projects to tens of seconds for much larger use-cases, and the memory and CPU usage spikes on startup.
@@ -379,7 +381,7 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 
 <1> Takes 3 seconds to start up
 
-In this app, we introduce a deliberately "slow" bean, by sleeping for 3 seconds.
+In this app, we introduce a deliberately "slow" bean, by sleeping for 3 seconds (you can configure it to be faster, if you're annoyed with the slow start).
 This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure like hibernate scanning entities.
 If we write tests for such an application, even if it does nothing, it will take 3 seconds to start up.
 But if we write a second test class with the exact same configuration, the test will run instantly.
@@ -394,12 +396,106 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 
 <1> Tell JUnit the order in which tests should run
 
-// TODO: continue here
+When you run this test file, and measure the runtime, it will be around 3 seconds, plus a few hundred milliseconds to start up the JVM, but not 6 seconds.
+If you observe the logs, you will see that the "Spring Boot" banner and our log "🐌 Configuring slow bean..." only show up once.
+This is because of the caching of the Spring TestContext Framework: the test app is started when the `SlowTests` start, and then it is reused for the `FastTests`.
 
 NOTE: We've hardcoded the order in which our tests run.
-It is not best practice but helps us reason about when the app starts.
+It is not generally a good practice, but here it helps us reason about when the app starts.
 
-// TODO: a word on meta-annotations and @MockitoBeans
+The way this works is through a cache of the Spring `ApplicationContext`.
+Whenever a test app is started by the Spring TestContext Framework, it is stored in a cache, and then reused in other test classes when possible.
+The cache key is, broadly speaking, the "configuration" of the test application: properties, profiles, and "configuration classes" or "beans" loaded in the application.
+In our case, both test classes have the exact same configuration, so they can use the same test application.
+You can observe the cache behavior by turning logs, in adding the properties from listing <<ch3-listing-cache-logs>> in your test `application.properties` file:
+
+[#ch3-listing-cache-logs, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Turning on logging for the Spring TestContext Framework
+[source,properties]
+----
+logging.level.org.springframework.test=DEBUG
+----
+
+Your tests will now print out many, many log lines, essentially displaying:
+
+----
+[...] Spring test ApplicationContext cache statistics: [DefaultContextCache@57c47a9e size = 1, maxSize = 32, parentContextCount = 0, hitCount = 0, missCount = 1, failureCount = 0]
+[...] Spring test ApplicationContext cache statistics: [DefaultContextCache@57c47a9e size = 1, maxSize = 32, parentContextCount = 0, hitCount = 1, missCount = 1, failureCount = 0]
+[...] Before test method: class [SlowTests], method [logsAppStartup], class annotated with @DirtiesContext [false] with mode [null], method annotated with @DirtiesContext [false] with mode [null]
+[...]
+----
+
+The first log line represents the first time the Spring tests need to access an `ApplicationContext`.
+First things first, you can see that the size of the cache is 1, and that's perfectly normal: Spring Boot tests is wiring up on app for you.
+That's also why the `missCount` is 1, since the cache is initially empty, with no test app started.
+Reading the logs, you'll also learn that, by default there are a maximum of 32 concurrent "test apps" available in the cache.
+That is A LOT.
+In general, you do not want to get anywhere near that number of apps, especially if it represents an almost full blown version of your Spring Boot app, with the majority of its dependencies.
+Why?
+First, because wiring up an application context takes a long time, and this will noticeably slow down your tests.
+If you start evicting test apps from the cache that took tens of seconds to start, the timing will be unbearable.
+Second, these apps consume resources, especially if you're relying on external resources, such as Testcontainers.
+This might be manageable on a beefy developer machine or a big CI server, but if your tests are running on tiny cloud instances, you won't even be able to run your full test suite before being out of memory.
+So you want to keep the `size` and `missCount` as low as possible.
+
+On the other hand, the `hitCount` can increase very rapidly without a hitch.
+If you try this yourself, you'll even notice that `hitCount` increases much faster than your number of tests.
+That happens because the Spring Test Context framework needs to read from the cache very often, for example to populate the `@Autowired` fields you have in your tests.
+If you want further information on what the cached configuration actually is, you can increase the log level, and get a description of how a test app is "indexed" in the cache.
+
+Let's discuss what this caching mechanism means for your test code, in practice.
+
+=== Avoiding creating too many test apps
+
+All in all, you should avoid creating many variations of your test app.
+Reading from the `ApplicationContext` does not modify the configuration, so using `@Autowired` or `@Value` in your tests, to access beans, is fine.
+But most other changes you might do to a test file will change the configuration of the app under test, and will result in a new test app.
+Here is a non-comprehensive list of annotations and paramaters that you should avoid changing, when possible:
+
+- Changing properties, through `@SpringBootApplication(properties = ...)` and `@TestPropertySource(...)`
+- Adding a profile with `@ActiveProfile(...)`
+- Selecting configuration classes manually, through `@SpringBootApplication(classes = ...)`
+- Adding configuration classes with `@TestConfiguration`
+- Adding auto-configuration classes, for example with `@AutoConfigureMockMvc`
+- Overriding beans with `@MockitoBean`, `@MockitoSpyBean` and `@TestBean`
+- Forcing a cache eviction through `@DirtiesContext`
+- Any Spring TestContext Framework customization, not detailed here, that you may want to try out (context initializers, context loaders, adding a parent context, ...)
+
+TIP: The complete explanation of how the caching key is computed is detailed in the reference documentation: https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html . If you find yourself trying to optimize test execution speed, take a peek!
+
+Again, the issue is about having _different_ configurations resulting in separate test apps.
+If all your testing scenarios require the same configuration change, say, changing a few properties and using `@MockitoBean` on some beans, you are totally free to do so, as long as you apply the same customizations to all test apps!
+In fact, you can create your own custom meta-annotation, reusable across all your tests, like the annotation in listing <<ch3-listing-meta-annotation>>.
+
+[#ch3-listing-meta-annotation, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Example meta-annotation
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/CustomSpringTest.java[tags=custom-spring-test]
+----
+
+<1> Any class using this will be a Spring Boot Test
+<2> Override some beans in the context
+<3> This class is an annotation
+
+With this, you can have your tests annotated with `@CustomSpringTest` instead of using `@SpringBootTest` and repeating all the customizations.
+
+NOTE: The rule of thumb is to try and keep the app number to a minimum, ideally a single test app.
+And for every rule, there are exceptions!
+There might be cases when you want to test two or three separate configurations, and verify their specific behavior.
+In that case, there is no way around starting multiple test apps, and the costs are worth taking on.
+
+If you follow these basic principles, your test suite should remain lean and fast.
+But there's no such thing as a free lunch, and there are limitations to this caching.
+
+=== Side effects
+
+// TODO
+
+The tests apps are stored in a static cache, literally a Java `static` variable.
+So the cache is only valid per-process.
+If you run your tests in multiple processes, the cache is not shared across test processes, and you risk launching more apps than you expected.
+If you run tests in parallel, you may also run into issues with tests polluting other tests // TODO
 
 [#ch3-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary

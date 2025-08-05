@@ -2,6 +2,7 @@ package wf.garnier.spring.boot.test.ch3.contextcache;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
@@ -14,10 +15,14 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 class SlowApplication {
 
+	//@formatter:off
 	@Bean
-	SlowBean slowBean() throws InterruptedException { // <1>
+	SlowBean slowBean(
+			@Value("${sleep.duration:3s}") Duration sleepDuration
+	) throws InterruptedException { // <1>
+	//@formatter:on
 		System.out.println("🐌 Configuring slow bean...");
-		Thread.sleep(Duration.ofSeconds(3));
+		Thread.sleep(sleepDuration);
 		return new SlowBean();
 		// tag::ignored[]
 	}
