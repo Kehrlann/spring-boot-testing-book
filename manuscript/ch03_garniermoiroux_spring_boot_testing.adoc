@@ -32,7 +32,9 @@ Or maybe you would like to split your integration tests by logical "module", and
 We'll explore all the different ways you can configure the test application, from changing a few properties to manually selecting which components are loaded in your test application.
 And you will learn the tradeoffs associated with customizing the application under test.
 
-// TODO: reference sample
+All samples in this chapter are in the `ch3/configuration` directory of the samples repository, accessible directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch3/configuration.
+There many more examples than those listed in this chapter, variations that won't go over but that may be useful.
+I encourage you to download the project and skim over the test files as you go through the chapter.
 
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == The `@SpringBootTest` annotation in detail
@@ -174,7 +176,20 @@ Any property that is not explicitly set, such as  `demo.active`, will keep the d
 WARNING: YAML properties are not supported in the `properties` parameter.
 
 While convenient, it may become unwieldy if you have a big chunk of configuration you'd like to declare in your test.
-To do that, you could, instead, rely on a custom profile.
+In that case, you can leverage the `@TestPropertySource` annotation.
+It has a `properties` parameter like the `@SpringBooTest` annotation, but also offers a `location` parameter which allows you to point to a specific file or files containing the values, like in listing <<ch3-listing-property-source>>.
+
+[#ch3-listing-property-source, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using `@TestPropertySource`
+[source,java,indent=0]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=property-source;!ignored]
+----
+
+This is more convenient than specifying big text blocks with 20 different properties, and you can point to multiple property sources.
+Like the regular Spring `@PropertySource` annotation, you can specify character encodings if necessary.
+One important limitation is that this annotation does not support YAML or JSON out of the box.
+It is possible to provide some code to enable other property formats, but there is a much more convenient way for Spring Boot Tests: using a custom profile.
 
 [#ch3-section-2-activating-a-profile, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Activating a profile
@@ -198,13 +213,10 @@ It will also pick up any bean that is annotated with `@Profile("test")`.
 But in practice, you should not add test-specific code to your production app!
 Those features could be turned on by mistake in a live environment, likely to cause bugs and unintended behavior.
 Remember: we've added the properties file in `src/test/resources`.
-// TODO: rework
 To add beans to test scenarios without touching your production code, Spring Boot Tests has a specific annotation: `@TestConfiguration`.
 
 NOTE: It is acceptable to use `@ActiveProfiles` to turn on certain production features selectively.
 For example, imagine you have an optional "Signle Sign On" feature behind an `sso` profile, and you only want to turn it on in some subset of tests, you can use `@ActiveProfiles("sso")`.
-
-// TODO: what about @TestPropertySources?
 
 [#ch3-section-2-adding-configuration, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Adding configuration with `@Configuration` and `@TestConfiguration`
