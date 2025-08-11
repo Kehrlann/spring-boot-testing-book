@@ -208,7 +208,7 @@ Then add the profile in your tests using `@ActiveProfiles`, as shown in listing 
 include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-profile;!ignored]
 ----
 
-With this, the "test" profile is applied to the test app, and Spring Boot will read the `src/test/resources/application-test.properties` file (YAML works, too!), and use it to override properties.
+With this, the "test" profile is applied to the test app, and Spring Boot will read the `src/test/resources/application-test.properties` file (YAML works, too), and use it to override properties.
 It will also pick up any bean that is annotated with `@Profile("test")`.
 In practice, you should not add test-specific code to your production app.
 Those features could be turned on by mistake in a live environment, likely to cause bugs and unintended behavior.
@@ -299,8 +299,8 @@ But for a big application, say your typical multi-module monolith, starting the 
 We have mentioned in xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-7[chapter 2] that, when you just want to test a few classes, you may not need `@SpringBootTest`.
 Specifically, if you want to test a `FooService` that has a dependency on a `BarService` and a `FooRepository`, you do not need Spring to do the auto-wiring for you.
 In some cases, though, you do need a bit of Spring machinery.
-Maybe you want to have Spring parse `properties` files for you, perform data validation, or activate `@Conditional` annotations on your beans, without booting the full production app.
-In that case, you can configure a much smaller application context while retaining the bulk of Spring Boot features, as shown in listing <<ch3-listing-classes>>.
+Say you want to have Spring parse `properties` files for you, perform data validation, or activate `@Conditional` annotations on your beans, without booting the full production app.
+In that case, you can configure a much smaller test application context while retaining the bulk of Spring Boot features, as shown in listing <<ch3-listing-classes>>.
 
 [#ch3-listing-classes, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the `classes = {...}` parameter
@@ -312,18 +312,19 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 <1> List the classes you want to include
 
 By using `classes = { ThingConfiguration.class }`, we ensure that only the beans in `ThingConfiguration` will be loaded, and nothing from your custom code.
-The classes can be either `@Configuration` classes containing beans, or direct beans themselves, annotated with `@Component`, `@Service`, `@Repository`, etc.
+The classes can be either `@Configuration` classes containing beans, or singleton bean classes annotated with `@Component`, `@Service`, `@Repository`, etc.
 Since Spring Boot auto-configurations are loaded from your main application class annotated with `@SpringBootApplication`, they are not included here, and will not be loaded either.
-Please note that if your `ThingConfiguration` has annotations which triggers other classes being present, such as `@Import`, `@ComponentScan`, `@EnableConfigurationProperties`, etc, those annotations will be triggered.
+Please note that if your `ThingConfiguration` has annotations which triggers other classes being present, such as `@Import`, `@ComponentScan`, `@EnableConfigurationProperties`, etc, those annotations will be used.
 In that case, your test app may contain many more beans than you expected.
 To avoid those issues, you must structure your code in a way that is composable, and avoid using a single giant configuration class that pulls the entire universe in your application.
+Instead, you write separate config classes with focused areas of concerns, for example one for data-related infrastructure bean, one for security, etc.
 
 Of course, if you want this test application to start, all the beans in `ThingConfiguration` must have access to their full dependency graph.
 If they rely on beans defined outside the scope of this configuration class, the app cannot start.
 You can visualize the issue in figure <<ch3-figure-01>>.
 
 [#ch3-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows represent the configuration classes in which beans are defined, and the solid arrows represent dependencies. Through the GreenThing class, our test has dependencies on components outside its scope.
+.Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows point from beans to the configuration classes in which they are defined, and the solid arrows represent dependencies. Through the GreenThing class, our test has dependencies on components outside its scope.
 image::ch03_f001_garniermoiroux.png[]
 
 In this example, both the `RedThing` and `PinkThing` beans have all the dependencies they need to be wired up.
@@ -331,7 +332,7 @@ But the `GreenThing` does not respect the boundaries of our test, and needs comp
 To fix the issue, we need to provide `YellowGizmo` and a `BlueWidget`.
 We could make the scope of our test bigger by adding more entries to `classes = {...}`, but it defeats the entire purpose of this exercise, and we might need to pull our dependencies' dependencies, sometimes multiple levels deep.
 Alternatively, we could write a custom `@TestConfiguration` and provide just the beans we need, and provide some stub implementations instead of the real classes.
-For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework has all the tooling you need: mock beans and test beans.
+For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework provides two handy features: mock beans and test beans.
 
 [#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Stubbing out dependencies by using mocks
@@ -360,36 +361,35 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 ----
 
 <1> Replace the `blueWidget` bean with a mock
-<2> Replace the Gizmo bean, and use a factory method with a matching name to create the instance
+<2> Replace the Gizmo bean with a stub
+<3> Use a factory method with a matching name to create the gizmo bean
 
-In this example, the dependencies for our `GreenThing` bean are fulfilled, and the application starts.
-We provide the missing beans by two ways.
+In this example, the dependencies for our `GreenThing` bean are fulfilled, and the application starts, because we provided the missing beans, using two distinct Spring Boot Test APIs.
 First, the blue widget is a `@MockitoBean`.
 That means that the instance of that bean will not be a real implementation, but instead will be a Mockito mock.
 By default, it has no behavior and provides default values to every method call, most often just a `null`, essentially acting as a "test dummy".
 This is perfect when you only need it to satisfy a dependency without needing to actually use it in your tests.
-If you actually exercise its code and need to return specific values, you can always program it and setup your own "canned" response.
-Since this is a mock, you can technically also run behavior verifications, asking questions such as "was this method called, with value 42?", but I'd argue that this is probably misguided in this case.
-We're testing a subset of our application, and only providing a few patches here and there to make it start.
-If you want to test deep behavior integration, you'll probably want to run a full `@SpringBootTest`.
+If your test actually needs to use code from that bean, and expects it to return specific values, you can always program the mock and set up your own "canned" response.
+Since it is a mock, you can technically also run behavior verifications, asking questions such as "was this method called, with value 42?", but I'd argue that this is misguided in this case: we're testing a subset of our application, and only providing a few configuration patches here and there to make it start, not testing deep integration.
+If you want to test full-blown features, you'll probably want to run a regular `@SpringBootTest` instead.
 Note, in this specific example, that since our app has multiple instances of the `Widget` bean, and relies on bean names for auto-wiring, we provide a name in the annotation itself to differentiate it from the `blackWidget`.
-The second way to provide a bean is to use a `@TestBean` annotation, which we do for the gizmo bean.
-This is not a mock, but instead any instance that you decide to provide.
-The only thing you need to do is create a static "factory" method of the same name, and in that method, apply anything you want to create your test bean.
+The second way to provide a bean is to use a `@TestBean` annotation, which we do for the Gizmo bean.
+This is not a mock, but instead any instance that you construct and provide.
+The only thing you need to do is create a static "factory" method with a name matching that of the field in the class, `gizmo()` in our case, and in that method, apply anything you want to create your test bean.
 While this is a little bit more verbose than using Mockito beans, it allows you to provide any code without having to use any of the Mockito apis "when this then return that".
-If you need a test stub with hardcoded set of responses, or a test fake with test-specific behavior, this is the annotation that you would use.
+If you need a test stub with hardcoded set of responses, or a test fake with test-specific behavior, this is the annotation that you should use.
 
 NOTE: If you work with Spring Boot version prior to 3.4, you might encounter `@MockBean` annotations.
-It achieves the same result as `@MockitoBean`: it is an earlier implementation, that to be a Spring Boot-only feature.
-In 3.4, these features were implemented in Spring Framework itself, renamed, and deprecated in Spring Boot.
+It achieves the same result as `@MockitoBean`: it is an earlier implementation, that used to be a Spring Boot-only feature.
+In 3.4, these features were implemented in Spring Framework itself, renamed, and the Boot `@MockBean` was deprecated.
 
 In this example, we have created beans that were _missing_ in the context of our test application.
 But with these annotations, it is also possible to replace beans entirely.
 We saw an example of this in the previous chapter, in section xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-6[2.6] when we replaced the "Weather Service" by a stub implementation.
 To replace beans where there is only one instance of the given type, such as the `Gizmo` in our example, you need to register a `@MockitoBean` or `@TestBean` of the same type as your replacement target.
-When there are multiple beans in your app, to tell Spring Boot Test which exact bean to replace, you can specify the name of the target, in the annotation.
+When there are multiple beans in your app, to tell Spring Boot Test which exact bean to replace, you can specify the name of the target, in the annotation, as we've done with our `@MockitoBean(name = "blueWidget")` above.
 There's one last feature that we won't explore here, the `@MockitoSpyBean` annotation.
-It is exactly what it says on the tin: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
+It does exactly what it says on the tin: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
 Why aren't we using this feature here?
 It's generally accepted that spies should rarely be used, as Mockito warns... _in their very own reference documentation_!
 
@@ -402,7 +402,7 @@ NOTE: To learn more about Mockito, please refer to chapter 10, "Writing elegant 
 
 And with that, you now know most of the configuration hooks for creating a test app.
 Powerful as they are, all these tools and abstractions do come at a cost, which might unacceptably slow down your test suites.
-To help you navigate the tradeoffs, let's take a look at the impact they have.
+To help you navigate the tradeoffs, let's take a look at how they impact your test suite.
 
 [#ch3-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Speeding up tests by reusing the ApplicationContext between tests
@@ -413,7 +413,7 @@ When you have multiple test files, and they all have different configurations, t
 As a result, each of these test apps need to be started separately before the test in which they are used.
 But starting a Spring application may take anywhere between 100ms for very small projects to tens of seconds for much larger use-cases, and the memory and CPU usage spikes on startup.
 For your test suites to be fast, you need to minimize the number of test apps starting.
-Fortunately, the Spring TestContext framework is here to help you by caching the `ApplicationContext` between tests!
+Fortunately, the Spring TestContext framework is here to help you by caching the `ApplicationContext` between tests.
 
 Consider the small, toy Spring application in listing <<ch3-listing-slowapp>>.
 
@@ -426,9 +426,9 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 
 <1> Takes 3 seconds to start up
 
-In this app, we introduce a deliberately "slow" bean, by sleeping for 3 seconds (you can configure it to be faster, if you're annoyed with the slow start).
-This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure like hibernate scanning entities.
-If we write tests for such an application, even if it does nothing, it will take 3 seconds to start up.
+In this app, we deliberately introduce a "slow" bean, which prints "==> Configuring slow bean..." and then sleeps for 3 seconds (you can configure it to be faster, if you're annoyed with the slow start).
+This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure, like Hibernate scanning entities.
+If we write tests for such an application, even if the test does nothing, the test app will take 3 seconds to start up.
 But if we write a second test class with the exact same configuration, the test will run instantly.
 We can see it in action in listing <<ch3-listing-slowapp-test>>.
 
@@ -441,12 +441,13 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 
 <1> Tell JUnit the order in which tests should run
 
+This test file contains two nested `@SpringBootTest`, so you would expect the tests to take approximately 2 * 3 = 6 seconds to run.
 When you run this test file, and measure the runtime, it will be around 3 seconds, plus a few hundred milliseconds to start up the JVM, but not 6 seconds.
-If you observe the logs, you will see that the "Spring Boot" banner and our log "🐌 Configuring slow bean..." only show up once.
-This is because of the caching of the Spring TestContext Framework: the test app is started when the `SlowTests` start, and then it is reused for the `FastTests`.
+If you observe the logs, you will see that the "Spring Boot" banner and our log "==> Configuring slow bean..." only show up once.
+This is because of the caching provided by the Spring TestContext Framework: the test app is started when the `SlowTests` start, and then it is reused for the `FastTests`.
 
 NOTE: We've hardcoded the order in which our tests run.
-It is not generally a good practice, but here it helps us reason about when the app starts.
+It is not generally a good practice, but here it helps us reason about when the test app starts and when it is reused.
 
 The way this works is through a cache of the Spring `ApplicationContext`.
 Whenever a test app is started by the Spring TestContext Framework, it is stored in a cache, and then reused in other test classes when possible.
@@ -466,36 +467,36 @@ Your tests will now print out many, many log lines, essentially displaying:
 ----
 [...] Spring test ApplicationContext cache statistics: [DefaultContextCache@57c47a9e size = 1, maxSize = 32, parentContextCount = 0, hitCount = 0, missCount = 1, failureCount = 0]
 [...] Spring test ApplicationContext cache statistics: [DefaultContextCache@57c47a9e size = 1, maxSize = 32, parentContextCount = 0, hitCount = 1, missCount = 1, failureCount = 0]
-[...] Before test method: class [SlowTests], method [logsAppStartup], class annotated with @DirtiesContext [false] with mode [null], method annotated with @DirtiesContext [false] with mode [null]
-[...]
+[... other logs ...]
 ----
 
 The first log line represents the first time the Spring tests need to access an `ApplicationContext`.
-First things first, you can see that the size of the cache is 1, and that's perfectly normal: Spring Boot tests is wiring up on app for you.
-That's also why the `missCount` is 1, since the cache is initially empty, with no test app started.
+First things first, you can see that the size of the cache is 1, and that's perfectly normal: Spring Boot tests is wiring up an app for you, and putting it in the cache.
+That's also why the `missCount` is 1, since the cache was initially empty, with no test app started.
 Reading the logs, you'll also learn that, by default there are a maximum of 32 concurrent "test apps" available in the cache.
 That is A LOT.
-In general, you do not want to get anywhere near that number of apps, especially if it represents an almost full blown version of your Spring Boot app, with the majority of its dependencies.
+In general, you do not want to get anywhere near that number of apps, especially if they represent a full-scale version of your Spring Boot app, with the majority of its dependencies.
 Why?
 First, because wiring up an application context takes a long time, and this will noticeably slow down your tests.
-If you start evicting test apps from the cache that took tens of seconds to start, the timing will be unbearable.
-Second, these apps consume resources, especially if you're relying on external resources, such as Testcontainers.
-This might be manageable on a beefy developer machine or a big CI server, but if your tests are running on tiny cloud instances, you won't even be able to run your full test suite before being out of memory.
+If you start evicting from the cache some test apps that took tens of seconds to start, and restart them multiple times, your test suite will take an unbearably long time to run.
+Second, these apps consume CPU and memory, especially if you're relying on external resources, such as Testcontainers.
+This might be manageable on a beefy developer machine or a big CI server, but if your tests are running on tiny cloud instances, you won't even be able to run your full test suite before running out of memory.
 So you want to keep the `size` and `missCount` as low as possible.
 
 On the other hand, the `hitCount` can increase very rapidly without a hitch.
-If you try this yourself, you'll even notice that `hitCount` increases much faster than your number of tests.
+If you try this for yourself, you'll even notice that `hitCount` increases much faster than your number of tests.
 That happens because the Spring Test Context framework needs to read from the cache very often, for example to populate the `@Autowired` fields you have in your tests.
-If you want further information on what the cached configuration actually is, you can increase the log level, and get a description of how a test app is "indexed" in the cache.
+If you want further information on what the cached configuration actually is, you can increase the log level to `TRACE`, and get a description of how a test app is "indexed" in the cache.
 
-Let's discuss what this caching mechanism means for your test code, in practice.
+Caching massively speeds up your tests, and, to benefit from it, you should avoid creating many variations of your test app.
+It is better to start the full test app once, and reuse it to verify separate aspects of your business logic rather than starting many variations across tests.
+But how do you keep the number of test apps low?
 
 === Avoiding creating too many test apps
 
-All in all, you should avoid creating many variations of your test app.
-Reading from the `ApplicationContext` does not modify the configuration, so using `@Autowired` or `@Value` in your tests, to access beans, is fine.
-But most other changes you might do to a test file will change the configuration of the app under test, and will result in a new test app.
-Here is a non-comprehensive list of annotations and paramaters that you should avoid changing, when possible:
+Reading from the `ApplicationContext` does not modify the configuration, so using `@Autowired` or `@Value` in your tests, to access beans, does not trigger the creation of new test apps.
+But most other changes you might do to a test file will change the configuration of the app under test, and will result in an increased test app count.
+Here is a non-comprehensive list of annotations and parameters that you should avoid changing, when possible:
 
 - Changing properties, through `@SpringBootApplication(properties = ...)` and `@TestPropertySource(...)`
 - Applying inconsistent styling to your custom properties, such using `key=value` in one place and `key = value` in another.
@@ -507,24 +508,25 @@ Here is a non-comprehensive list of annotations and paramaters that you should a
 - Forcing a cache eviction through `@DirtiesContext`
 - Any Spring TestContext Framework customization, not detailed here, that you may want to try out (context initializers, context loaders, adding a parent context, ...)
 
-TIP: The complete explanation of how the caching key is computed is detailed in the reference documentation: https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html . If you find yourself trying to optimize test execution speed, take a peek!
+TIP: The complete explanation of how the caching key is computed is detailed in the reference documentation: https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html . If you find yourself trying to optimize test execution speed, take a peek.
 
 Again, the issue is about having _different_ configurations resulting in separate test apps.
-If all your testing scenarios require the same configuration change, say, changing a few properties and using `@MockitoBean` on some beans, you are totally free to do so, as long as you apply the same customizations to all test apps!
+If all your testing scenarios require the same configuration change, say, changing a few properties and using `@MockitoBean` on some beans, you are totally free to do so, as long as you apply the same customizations to all test apps.
 In fact, you can create your own custom meta-annotation, reusable across all your tests, like the annotation in listing <<ch3-listing-meta-annotation>>.
 
 [#ch3-listing-meta-annotation, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Example meta-annotation
+.A testing meta-annotation
 [source,java,indent=0]
 ----
 include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/CustomSpringTest.java[tags=custom-spring-test]
 ----
 
-<1> Any class using this will be a Spring Boot Test
+<1> Override some properties
 <2> Override some beans in the context
 <3> This class is an annotation
 
-With this, you can have your tests annotated with `@CustomSpringTest` instead of using `@SpringBootTest` and repeating all the customizations.
+With this, any test suite class annotated with `@CustomSpringTest` will also be a `@SpringBootTest`, and share the same customizations.
+You won't have to repeat customizations across files, and you'll be sure that all test apps share the same configuration.
 
 NOTE: The rule of thumb is to try and keep the app number to a minimum, ideally a single test app.
 And for every rule, there are exceptions!
@@ -537,12 +539,12 @@ But there's no such thing as a free lunch, and there are limitations to this cac
 === Tradeoffs, side-effects and limitations
 
 The most important side effect is a direct consequence of re-using the same app between tests.
-Since all the classes are still up and in-memory, and hold references to external systems like databases, message brokers, filesystem, etc, any change in your test will be visible to the next test.
+Since all the classes remain up and running in-memory between tests, and hold references to external systems like databases, message brokers, filesystem, etc, any change in one of your test will be visible to the next test.
 This can lead to so-called "test pollution", where tests are not isolated anymore.
 For example, if you have a database running in a Docker container, and test 1 inserts data, then that data will be in the database when test 2 runs.
 Or if a test deletes some in-memory data, that data will not be available for the rest of the test suite.
-To overcome this, there are two possibilities: you can write tests that only depend on state that are initialized locally, or ensure the global state is reset after every test that modifies it, or before every test.
-This usually involves writing custom logic, like we did in the previous chapter, in section xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-5[2.5], by deleting every entry in the repository before every test, therefore "resetting the world".
+To work around this, there are two possibilities: you can write tests that only depend on state that is initialized locally, for example in the test method itself, or ensure that the global state is either reset after every test that modifies it or before every test.
+This usually involves writing custom logic, like we did in the previous chapter, in section xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-5[2.5], by deleting every entry in the repository before every test, essentially "resetting the universe" from the point of view of our test methods.
 Some tests may delete data or "break" components in way that are hard to recover from, and, in that case, the easiest might be to reset the test app entirely.
 You can achieve that by using the `@DirtiesContext` annotation, as shown listing <<ch3-listing-dirties-context>>.
 
@@ -556,7 +558,7 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 In this example, the test app will be removed from the cache after the `breakStuff` test completes.
 There are other configuration options for `@DirtiesContext`, like recreating the app before the method instead of after, and placing options to work with a test class instead of method.
 Refer to the https://docs.spring.io/spring-framework/reference/testing/annotations/integration-spring/annotation-dirtiescontext.html[reference documentation] if you would like to learn more.
-But remember, this will slow down your test, and should be a last resort annotation that you avoid using as much as possible!
+But remember, this will slow down your test, and should be a last resort annotation that you avoid using as much as possible.
 
 Another limitation of the cache is that it's a static cache, literally a Java `static` variable.
 So there is one cache per process running.
@@ -572,5 +574,5 @@ As the reference documentation puts, it, "can result in unexpected side effects,
 - There is a host of options and hooks for configuring the test application, the most useful being the parameters in `@SpringBooTest(properties = { ... })` and the `@TestConfiguration` annotation.
 - It is possible to test only a subset of the application with `@SpringBootTest(classes = { ... })`, but it is useful only for a select number of use-cases.
 - When you want to stub out external services, or when you want to add missing beans to your tests, use `@MockitoBean` or `@TestBean`.
-- Most importantly: avoid creating many variations of your app's configuration in your tests.
-You will wind up with slow, resource-intensive tests.
+- Most importantly: use all these tools with parsimony and care.
+Avoid creating many variations of your app's configuration in your tests, or you will wind up with slow, resource-intensive tests.
