@@ -12,7 +12,7 @@
 :listing-number:
 :tabsize: 2
 
-[#ch3_title, reftext={chapter}, caption='{chapter}']
+[#ch3-title, reftext={chapter}, caption='{chapter}']
 = Configuring and running an application for testing
 
 This chapter covers:

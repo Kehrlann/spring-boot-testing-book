@@ -12,7 +12,7 @@
 :listing-number:
 :tabsize: 2
 
-[#ch1_title, reftext={chapter}, caption='{chapter}']
+[#ch1-title, reftext={chapter}, caption='{chapter}']
 = Spring Boot-specific test tooling
 
 This chapter covers

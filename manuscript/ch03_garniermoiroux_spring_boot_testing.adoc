@@ -12,7 +12,7 @@
 :listing-number:
 :tabsize: 2
 
-[#ch3_title, reftext={chapter}, caption='{chapter}']
+[#ch3-title, reftext={chapter}, caption='{chapter}']
 = Configuring and running an application for testing
 
 This chapter covers:
@@ -39,7 +39,7 @@ I encourage you to download the project and skim over the test files as you go t
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Understanding how the `@SpringBootTest` annotation works
 
-In the xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2_title[previous chapter], we've annotated our test class with `@SpringBootTest`, and you'll encounter it throughout this entire book.
+In the xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-title[previous chapter], we've annotated our test class with `@SpringBootTest`, and you'll encounter it throughout this entire book.
 It is useful and easy to get started with, but sometimes described as "auto-magic":
 it does so many things automatically, in the background, most of which you don't understand or even realize are happening, that it feels like magic.
 While the implementation details are deep and intricate, at a high level, it is not particularly scary.

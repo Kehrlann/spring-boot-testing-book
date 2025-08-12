@@ -12,7 +12,7 @@
 :listing-number:
 :tabsize: 2
 
-[#ch2_title, reftext={chapter}, caption='{chapter}']
+[#ch2-title, reftext={chapter}, caption='{chapter}']
 = Testing a Spring Boot "Hello World" application
 
 This chapter covers:
