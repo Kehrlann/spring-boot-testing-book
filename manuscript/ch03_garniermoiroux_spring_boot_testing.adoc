@@ -141,7 +141,7 @@ Now that we know the basics of "reading" from our application, let's "write" it,
 The Spring TestContext framework offers many hooks to configure the application under test, but we won't go into the details in this book.
 After all, we're testing Spring Boot apps, and in the vast majority of cases, all you need is covered by the `@SpringBootTest` annotation.
 
-[#ch3-section-2-changing-configuration-props, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch3-section-3-changing-configuration-props, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Changing configuration properties
 
 The first thing that you can do is modify properties directly in the annotation, in many different ways.
@@ -191,7 +191,7 @@ Like the regular Spring `@PropertySource` annotation, you can specify character 
 It has the same limitations as `@PropertySource`, and does not support YAML or JSON out of the box.
 It is possible to provide some code to enable other property formats, but there is a much more convenient way for Spring Boot Tests: using a custom profile.
 
-[#ch3-section-2-activating-a-profile, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch3-section-3-activating-a-profile, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Activating a profile
 
 Spring supports adding the `@Profile` annotation on bean definitions to express that some beans are to be loaded when a given profile is active.
@@ -218,7 +218,7 @@ To add beans to test scenarios without touching your production code, you can us
 NOTE: It is acceptable to use `@ActiveProfiles` to turn on certain production features selectively.
 For example, imagine you have an optional "Signle Sign On" feature behind an `sso` profile, and you only want to turn it on in some subset of tests, you can use `@ActiveProfiles("sso")`.
 
-[#ch3-section-2-adding-configuration, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch3-section-3-adding-configuration, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Adding configuration with `@Configuration` and `@TestConfiguration`
 
 If you would like to add test-specific beans, there are two possibilities.
@@ -274,7 +274,7 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 In this example, all beans defined within the `TestConfig` class will be added to the test app for the `NestedConfigTests`.
 
 WARNING: Do not nest a `@Configuration` class in your tests.
-It overrides the entire configuration of the app, similar to what we'll see in section <<ch3-section-2-configuring-from-scratch>> below.
+It overrides the entire configuration of the app, similar to what we'll see in section <<ch3-section-3-configuring-from-scratch>> below.
 
 If you would like to re-use the `@TestConfiguration` class across test files, you can extract it in its own top-level class, and import it explicitly, as shown in listing <<ch3-listing-import-testconfiguration>>.
 
@@ -293,7 +293,7 @@ It is composable, with multiple test configurations you can choose from and stri
 So far, we've seen how to make a test application and add custom, test-specific bean to the default "production" configuration.
 But for a big application, say your typical multi-module monolith, starting the full app might be "expensive" and take a long time. `@SpringBootTest` has a dedicated parameter for that very specific use-case: `classes=`.
 
-[#ch3-section-2-configuring-from-scratch, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch3-section-3-configuring-from-scratch, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Configuring the application from scratch
 
 We have mentioned in xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-7[chapter 2] that, when you just want to test a few classes, you may not need `@SpringBootTest`.
@@ -337,7 +337,7 @@ For all the cases where you'd want to provide or replace existing beans, the Spr
 [#ch3-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Stubbing out dependencies by using mocks
 
-Let's build up on the example from the previous section <<ch3-section-2-configuring-from-scratch>>.
+Let's build up on the example from the previous section <<ch3-section-3-configuring-from-scratch>>.
 If we ran a Spring Boot Test with just the `ThingConfiguration` class, it would fail with the usual Spring Boot message:
 
 ----
