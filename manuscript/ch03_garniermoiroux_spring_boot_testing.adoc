@@ -145,7 +145,7 @@ After all, we're testing Spring Boot apps, and in the vast majority of cases, al
 === Changing configuration properties
 
 The first thing that you can do is modify properties directly in the annotation, in many different ways.
-Imagine you have the following properties in your application, with some defaults set in the `application.properties` file, represented in listing <<ch3-listing-properties>>.
+Imagine you have the following properties in your application, with some defaults set in the `application.properties` file:
 
 [#ch3-listing-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Properties defined application.properties
@@ -154,7 +154,7 @@ Imagine you have the following properties in your application, with some default
 include::../code/ch3/configuration/src/main/resources/default-configuration.properties[]
 ----
 
-To override the values, you can use the `properties` parameter of the annotation with an array of properties, shown in listing <<ch3-listing-properties-array>>.
+To override the values, you can use the `properties` parameter of the annotation with an array of properties:
 
 [#ch3-listing-properties-array, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Overriding properties with the `@SpringBootTest` annotation
@@ -163,7 +163,7 @@ To override the values, you can use the `properties` parameter of the annotation
 include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-array;!ignored]
 ----
 
-You can also use a single Java text block to override the values, like in <<ch3-listing-properties-textblock>>.
+You can also use a single Java text block to override the values:
 
 [#ch3-listing-properties-textblock, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Overriding properties using a Java text block
@@ -179,7 +179,7 @@ WARNING: YAML properties are not supported in the `properties` parameter.
 
 While convenient, using inline values directly in the annotation may become unwieldy if you have a big chunk of configuration you'd like to declare in your test.
 In that case, you can leverage the `@TestPropertySource` annotation.
-It has a `properties` parameter like the `@SpringBooTest` annotation, but also offers a `location` parameter which allows you to point to a specific file or files containing the values, like in listing <<ch3-listing-property-source>>.
+It has a `properties` parameter like the `@SpringBooTest` annotation, but also offers a `location` parameter which allows you to point to a specific file or files containing the values, for example `custom-values.properties`:
 
 [#ch3-listing-property-source, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using `@TestPropertySource`
@@ -201,7 +201,7 @@ A profile is activated using a system property, for example `spring.profiles.act
 Additionally, Spring Boot will pick properties files with the profile name, such as `application-prod.properties` or `application-france.yml`.
 If you would like to override many properties in your tests, you can group them in a test-specific properties file, and give it a profile name, such as "test".
 Be sure to add that file to `src/test/resources`, so that it is never picked up by your production code.
-Then add the profile in your tests using `@ActiveProfiles`, as shown in listing <<ch3-listing-profile>>.
+Then add the profile in your tests using `@ActiveProfiles`:
 
 [#ch3-listing-profile, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using a profile in tests
@@ -226,7 +226,7 @@ For example, imagine you have an optional "Single Sign On" feature behind an `ss
 If you would like to add test-specific beans, there are two possibilities.
 First, you can create a `@Configuration` class in your test directory.
 If it is located in the same package as your Spring Boot main class, or any sub-package, they will be added to the configuration of the test application.
-Let's examine a concrete example, with the file structure represented in listing <<ch3-listing-file-structure>>.
+Let's examine a concrete example, with the following file structure:
 
 [#ch3-listing-file-structure, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Project file structure for custom configurations
@@ -265,7 +265,7 @@ It is useful when adding beans that you want to have in all your tests, but ther
 While you could hack your way around with different packages or custom exclude rules for component scanning, that would be a lot of boilerplate.
 So the Spring Boot team came up with the appropriate tool for the job, namely, the `@TestConfiguration` annotation.
 It works like a regular Spring configuration, but you have to enable it explicitly.
-The first possibility is to nest the configuration class inside your test class, like in listing <<ch3-listing-nested-testconfiguration>>.
+The first possibility is to nest the configuration class inside your test class, like so:
 
 [#ch3-listing-nested-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Nested `@TestConfiguration`
@@ -279,7 +279,7 @@ In this example, all beans defined within the `TestConfig` class will be added t
 WARNING: Do not nest a `@Configuration` class in your tests.
 It overrides the entire configuration of the app, similar to what we'll see in section <<ch3-section-3-configuring-from-scratch>> below.
 
-If you would like to re-use the `@TestConfiguration` class across test files, you can extract it in its own top-level class, and import it explicitly, as shown in listing <<ch3-listing-import-testconfiguration>>.
+If you would like to re-use the `@TestConfiguration` class across test files, you can extract it in its own top-level class, and import it explicitly:
 
 [#ch3-listing-import-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Importing `@TestConfiguration`
@@ -303,7 +303,7 @@ We have mentioned in xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-secti
 Specifically, if you want to test a `FooService` that has a dependency on a `BarService` and a `FooRepository`, you do not need Spring to do the auto-wiring for you.
 In some cases, though, you do need a bit of Spring machinery.
 Say you want to have Spring parse `properties` files for you, perform data validation, or activate `@Conditional` annotations on your beans, without booting the full production app.
-In that case, you can configure a much smaller test application context while retaining the bulk of Spring Boot features, as shown in listing <<ch3-listing-classes>>.
+In that case, you can configure a much smaller test application context while retaining the bulk of Spring Boot features, as demonstrated in listing <<ch3-listing-classes>>:
 
 [#ch3-listing-classes, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the `classes = {...}` parameter
@@ -354,7 +354,7 @@ Parameter 0 of method greenThing in wf.garnier.spring.boot.test.ch3.configuratio
 ----
 
 We want to write a test for our class, but our `GreenThing` depends on the `YellowGizmo` and `BlueWidget`.
-To provide those, we have two main options: mockito beans and test beans, both present in listing <<ch3-listing-mockitobean-testbean>>.
+To provide those, we have two main options, mockito beans and test beans, both used in the test below:
 
 [#ch3-listing-mockitobean-testbean, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Providing beans with `@MockitoBean` and `@TestBean`
@@ -421,7 +421,7 @@ Fortunately, the Spring TestContext framework is here to help you by caching the
 
 === Using the Spring ContextCache
 
-Consider the small, toy Spring application in listing <<ch3-listing-slowapp>>.
+Consider the small, toy Spring application:
 
 [#ch3-listing-slowapp, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A Boot app that starts slowly
@@ -436,7 +436,7 @@ In this app, we deliberately introduce a "slow" bean, which prints "==> Configur
 This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure, like Hibernate scanning entities.
 If we write tests for such an application, even if the test does nothing, the test app will take 3 seconds to start up.
 But if we write a second test class with the exact same configuration, the test will run instantly.
-We can see it in action in listing <<ch3-listing-slowapp-test>>.
+We can see it in action by running two test classes:
 
 [#ch3-listing-slowapp-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Tests for our slow application
@@ -459,7 +459,7 @@ The way this works is through a cache of the Spring `ApplicationContext`.
 Whenever a test app is started by the Spring TestContext Framework, it is stored in a cache, and then reused in other test classes when possible.
 The cache key is, broadly speaking, the "configuration" of the test application: properties, profiles, and "configuration classes" or "beans" loaded in the application.
 In our case, both test classes have the exact same configuration, so they can use the same test application.
-You can observe the cache behavior by turning logs, in adding the properties from listing <<ch3-listing-cache-logs>> in your test `application.properties` file:
+You can observe the cache behavior by turning logging on, by adding the appropriate properties to your test `application.properties` file:
 
 [#ch3-listing-cache-logs, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Turning on logging for the Spring TestContext Framework
@@ -518,7 +518,7 @@ TIP: The complete explanation of how the caching key is computed is detailed in 
 
 Again, the issue is about having _different_ configurations resulting in separate test apps.
 If all your testing scenarios require the same configuration change, say, changing a few properties and using `@MockitoBean` on some beans, you are totally free to do so, as long as you apply the same customizations to all test apps.
-In fact, you can create your own custom meta-annotation, reusable across all your tests, like the annotation in listing <<ch3-listing-meta-annotation>>.
+In fact, you can create your own custom meta-annotation, reusable across all your tests, for example:
 
 [#ch3-listing-meta-annotation, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A testing meta-annotation
@@ -552,7 +552,7 @@ Or if a test deletes some in-memory data, that data will not be available for th
 To work around this, there are two possibilities: you can write tests that only depend on state that is initialized locally, for example in the test method itself, or ensure that the global state is either reset after every test that modifies it or before every test.
 This usually involves writing custom logic, like we did in the previous chapter, in section xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-section-5[2.5], by deleting every entry in the repository before every test, essentially "resetting the universe" from the point of view of our test methods.
 Some tests may delete data or "break" components in way that are hard to recover from, and, in that case, the easiest might be to reset the test app entirely.
-You can achieve that by using the `@DirtiesContext` annotation, as shown listing <<ch3-listing-dirties-context>>.
+You can achieve that by using the `@DirtiesContext` annotation, either on a test class or on a test method:
 
 [#ch3-listing-dirties-context, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Recreating the test app after a test
