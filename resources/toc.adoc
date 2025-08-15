@@ -28,8 +28,8 @@ In this chapter, we will work through a simple example, and showcase some of the
 
 Both the Spring Framework and Spring Boot provide tools to simplify setting up, configuring and interacting with a test version of your application. It all starts with the @SpringBootTest annotation that every Spring developer knows: just like Spring Boot, it hides a lot of the underlying complexity and seems to “just work”. But, like many abstractions, when used incorrectly, it may lead to slow or brittle test suites. In this chapter, we will explain how @SpringBootTest binds your production code and JUnit tests together. We will take a closer look at the underlying infrastructure that the Spring testing framework provides, and the multiple capabilities it exposes, beyond  the default usage of @SpringBootTest. We will examine tradeoffs when using these tools, and discuss best practices for keeping your test suite fast and efficient.
 
-1. Setting up a Spring Boot application for testing with @SpringBootTest
-2. Accessing Spring infrastructure in JUnit tests through the SpringExtension
+1. Understanding how the `@SpringBootTest` annotation works
+2. Interacting with the application
 3. Configuring the application under test
 4. Stubbing out dependencies by using mocks
 5. Speeding up tests by reusing the ApplicationContext between tests
@@ -38,7 +38,7 @@ Both the Spring Framework and Spring Boot provide tools to simplify setting up, 
 
 The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and Javascript, or server-side components exposing HTTP endpoints in Rest or GraphQL. Having some level of testing from the API down is an important part of testing, often called “integration” or “component” testing. It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application. This introduces overhead, for example provisioning test environments. In this chapter, we will cover the tools and infrastructure that Spring offers to test HTTP applications locally, using simple unit tests. We will see how to test servlet and reactive applications, how to automate user interaction tests, and how to test client applications.
 
-1. Testing Servlet applications with MockMvc and MockMvcTester
+1. Testing Servlet applications with MockMvcTester
 2. Testing Reactive web applications: WebTestClient
 3. Using a lightweight web browser to simulate human interaction, with HtmlUnit
 4. Running the full web server in tests
