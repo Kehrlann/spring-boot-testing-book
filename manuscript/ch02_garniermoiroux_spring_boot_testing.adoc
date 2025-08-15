@@ -174,7 +174,7 @@ So, with that in mind, let's write our first test, specific to this particular a
 Before diving deep into the features of this weather dashboard website, let's ensure that the Spring Boot application responds to HTTP requests on the index page, or `/`, and that it displays _something_.
 This tells you that have created the appropriate mapping for the `/` path, and that it does, indeed, render an HTML page.
 To do so, you need to make HTTP calls to your application.
-This is such a common scenario that Spring has specialized utility classes for this, as shown in listing <<ch2-listing-first-test>>.
+This is such a common scenario that Spring has specialized utility classes for this, such as `MockMvcTester`:
 
 [#ch2-listing-first-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Verifying that the application responds to HTTP queries.
@@ -222,7 +222,7 @@ It was a read-only test, one that does not add any data to the database.
 Let's create a test that exercises a database write, by selecting a city with another HTTP request.
 To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: for example, that city name is somewhere else on the page and the test would pass even if no city was selected.
 In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
-But let's start simple, and instead of worrying about HTML structure, let's check what that the database does indeed contain the city we have added, as shown in listing <<ch2-listing-context-dependencies>>.
+But let's start simple, and instead of worrying about HTML structure, let's check what that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
 
 [#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Validating that users can select a city.
@@ -241,7 +241,7 @@ But if you have access to the whole application context, you can imagine many us
 This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it before trying to query the app for data.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
-I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function, as shown in listing <<ch2-listing-select-city>>.
+I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function:
 
 [#ch2-listing-select-city, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A helper function for city selection.
@@ -259,7 +259,7 @@ When it comes to test code specifically, JUnit, the framework we use, has its ow
 
 Imagine you want to add a test that shows that a city can only be present a single time in the selection database, that there are no duplicates.
 The structure of the test is fairly simple: add the same city twice, and ensure that there is only one entry in the database.
-Using our `selectCity(...)` helper method from the previous section, we can write the test in listing <<ch2-listing-no-duplicates>>.
+Using our `selectCity(...)` helper method from the previous section, we can write the following test:
 
 [#ch2-listing-no-duplicates, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Verify that there are not duplicates in the list of selected cities.
@@ -303,7 +303,7 @@ But gathering weather data is a core feature of our application!
 Let's write a test that ensures that our weather dashboard displays the correct information.
 To avoid parsing the HTML page to find the exact elements we want to verify, let's take a shortcut and use the JSON API that the application provides.
 It should return a response that looks something like this: `{"cityName": "<SOME CITY>", "temperature": <SOME TEMPERATURE>}`.
-Putting it all together, we can write listing <<ch2-listing-weather-data>>.
+Putting it all together, our test test would look like:
 
 [#ch2-listing-weather-data, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Ensure that weather data is available in the API.
@@ -362,7 +362,7 @@ The general scoring is complex, and testing all possible variations from the fin
 It is simpler to break the problem into smaller chunks that you can reason about independently.
 For example, we could introduce one `@Service WeatherScoringSerivce` class that generates an aggregate score based on weather history, and user preferred temperature ranges.
 For testing all the possible variations, you would write unit tests.
-To give you an idea of what those tests could look like, see listing <<ch2-unit-test>>.
+To give you a rough idea, these tests could look something like this:
 
 [#ch2-unit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A sample domain test without Spring-specific testing tools.
