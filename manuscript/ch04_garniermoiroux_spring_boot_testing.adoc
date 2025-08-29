@@ -17,11 +17,19 @@
 
 This chapter covers:
 
-* a
-* b
-* c
+* Testing Spring web applications with `MockMvcTester`
+* Using alternatives to `MockMvcTester`
+* Simulating browser interactions with `HtmlUnit`
+* Running the full web server in tests
+* Driving a complete web browser in tests with Selenium
+* Testing client applications with MockRestServiceServer
 
-Blurb
+The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and sometimes Javascript, or server-side components exposing HTTP endpoints in REST, GraphQL or any other format.
+Having some level of testing from the API down is an important part of integration testing.
+It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
+As we have discussed in the first chapter, this introduces overhead, for example provisioning test environments.
+With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications locally, using simple JUnit tests.
+Let's discover how you can test your server application by making HTTP requests, how you can automate user interaction tests, and what's available for testing "client" application
 
 [#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing Servlet applications with MockMvcTester
@@ -42,3 +50,15 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 - An interesting side note
 - A subtle point
 - Some tradeoffs
+
+
+// The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and Javascript, or server-side components exposing HTTP endpoints in Rest or GraphQL. Having some level of testing from the API down is an important part of testing, often called “integration” or “component” testing. It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application. This introduces overhead, for example provisioning test environments. In this chapter, we will cover the tools and infrastructure that Spring offers to test HTTP applications locally, using simple unit tests. We will see how to test servlet and reactive applications, how to automate user interaction tests, and how to test client applications.
+//
+// 1. Testing Servlet applications with MockMvcTester
+// 2. Testing Reactive web applications: WebTestClient
+// 3. Using a lightweight web browser to simulate human interaction, with HtmlUnit
+// 4. Running the full web server in tests
+// 5. Driving a complete web browser in tests with Selenium
+// 6. Testing client applications with MockRestServiceServer
+
+// QUestion: graphql
