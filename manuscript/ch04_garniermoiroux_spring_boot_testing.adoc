@@ -1,0 +1,44 @@
+= Spring Boot Testing In Action
+:chapter: 4
+:sectnums:
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 3
+:leveloffset: 1
+:imagesdir: ../images/ch04/
+:table-number:
+:figure-number:
+:listing-number:
+:tabsize: 2
+
+[#ch4-title, reftext={chapter}, caption='{chapter}']
+= Testing web applications
+
+This chapter covers:
+
+* a
+* b
+* c
+
+Blurb
+
+[#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Testing Servlet applications with MockMvcTester
+
+More blurbs.
+
+[#ch4-listing-foobar, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.blah blah
+[source,java]
+----
+include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/InteractWithAppTests.java[tags=interact-tests;!ignored]
+----
+
+[#ch4-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Summary
+
+- A good point
+- An interesting side note
+- A subtle point
+- Some tradeoffs
