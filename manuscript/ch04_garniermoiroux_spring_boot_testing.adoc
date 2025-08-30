@@ -29,12 +29,38 @@ Having some level of testing from the API down is an important part of integrati
 It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
 As we have discussed in the first chapter, this introduces overhead, for example provisioning test environments.
 With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications locally, using simple JUnit tests.
-Let's discover how you can test your server application by making HTTP requests, how you can automate user interaction tests, and what's available for testing "client" application
+Together, we'll discover how you can test your server application by making HTTP requests, how you can automate user interaction tests, and what's available for testing "client" applications.
 
 [#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Testing Servlet applications with MockMvcTester
+== Testing Servlet applications with `MockMvcTester`
 
-More blurbs.
+For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
+The general behavior will be very similar, but instead of doing server-only rendering, we'll sprinkle a bit of javascript on it so that it behaves like a single-page application.
+
+[#ch4-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Alternatives to `MockMvcTester`
+
+TODO
+
+[#ch4-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Simulating human interaction with HtmlUnit
+
+TODO
+
+[#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Running the full web server in tests
+
+TODO
+
+[#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Testing through a real web browser with Selenium
+
+TODO
+
+[#ch4-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Testing client applications
+
+TODO
 
 [#ch4-listing-foobar, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .blah blah
@@ -62,3 +88,4 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 // 6. Testing client applications with MockRestServiceServer
 
 // QUestion: graphql
+// Question: TestRestClient
