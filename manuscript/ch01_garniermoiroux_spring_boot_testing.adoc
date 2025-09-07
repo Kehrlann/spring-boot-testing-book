@@ -350,7 +350,7 @@ Similarly, you can use `.andExpect(status().isCreated())` to verify that the ret
 .A sample test using `MockMvc`.
 [source,java]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=content;!annotations;!class-members;!ignored]
+include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=test;!annotations;!class-members;!ignored]
 ----
 
 <1> Configure the `WidgetValidator` mock so that it never throws an exception.
