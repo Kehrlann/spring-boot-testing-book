@@ -283,18 +283,18 @@ You must also take the lifecycle of the application into consideration, to ensur
 And you will be calling the method `ApplicationContext.getBean(...)` a lot.
 
 And lastly, with your "test application" running, you will probably end up copy-pasting a lot of code, or writing utility methods.
-For example, the `RestTemplate` API for making HTTP requests is very versatile, and covers a wide range of production use-cases.
+For example, the `RestClient` API for making HTTP requests is very versatile, and covers a wide range of production use-cases.
 But when calling into your test application, most requests will look the same, and you will probably not need the flexibility.
 So you will likely write utility methods, possibly different per project, that every new engineer on the team will need to learn.
-In listing <<ch1-listing-resttemplate>>, we show the code required to send an HTTP `POST` request, with a content type of `application/x-www-form-urlencoded`.
-It requires using the verbose `LinkedMultiValueMap` class, and possibly a `RequestEntity`.
-These obscure the meaning of the test, and would be better wrapped in some utility, where you could call, say `post("uri", requestBody)`.
+In listing <<ch1-listing-restclient>>, we show the code required to send an HTTP `POST` request, with a content type of `application/x-www-form-urlencoded`.
+It requires using the verbose `LinkedMultiValueMap` class and setting the content type.
+This obscures the meaning of the test, and would be better wrapped in some utility, where you could call, say `post("uri", requestBody)`.
 
-[#ch1-listing-resttemplate, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch1-listing-restclient, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Sending a POST request in Spring.
 [source,java]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=resttemplate,indent=0]
+include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=restclient,indent=0]
 ----
 
 With the first three steps we mentioned above, configuration, setup and test, you are able to execute tests against a running application, swapping some beans for a stub.
@@ -302,7 +302,7 @@ We've seen that writing such tests is cumbersome, and requires advanced knowledg
 We have not explored all the ways things can go wrong when manually creating test applications.
 But trust me, if you go down this path, you will run into many, many side effects that are specific to certain testing scenarios, and that you will need to handle one by one.
 
-To recap, everything you would to think about if there was not dedicated Spring tooling for tests:
+To recap, in the absence of dedicated Spring tooling for tests, here is a list of everything you'd need think about:
 
 - Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
 - Replacing beans selectively, for example to avoid connecting to external systems.
@@ -311,6 +311,7 @@ To recap, everything you would to think about if there was not dedicated Spring 
 - Optionally, writing utility classes to make tests less verbose.
 
 NOTE: If you would like to see a full example of such tests, check out the samples at https://github.com/Kehrlann/spring-boot-testing-book-samples/, specifically in the `ch1/widget` directory.
+You'll find the tests in `ch1/widget/src/test/java/.../manual`.
 
 [#ch1-section4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Removing the toil: a typical `@SpringBootTest`
