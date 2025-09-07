@@ -363,7 +363,7 @@ The test is simpler and easier to read, with noticeable gains in the boilerplate
 
 - You do not need to touch lower-lever Spring abstractions like the `ApplicationContext`.
 - You do not need to think about the lifecycle of the application, with start and stop.
-- The focus is on your test code, not on configuration: you express what is different in your test configuration compared to the "normal" configuration, which beans of the application you want to interact with, and Spring Boot Test take care of the rest for you.
+- The focus is on your test code, not on configuration: you express what is different in your test configuration compared to the "normal" configuration, which beans of the application you want to interact with, and Spring Boot Test takes care of the rest for you.
 - There are helpful utility methods and classes, such as `MockMvc`, with its simpler API and its ability to make assertions on the HTTP responses from your application.
 
 [#ch1-section5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -393,10 +393,10 @@ ____
 
 This means that the more you use it, the more likely you will face one or more limitations of what comes "out-of-the box".
 For example, your test suite might get unbearably slow.
-In those cases, you need to know what's going on under the hood, so you can wield the abstraction properly—or even give up on using altogether, when it does not make sense!
+In those cases, you need to know what's going on under the hood, so you can wield the abstraction properly—or even give up on using it altogether, when it does not make sense!
 
 The second goal of this book is to help you get familiar with the lesser-known aspects of testing Spring applications, and guide you around the many pitfalls of "just" relying on the `@SpringBootTest` for all your tests.
-You will learn the fundamentals, how the magic `@SpringBootTest` works and what are the costs associated with it, and how to work around limitations.
+You will learn the fundamentals, how the magic `@SpringBootTest` annotation works and what are the costs associated with it, and how to work around limitations.
 
 The third goal is to give you an introduction to the testing libraries that are bundled with Spring Boot Test.
 While you may use some or all of those libraries daily, you might not know the full depth of their scope and how they can help you write elegant, stable and overall better tests.
