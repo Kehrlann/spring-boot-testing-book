@@ -375,7 +375,7 @@ First, the blue widget is a `@MockitoBean`.
 That means that the instance of that bean will not be a real implementation, but instead will be a Mockito mock.
 By default, it has no behavior and provides default values to every method call, most often just a `null`, essentially acting as a "test dummy".
 This is perfect when you only need it to satisfy a dependency without needing to actually use it in your tests.
-If your test actually needs to use code from that bean, and expects it to return specific values, you can always program the mock and set up your own "canned" response.
+If your test actually needs to use code from that bean, and expects it to return specific values, you can always program the mock and set up your own "canned" response. We have already seen an example of this in the previous chapter, in listing xref:ch02_garniermoiroux_spring_boot_testing.adoc#ch2-listing-mocks[2.8].
 Since it is a mock, you can technically also run behavior verifications, asking questions such as "was this method called, with value 42?", but I'd argue that this is misguided in this case: we're testing a subset of our application, and only providing a few configuration patches here and there to make it start, not testing deep integration.
 If you want to test full-blown features, you'll probably want to run a regular `@SpringBootTest` instead.
 Note, in this specific example, that since our app has multiple instances of the `Widget` bean, and relies on bean names for auto-wiring, we provide a name in the annotation itself to differentiate it from the `blackWidget`.
