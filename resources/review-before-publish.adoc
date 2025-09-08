@@ -27,3 +27,8 @@ Discuss JUnit 4 vs JUnit 5/6
 ** format
 ** add license to all code files
 ** Ensure license file present
+
+
+== Examples
+
+Review mockito hack in pom.xml
