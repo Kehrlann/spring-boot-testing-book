@@ -23,10 +23,10 @@ This chapter covers:
 * Deciding when (not) to use `@SpringBootTest`
 
 When you create a project on Spring Initializr, also known as https://start.spring.io, you get testing libraries bundled in, as we mentioned in the previous chapter.
-There is also a test file in the zip file containing your project, ready to execute.
+There is also a test class in the zip file containing your project, ready to execute.
 It contains a single test method, which is empty, and the only thing it verifies is that the application can start.
 This has value in and on itself, as it validates your Spring dependency graph, and your Spring Boot properties.
-Having this test file also makes it easy to add your own tests, without having too much to decide: the next, obvious step is to add another method to this test file.
+Having this test class also makes it easy to add your own tests, without having too much to decide: the next, obvious step is to add another method to this test file.
 
 It's a good start, but where do you go from here?
 When writing "integration" tests, there are a few key points that structure what your test suite will look like.
@@ -97,7 +97,7 @@ On the architecture side, the class diagram is straightforward and resembles tha
 .The architecture of the application under test. On the left side, the `@Controller` is the entrypoint to the application. On the right side are external systems that the application connects to. In between are the classes that hold your application logic. Solid arrows represent code dependencies and dashed arrows external connections.
 image::ch02_f002_garniermoiroux.png[]
 
-There a single `@Controller`, parsing HTTP requests, validating data, and then calling into a single `@Service`.
+There is a single `@Controller`, parsing HTTP requests, validating data, and then calling into a single `@Service`.
 That class aggregates results from three components, that represent external services, either a database or a REST API.
 The first is the `CityRepository`, which contain the list of known cities with their latitude and longitude.
 They are displayed in the auto-complete box in the "add a new city" section of the website.
@@ -222,7 +222,7 @@ It was a read-only test, one that does not add any data to the database.
 Let's create a test that exercises a database write, by selecting a city with another HTTP request.
 To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: for example, that city name is somewhere else on the page and the test would pass even if no city was selected.
 In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
-But let's start simple, and instead of worrying about HTML structure, let's check what that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
+But let's start simple, and instead of worrying about HTML structure, let's check that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
 
 [#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Validating that users can select a city.
