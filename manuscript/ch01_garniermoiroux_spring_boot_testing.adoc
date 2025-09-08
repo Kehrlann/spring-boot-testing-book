@@ -348,7 +348,7 @@ Similarly, you can use `.andExpect(status().isCreated())` to verify that the ret
 
 [#ch1-listing-test-method, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A sample test using `MockMvc`.
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=test;!annotations;!class-members;!ignored]
 ----
