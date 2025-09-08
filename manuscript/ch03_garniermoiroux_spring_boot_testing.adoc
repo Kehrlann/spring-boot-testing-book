@@ -133,7 +133,9 @@ Therefore `@Value("#{21 + 21}") int value` is a perfectly valid expression, albe
 Technically, you can also autowire the entire `ApplicationContext`, which then allows you to access any bean or any property in the context, at the expense of writing a little bit more code.
 This is rarely seen in the wild.
 
-Now that we know the basics of "reading" from our application, let's "write" it, or more precisely, "configure" it.
+NOTE: If you'd like to learn more about the Spring Expression Language (SpEL), please refer to the official documentation: https://docs.spring.io/spring-framework/reference/core/expressions.html.
+
+Now that we know the basics of "reading" from our application, let's "write" to it, or more precisely, "configure" it.
 
 [#ch3-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Configuring the application under test
@@ -175,7 +177,8 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 The examples in both listings will produce the same result: they will override the value of `demo.value` and `demo.message`.
 Any property that is not explicitly set, such as  `demo.active`, will keep the default value resolved from the usual application properties sources, such as `application.properties`.
 
-WARNING: YAML properties are not supported in the `properties` parameter.
+WARNING: The YAML format is not supported in the `properties` parameter.
+Everything must be declared using the "properties" format, for example `some.property.value=42`.
 
 While convenient, using inline values directly in the annotation may become unwieldy if you have a big chunk of configuration you'd like to declare in your test.
 In that case, you can leverage the `@TestPropertySource` annotation.
@@ -260,8 +263,8 @@ Since it is a `@SpringBootApplication`, component scanning is active: Spring Boo
 When the tests are compiled, the classpath will contain `com.example.ProductionConfiguration` from the production code, but also `com.example.MainTestConfiguration`, `com.example.nested.NestedTestConfiguration`, `com.notincluded.ExcludedConfiguration`, as well as your test classes.
 In that case, both `MaintTestConfiguration` and `NestedTestConfiguration` are under `com.example.*`, and will be considered part of the test app's configuration.
 
-But there's one big caveat with this approach: every single `@SpringBootTest` will pick up this config class.
-It is useful when adding beans that you want to have in all your tests, but there are cases you want to modify the config for a subset of tests.
+But there's one big caveat with this approach: every single `@SpringBootTest` will pick up these two additional configuration classes, "Main" and "Nested".
+It is useful when adding beans that you want to have in all your tests, but there are cases where you only want to modify the config for a subset of tests.
 While you could hack your way around with different packages or custom exclude rules for component scanning, that would be a lot of boilerplate.
 So the Spring Boot team came up with the appropriate tool for the job, namely, the `@TestConfiguration` annotation.
 It works like a regular Spring configuration, but you have to enable it explicitly.
@@ -327,7 +330,7 @@ If they rely on beans defined outside the scope of this configuration class, the
 You can visualize the issue in figure <<ch3-figure-01>>.
 
 [#ch3-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows point from beans to the configuration classes in which they are defined, and the solid arrows represent dependencies. Through the GreenThing class, our test has dependencies on components outside its scope.
+.Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows point from beans to the configuration classes in which they are defined, and the solid arrows represent dependencies. Through the GreenThing bean, our test has dependencies on components outside its scope.
 image::ch03_f001_garniermoiroux.png[]
 
 In this example, both the `RedThing` and `PinkThing` beans have all the dependencies they need to be wired up.
@@ -537,7 +540,7 @@ You won't have to repeat customizations across files, and you'll be sure that al
 NOTE: The rule of thumb is to try and keep the app number to a minimum, ideally a single test app.
 And for every rule, there are exceptions!
 There might be cases when you want to test two or three separate configurations, and verify their specific behavior.
-In that case, there is no way around starting multiple test apps, and the costs are worth taking on.
+In that case, there is no way around starting multiple test apps, and the startup and memory costs are worth taking on.
 
 If you follow these basic principles, your test suite should remain lean and fast.
 But there's no such thing as a free lunch, and there are limitations to this caching.
