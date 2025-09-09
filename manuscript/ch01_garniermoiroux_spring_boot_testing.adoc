@@ -64,6 +64,9 @@ The Spring Boot Starter Test project is the testing version of the Spring Boot "
 The starter pulls many useful test dependencies into the `test` scope of your project, as show on listing <<ch1-listing-pom-xml>>.
 This means they cannot be used by your main application code, sometimes referred to as "production" code.
 
+NOTE: Most of the examples in the book will be using Maven.
+There is an example of a Gradle-based project in the samples for the book, at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch1/gradle.
+
 The libraries you get from the starter are broadly divided into two categories.
 
 First, every dependency in the `org.springframework` and `org.springframework.boot` groups is Spring-specific tooling, created and maintained by the Spring team, with contributions from the Spring community.
