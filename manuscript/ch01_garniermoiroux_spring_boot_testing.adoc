@@ -59,11 +59,10 @@ The majority of Boot applications use MVC, also known as "Spring Web", rather th
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-webmvc-test</artifactId>
-    <scope>test</scope> <!--1-->
+    <scope>test</scope> <1>
   </dependency>
 </dependencies>
 ----
-
 <1> The dependencies are in the `test` scope
 
 The starter pulls many useful test dependencies into the `test` scope of your project, as show on listing <<ch1-listing-pom-xml>>.
@@ -357,7 +356,6 @@ Writing tests for the Widget application from <<ch1-section3>> requires much les
 ----
 include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=content;!test;!ignored]
 ----
-
 <1> Declare this is a test of your Spring Boot application.
 <2> Test-specific Spring capabilities.
 <3> Access the beans in the running instance through `@Autowired` annotation.
@@ -379,7 +377,6 @@ Similarly, you can use `.andExpect(status().isCreated())` to verify that the ret
 ----
 include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=test;!annotations;!class-members;!ignored]
 ----
-
 <1> Configure the `WidgetValidator` mock so that it never throws an exception.
 <2> Make HTTP calls to your application, without having to worry about the URL or the exact details about the body of the request.
 <3> Assert that the response returns HTTP 201.
@@ -413,9 +410,11 @@ You can achieve a lot very quickly with the `@SpringBootTest` annotation, withou
 As we have seen with the examples in section <<ch1-section3>> and <<ch1-section4>>, Spring Boot Test takes care of a lot of things in the background.
 But it is just a set of abstractions, and, as the saying goes:
 
-[QUOTE,Joel Spolsky,The Law of Leaky Abstractions (https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/)]
+[QUOTE,Joel Spolsky,The Law of Leaky Abstractions]
 ____
 All non-trivial abstractions, to some degree, are leaky.
+
+Source: https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/[]
 ____
 
 This means that the more you use it, the more likely you will face one or more limitations of what comes "out-of-the box".

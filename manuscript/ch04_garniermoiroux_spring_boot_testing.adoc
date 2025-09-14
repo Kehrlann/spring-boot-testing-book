@@ -15,7 +15,7 @@
 [#ch4-title, reftext={chapter}, caption='{chapter}']
 = Testing web applications
 
-This chapter covers:
+This chapter covers
 
 * Testing Spring web applications with `MockMvcTester`
 * Using alternatives to `MockMvcTester`
@@ -57,7 +57,6 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page;!fluent-assertions]
 ----
-
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI

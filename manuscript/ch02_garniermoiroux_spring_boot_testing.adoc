@@ -15,7 +15,7 @@
 [#ch2-title, reftext={chapter}, caption='{chapter}']
 = Testing a Spring Boot "Hello World" application
 
-This chapter covers:
+This chapter covers
 
 * Interacting with your application inside a `@SpringBootTest`
 * Factoring common setup with JUnit
@@ -124,7 +124,6 @@ In this example, the test is in `WeatherApplicationTests.java`.
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
 ----
-
 <1> The annotation turns the class is a Spring Boot integration test.
 <2> Annotated methods contain your test code
 
@@ -141,7 +140,9 @@ This is visible in the logs: you should see a Spring banner and the usual applic
  =========|_|==============|___/=/_/_/_/
 
  :: Spring Boot ::                (v3.4.3)
-2025-06-14T18:17:40.390+02:00  INFO 67674 --- [Weather App] [           main] w.g.s.b.t.c.w.WeatherApplicationTests    : Starting WeatherApplicationTests using Java 21.0.5 with PID 67674 (...)
+2025-06-14T18:17:40.390+02:00  INFO 67674 --- [Weather App] [           
+[CA]main] w.g.s.b.t.c.w.WeatherApplicationTests    : Starting 
+[CA]WeatherApplicationTests using Java 21.0.5 with PID 67674 (...)
 
 ... then the rest of the application logs ...
 ----
@@ -185,7 +186,6 @@ This is such a common scenario that Spring Boot Test has specialized utility cla
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mock-mvc-tester;first-test]
 ----
-
 <1> The test is a Spring Boot Test.
 <2> Make `MockMvcTester` available in the test method.
 <3> Use `MockMvcTester` to make an HTTP request.
@@ -233,7 +233,6 @@ But let's start simple, and instead of worrying about HTML structure, DOM elemen
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
 ----
-
 <1> Access the repository bean from the test app.
 <2> Query the repository to ensure data was added.
 
@@ -353,7 +352,6 @@ We can replace beans the application context with a mock, and configure it to re
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=mockito-bean;weather-data;!weather-data-assertions]
 ----
-
 <1> Replace the bean by a mock.
 <2> Configure the mock for usage.
 
@@ -405,7 +403,6 @@ void temperatureHistoryAboveAcceptableRange() {
   assertThat(score).isEqualTo(0);
 }
 ----
-
 <1> Create object under test with the `new` keyword
 <2> Call instance methods directly
 
