@@ -88,6 +88,7 @@ Here is a non-exhaustive list of the "goodies" you'll find in the toolkit:
 - JUnit, the testing framework, with `org.junit.jupiter:junit-jupiter`.
 This is where you will find your `@Test` annotation.
 JUnit is the most popular testing framework in Java, no other framework even comes close.
+In Spring Boot 4, you get the most recent JUnit major, which is version 6.
 For advanced JUnit usage, please refer to chapter 8, "Creating reusable test abstractions with JUnit".
 - Two assertion libraries, Hamcrest (`org.hamcrest:hamcrest`) and AssertJ (`org.assertj:assertj-core`).
 With these, you can write assertions that explain what your test expects to be true.
@@ -190,7 +191,7 @@ For example, you do not need to manage a full web browser and a webdriver.
 Usually, having Java, and maybe a way to run Docker containers, is enough.
 - They have no external dependencies, or very few.
 You do not need to run and synchronize three separate microservices for your tests.
-Instead, you provide "mocks" or "stubs" of your dependencies, with programmable behavior that simulates "real" dependencies.
+Instead, you provide "mocks" and "stubs" of your dependencies, with programmable behavior that simulates "real" dependencies.
 As a result, they are reasonably easy to run in multiple environments: your local machine, your coworker's machine, the CI environment, ...
 - They can test for some complex error conditions.
 Specifically, any error condition from a mocked dependency can be simulated: timeouts, protocol errors, invalid data, ...
@@ -204,12 +205,13 @@ But, like everything in software engineering, there's no silver bullet for testi
 
 - They are slower to run than unit tests.
 Incorrectly setting up the tests may lead to test suites that take minutes to run, if not hours.
-- They cannot easily test all the possible scenarios of a given feature.
+- They cannot easily test all the conditions, branches and code paths of a given feature.
 This is better done in unit tests, where you can control the inputs of every test with minimal friction, by wiring classes manually, and introducing stubs and mocks in your dependency graph.
 - They cannot simulate all possible error conditions.
-If you include a database in your tests, you can't simulate latency in the database connection.
+If you include a live, external web service in your tests, you cannot control or simulate its multiple failure modes.
 - They are less specific than unit tests.
-A failed test does not indicate precisely what in your code is wrong, and you may need to spend some time debugging before figuring out what the underlying problem is.
+Since they typically exercise a lot of code, a failed integration test does not indicate precisely which part of the code is wrong.
+You may need to spend some time debugging before figuring out what the underlying problem is.
 - They are more prone to test pollution, where running tests in a different order results in different outcomes.
 You may need to write some cleanup code to run between tests, or ensure the data in your test is unique.
 - While they give some confidence in how your app behaves, they may have blind spots in system behavior as a whole.
@@ -241,7 +243,7 @@ To make sense of the code you would need to write, let's examine a concrete exam
 The application is a fairly simple app, responsible for handling Widgets.
 Users interact with the application by making HTTP requests.
 The API is therefore exposed through a Spring REST Controller, `WidgetController`, and data is ultimately stored in a repository, `WidgetRepository`.
-The `WidgetValidator` service represents an external service, used to validate Widgets before they are stored.
+The `WidgetValidator` service represents an external service, accessible over HTTP, used to validate Widgets before they are stored.
 It has complex logic, and is difficult to run on a developer machine, so you want to avoid running it locally.
 A simple class diagram in figure <<ch1-figure-03>> shows the dependency graph of these components.
 
@@ -254,7 +256,7 @@ Spring Boot gives you automatic configuration through the `@SpringBootApplicatio
 For example, by scanning the classpath, it discovers classes with Spring annotations, and adds them to the application context, as Spring beans.
 It finds the `@Service WidgetValidator` that represents your external service, and makes it available in the application.
 But we said that, for our test case, we would like to remove it!
-Ideally, we would replace it by some "fake" `WidgetValidator` with custom behavior.
+Ideally, we would replace it by some "fake" `WidgetValidator`, that we can program to act like the real implementation without actually making network calls.
 To avoid triggering this auto-discovery behavior, you cannot rely on the simple `@SpringBootApplication` annotation.
 Instead, you need to create a custom configuration class, with your test-related configuration as well as the appropriate autoconfiguration that Spring Boot brings, while excluding configurations that are not relevant.
 Even for a simple use-case, where we replace a single bean, the amount of configuration required to make it work quickly gets out of control.
