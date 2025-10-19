@@ -45,7 +45,8 @@ Before you add tests, you need _something_ to test.
 Even if you did test-driven development, you would need to decide _what_ you are going to build before writing tests.
 This book is about writing tests, so we will not be explaining how to build the applications we will use as examples for our tests.
 Instead, you can download the test applications at https://github.com/Kehrlann/spring-boot-testing-book-samples/.
-To run them, you will need Java 21, the latest LTS version.
+Each chapter will have one or more dedicated projects, located in a directory with the chapter number, e.g. `ch02`.
+To run the examples, you will need Java 25, the latest LTS version.
 
 Before we start discussing, let's get familiar with the application under test.
 For this example, you will use a simple web page that displays the weather and temperature for cities.
@@ -90,6 +91,7 @@ The following dependencies are included:
 * `spring-boot-starter-thymeleaf` for rendering the application
 * `spring-boot-starter-data-jpa` for storing and retrieving data
 * `com.h2database:h2` is the backing in-memory database for the application
+* And, of course, `spring-boot-starter-test` for testing
 
 On the architecture side, the class diagram is straightforward and resembles that of many Spring Boot applications, as shown in figure <<ch2-figure-02>>.
 
@@ -145,7 +147,7 @@ This is visible in the logs: you should see a Spring banner and the usual applic
 
 The test itself has no code, so it does not exercise any specific feature.
 The only thing it tells you that the application can start: this means, for example, that the dependency graph of the application is correct and does not have missing beans, and that the properties in `application.yml` are valid.
-That is the only thing that Spring can infer from your project: Spring Boot does not know anything about your business logic!
+That is the only thing that Spring Boot can infer from your project: it does not know anything about your business logic!
 To watch the test fail, you can add an invalid property, for example, `server.port: foobar`, and try to re-run the test.
 It should throw an error, and you should see the failure in the logs:
 
@@ -174,7 +176,7 @@ So, with that in mind, let's write our first test, specific to this particular a
 Before diving deep into the features of this weather dashboard website, let's ensure that the Spring Boot application responds to HTTP requests on the index page, or `/`, and that it displays _something_.
 This tells you that have created the appropriate mapping for the `/` path, and that it does, indeed, render an HTML page.
 To do so, you need to make HTTP calls to your application.
-This is such a common scenario that Spring has specialized utility classes for this, such as `MockMvcTester`:
+This is such a common scenario that Spring Boot Test has specialized utility classes for this, such as `MockMvcTester`:
 
 [#ch2-listing-first-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Verifying that the application responds to HTTP queries.
@@ -217,12 +219,12 @@ Let's expand our scope and start testing actual features that are implemented in
 [#ch2-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Accessing context dependencies
 
-The previous test was extremely simple, and did not demonstrate any weather-related features in our application, one that we would describe in detail in a "user story".
+The previous test was extremely simple, and did not demonstrate any weather-related features in our application, one that we would describe in detail in a "feature request", "ticket" or "user story".
 It was a read-only test, one that does not add any data to the database.
 Let's create a test that exercises a database write, by selecting a city with another HTTP request.
 To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: for example, that city name is somewhere else on the page and the test would pass even if no city was selected.
 In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
-But let's start simple, and instead of worrying about HTML structure, let's check that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
+But let's start simple, and instead of worrying about HTML structure, DOM element IDs or ARIA roles, let's check that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
 
 [#ch2-listing-context-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Validating that users can select a city.
@@ -357,7 +359,7 @@ However, the bigger the application, the more complex the features, the harder i
 You will need to introduce unit tests, focused on smaller pieces of logic.
 As we've discussed in chapter 1, at that level, you should not be running a Boot application to verify behavior.
 
-Imagine that our weather is much more complex, and has a full "travel recommendation" engine, taking many parameters into account to suggest some holiday plans, such as travel type and cost, lodging costs, weather history averages, user preferences, etc.
+Imagine that our weather app is much more complex, and has a full "travel recommendation" engine, taking many parameters into account to suggest some holiday plans, such as travel type and cost, lodging costs, weather history averages, user preferences, etc.
 The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up N separate data sources for each case, with subtle variations for each.
 It is simpler to break the problem into smaller chunks that you can reason about independently.
 For example, we could introduce one `@Service WeatherScoringSerivce` class that generates an aggregate score based on weather history, and user preferred temperature ranges.
@@ -393,7 +395,8 @@ void temperatureHistoryAboveAcceptableRange() {
 <2> Call instance methods directly
 
 This is a perfect example of tests that you should not make into Spring Boot Tests.
-It is a "business domain" test, which focuses entirely on a single feature with complex behavior, in this case "weather scoring".
+It focuses entirely on a single feature with complex behavior, in this case "weather scoring".
+In some styles of software architecture, this would be called a "domain" test, or "application core" test.
 You do not need to carefully create a full dependency tree of mocks for hotel prices, train comparison, etc.
 By keeping the Service under test decoupled from the rest of the application, it keeps the test straight to the point, easy to reason about, and easy to duplicate for all your other test cases: when the temperatures go below the acceptable range, the score variations for when they are always in the preferred range vs only sometimes, what happens when there is no historical data, etc.
 In terms of code, this setup means you can simply create the Service by calling `new` and passing dependencies to the constructor explicitly, without relying on the Spring "Inversion of Control" container and its autowiring capabilities.
