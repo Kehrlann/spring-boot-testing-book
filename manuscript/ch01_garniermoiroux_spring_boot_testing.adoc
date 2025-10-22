@@ -163,16 +163,33 @@ Those are sometimes called end-to-end tests.
 They ensure that the system works as expected from the highest level, from the user's perspective, but they are slower, more difficult to set up, and more fragile.
 And there is a whole continuum of test types in between.
 
-Spring Boot tests shine somewhere in the middle, for what I'd call "Integration Tests".
+Spring Boot tests shine somewhere in the middle, for what I'd call _Integration Tests_.
 The term is not universally accepted, so it is worth defining it in the context of this book.
-Integration tests typically involve many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
-They may cover your entire application, and include some external dependencies such as a database, but not your entire system with its many dependencies.
+Integration tests ensure that multiple units of code, usually developed independently, work well together.
+In this book, we will consider that integration tests, in addition to testing the code that you developed, also verify that it integrates with Spring correctly.
+Such a typically involve many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
+It may cover your entire application, and include some external dependencies such as a database.
+However, it typically does not cover the entire system with its external dependencies.
 Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
 
 [#ch1-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The testing spectrum. On one end, unit tests that involve one or a few classes, and no Spring-specific code. On the other end, there are full-blown end-to-end tests, that may involve many complex components, that need tooling beyond the context of Spring. In between those two ends, there is a whole category of "integration tests".
 image::ch01_f002_garniermoiroux.png[]
 
+Think of it in terms of testing a car.
+Unit tests ensure that the cylinders run smoothly in the engine block, or that the fuel pump delivers the appropriate flow of liquid.
+It gives confidence that a single, independently developed unit functions according to spec, and catch problems early on.
+An integration test verifies that the engine can actually run.
+This requires assembling the engine block, the ignition system, the fuel pump, the exhaust, etc., and checking that the crankshaft rotates at the expected speed.
+As the name implies, it gives confidence in the fact that our units can be _integrated_, and that they work well together.
+In a car, it could catch "bugs" like the pump not delivering fuel fast enough for the engine to accelerate.
+Notice that this test does not include all the components of the car, only a subset.
+An end-to-end test is a test drive once the vehicle is fully assembled, with a user at the wheel.
+It's an essential test, which gives you the most confidence that the car can do what it was designed for.
+But it's an expensive test: you need to assemble a full car to verify this!
+You don't want to realize that the fuel pump does not even start at this stage: that's the reason why we run unit and integration tests in earlier phases.
+
+But back to the world of computers and Spring applications!
 Spring Boot tests straddle the line between unit tests and end-to-end tests, getting the best of both worlds:
 
 - They are reasonably fast to run, in the order of magnitude of a few seconds.
@@ -192,9 +209,9 @@ Usually, having Java, and maybe a way to run Docker containers, is enough.
 - They have no external dependencies, or very few.
 You do not need to run and synchronize three separate microservices for your tests.
 Instead, you provide "mocks" and "stubs" of your dependencies, with programmable behavior that simulates "real" dependencies.
-As a result, they are reasonably easy to run in multiple environments: your local machine, your coworker's machine, the CI environment, ...
+As a result, they are reasonably easy to run in multiple environments: your local machine, your coworker's machine, the CI environment and so on.
 - They can test for some complex error conditions.
-Specifically, any error condition from a mocked dependency can be simulated: timeouts, protocol errors, invalid data, ...
+Specifically, any error condition from a mocked dependency can be simulated: timeouts, protocol errors, invalid data, etc.
 - They are usually fairly deterministic.
 They have few moving pieces in the software under test, and few side effects.
 For example, you do not have to deal with the asynchronous behavior and latency inherent to UI components, such as "wait until that element becomes visible".
