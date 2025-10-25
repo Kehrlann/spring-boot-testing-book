@@ -23,23 +23,7 @@ ArchUnit testing
 
 ### Open
 
-- Intro paragraph:
-    - "Most users have already developed Test cases, and also some users transitioning into such roles may benefit if there is a “For those who are just starting out…” section."
-- First comment of 1.2 around unit tests -> is it clear enough?
-- Consider making test "bold", multiple times -> thoughts?
-- 9 is passionate about test typologies and so on. I'm not sure this is productive in the context of this book.
-  - Also extremely nitpicky in ch02
-- 10 didn't like section 1.3 and 1.4 at all (but 15 loved those)
-  - Shows in the overall chapter comment ; 3/5
-  - I think he wants a full rewrite except for a very specific thing
-  - What do you think?
-- Let's talk about the "test pyramid" again ; and continuum of testing
-  - Should I include a word about _why_ we don't talk about the testing pyramid?
-  - https://web.dev/articles/ta-strategies
-
-- Rework 1.2 paragraph 2: what are integration tests for?
-- Explain dependency injection in 1.3
-- Ch2: test observable behavior?
+- Explain dependency injection in chapter 2, it's for more beginner profiles
 - Use java 25
 
 - Rendering issues in code samples in the book review tooling: empty comments for annotations
