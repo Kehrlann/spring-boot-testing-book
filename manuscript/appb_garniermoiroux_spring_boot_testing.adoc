@@ -1,0 +1,90 @@
+= Spring Boot Testing In Action
+:chapter: 1
+:sectnums:
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 0
+:leveloffset: 1
+:imagesdir: ../images/ch01/
+:table-number:
+:figure-number:
+:listing-number:
+:tabsize: 2
+
+[#appb-title, reftext={chapter}, caption='{chapter}']
+= Beans and the ApplicationContext: dependency injection in Spring
+
+
+Every time you hear about Spring, there will be a mention of "beans".
+Most users will be familiar with the concept, and even newcomers have an understanding that these are "special objects managed by Spring".
+These beans have a fundamental impact in testing, and it is worth exploring what they are exactly.
+
+One the core technologies of Spring is it's _Inversion of Control container_, or IoC container for short.
+It is designed for a specific form of IoC, called _Dependency Injection_ (DI).
+The main idea of dependency injection is that if a instance of class A needs an instance of class B, say, as a field, instead of having A create B with `new B(...)`, that instance of B is passed to A, usually in a constructor, e.g. `public A(B instanceOfB)`.
+This way, A does not need to care about how to create an instance of B, or B's dependencies are.
+Furthermore, A can use any subclass of B. Let's say B is a data store, then there could be a JDBC-based implementation, an in-memory implementation, a Redis-based implementation, etc.
+A does not need to decide which one should be used.
+
+Spring, like other DI frameworks, allow you to express your objects and their dependencies without having to create them manually using their constructors such as  `new A(...)`.
+You simply declare that you want an instance of A, which depends on B, and Spring figures out the dependency graph (A depends on B, which depends on C and D, etc.) and instantiates the objects for you.
+All these objects, managed by Spring, are called _beans_.
+To "declare" what you want, you provide Spring with _configuration metadata_.
+In the early days, this was done through XML files, but today, you are likely creating Java code containing specific Spring annotations.
+There is a myriad of ways to create beans in Java, with as many subtleties, but the most common ones are: using an annotation on a given class, and using a factory method.
+
+To make a class a Spring bean, you annotate with one of the Spring stereotype annotations, such as `@Component`, `@Service`, `@Controller`, `@Repository`, etc.
+For example:
+
+[#ch2-di-component, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Creating a bean with an annotation
+[source,java]
+----
+@Service // <1>
+class FooService {
+
+    private final BarRepository barRepository;
+
+    public FooService(BarRespository barRespository) { // <2>
+        this.barRepository = barRespository;
+    }
+
+}
+----
+
+1. This class is a Spring bean
+2. It depends on another Spring bean, `BarRepository`
+
+Through the constructor signature, you can express the dependencies of your `FooService`.
+
+To create a bean using a factory method, you use the `@Bean` annotation on a configuration class, like so:
+
+[#ch2-di-factory-method, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Creating a bean with an annotation
+[source,java]
+----
+@Configuration // <1>
+class FooConfiguration {
+
+    @Bean // <2>
+    public FooService fooService(
+            BarRespository barRespository  // <3>
+    ) {
+        // ... pre-processing ... <4>
+        return new FooService(barRespository);
+    }
+
+}
+----
+
+1. This class contains beans
+2. This method creates a Spring bean, `FooService`
+3. It depends on another Spring bean, `BarRepository`
+4. Any code you need to execute before creating your bean
+
+Dependencies are expressed through the arguments passed to the factory method, and possibly fields of the containing configuration class.
+
+The Spring IoC container is called the `ApplicationContext`, and is tasked with created instances of these beans for your.
+In Spring Boot, it is configured to scan your classpath: it finds your annotated classes, and, together with configuration that Boot provides, creates your bean in the correct order.
+Figure <<>> shows the process.

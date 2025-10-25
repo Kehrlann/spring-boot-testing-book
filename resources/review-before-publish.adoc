@@ -20,6 +20,8 @@ Discuss JUnit 4 vs JUnit 5/6
 
 == Appendix A - running a test
 
+== Appendix B - dependency injection in Spring
+
 == All
 
 * Encourage readers to go read the java doc.
