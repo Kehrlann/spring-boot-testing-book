@@ -242,6 +242,16 @@ Here, the usage is fairly trivial.
 But if you have access to the whole application context, you can imagine many use-cases involving accessing beans and using them directly.
 This ranges from simple shortcuts for adding or checking data with various `@Service` or `@Repository` beans, to testing error handling in your application by, say, accessing a `DataSource` and closing it before trying to query the app for data.
 
+[NOTE]
+.Custom beans for testing
+====
+We mention accessing beans from your application.
+This is all done by using _dependency injection_: you declare in your test that you want to access an `@Autowired FooService service`, and Spring Boot Test will _inject_ one for your in the context.
+You do not need to write specific code for this service to be created, or set as a field in your test class: the framework does the heavy lifting for your.
+
+To discover the basics of dependency injection in Spring, please refer to Appendix B, "Beans and the ApplicationContext: dependency injection in Spring".
+====
+
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
 I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function:
 
