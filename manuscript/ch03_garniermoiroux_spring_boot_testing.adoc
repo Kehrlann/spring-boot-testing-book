@@ -108,9 +108,26 @@ Let's start by interacting with our test application.
 
 With Spring Boot Test, as we've already seen, you can access any bean in the context.
 You can also access any environment property loaded in the app.
-Listing <<ch3-listing-interact>> demonstrates the APIs for reading from the app under test.
+Say we have an extremely basic application, that provides 4 beans of type `Thing`:
 
-// TODO: This is not clear enough
+[#ch3-listing-simple-app, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A very, very simple app
+[source,java,indent=0]
+----
+@Configuration
+public class ThingConfiguration {
+
+    record Thing(String name) { }
+
+    @Bean Thing redThing() { new Thing("red"); }
+    @Bean Thing pinkThing() { new Thing("pink"); }
+    @Bean Thing greenThing() { new Thing("green"); }
+    @Bean Thing redThing() { new Thing("red"); }
+
+}
+----
+
+Listing <<ch3-listing-interact>> demonstrates the APIs for reading from the app under test:
 
 [#ch3-listing-interact, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Accessing the Spring context
