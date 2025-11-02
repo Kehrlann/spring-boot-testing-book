@@ -88,10 +88,11 @@ On the technical side, the application is a simple server-rendered HTML website,
 The following dependencies are included:
 
 * `spring-boot-starter-web` for serving web requests
+* `spring-boot-starter-restclient` for making HTTP request to external services
 * `spring-boot-starter-thymeleaf` for rendering the application
 * `spring-boot-starter-data-jpa` for storing and retrieving data
 * `com.h2database:h2` is the backing in-memory database for the application
-* And, of course, `spring-boot-starter-test` for testing
+* And, since this is a "Spring Web" application, `spring-boot-starter-webmvc-test` for testing
 
 On the architecture side, the class diagram is straightforward and resembles that of many Spring Boot applications, as shown in figure <<ch2-figure-02>>.
 
