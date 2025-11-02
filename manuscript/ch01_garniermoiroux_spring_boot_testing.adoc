@@ -41,19 +41,24 @@ You will discover with which types of tests these tools shine, and how they outp
 == What's "Spring Boot Testing"?
 
 There is no such thing as an official "Spring Boot Test" project.
-However, the Spring Boot project has a "starter" dependency specifically used for testing, called `spring-boot-starter-test`.
-When you create a new project using the Spring Initializr, better known as https://start.spring.io, no matter which projects you select from the dropdown list, you get this starter as a dependency and an example test that uses the `@SpringBootTest` annotation.
+However, the Spring Boot project has a few "starter" dependencies specifically used for testing:
+
+- `spring-boot-starter-test`, which contains the basics for testing Boot applications, without any web capabilities
+- `spring-boot-starter-webmvc-test` and `spring-boot-starter-webflux-test`, which contain all of `spring-boot-starter-test` plus specific classes for testing web applications, based either on MVC or WebFlux
+
+When you create a new project using the Spring Initializr, better known as https://start.spring.io, no matter which projects you select from the dropdown list, you get the appropriate test starter as a dependency and an example test that uses the `@SpringBootTest` annotation.
 The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach: it contains a curated list of dependencies that will make writing tests easier, with dedicated tooling.
+The majority of Boot applications use MVC, also known as "Spring Web", rather than WebFlux, and their build file will have the MVC starter:
 
 [#ch1-listing-pom-xml, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.The spring-boot-starter-test dependency in the pom.xml a typical Boot project
+.The spring-boot-starter-webmvc-test dependency in the pom.xml a typical Boot project
 [source,xml]
 ----
 <dependencies>
   <!-- ... -->
   <dependency>
     <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-test</artifactId>
+    <artifactId>spring-boot-starter-webmvc-test</artifactId>
     <scope>test</scope> <!--1-->
   </dependency>
 </dependencies>
@@ -132,17 +137,17 @@ Looking for the root dependency of `org.springframework.boot:spring-boot-starter
 [source]
 ----
 testCompileClasspath - Compile classpath for source set 'test'.
-+--- org.springframework.boot:spring-boot-starter-web -> 3.4.2
++--- org.springframework.boot:spring-boot-starter-web -> 4.0.0
 
 ... omitted ...
 
-\--- org.springframework.boot:spring-boot-starter-test -> 3.4.2
-     +--- org.springframework.boot:spring-boot-starter:3.4.2 (*)
-     +--- org.springframework.boot:spring-boot-test:3.4.2
-     |    +--- org.springframework.boot:spring-boot:3.4.2 (*)
-     |    \--- org.springframework:spring-test:6.2.2
-     |         \--- org.springframework:spring-core:6.2.2 (*)
-     +--- org.springframework.boot:spring-boot-test-autoconfigure:3.4.2
+\--- org.springframework.boot:spring-boot-starter-test -> 4.0.0
+     +--- org.springframework.boot:spring-boot-starter:4.0.0
+     +--- org.springframework.boot:spring-boot-test:4.0.0
+     |    +--- org.springframework.boot:spring-boot:4.0.0
+     |    +--- org.springframework:spring-core:7.0.0
+     |    \--- org.springframework:spring-test:7.0.0
+     +--- org.springframework.boot:spring-boot-test-autoconfigure:4.0.0
 
 ... omitted ...
 ----
@@ -150,7 +155,7 @@ testCompileClasspath - Compile classpath for source set 'test'.
 Everything in the tree below `org.springframework.boot:spring-boot-starter-test` are the dependencies that this starter brings, such as `org.springframework.boot:spring-boot-test` or `org.springframework.boot:spring-boot-test-autoconfigure`.
 ====
 
-In this book, when we use "Spring Boot Test", we will be referring to tests written using the tools in `spring-boot-starter-test`, and loosely to using the patterns associated with these tools.
+In this book, when we use "Spring Boot Test", we will be referring to tests written using the tools in `spring-boot-starter-test` or the specialized web starters, and loosely to using the patterns associated with these tools.
 
 [#ch1-section2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == When to use Spring Boot Test
