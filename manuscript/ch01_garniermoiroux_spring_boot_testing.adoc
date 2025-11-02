@@ -44,7 +44,7 @@ There is no such thing as an official "Spring Boot Test" project.
 However, the Spring Boot project has a few "starter" dependencies specifically used for testing:
 
 - `spring-boot-starter-test`, which contains the basics for testing Boot applications, without any web capabilities
-- `spring-boot-starter-webmvc-test` and `spring-boot-starter-webflux-test`, which contain all of `spring-boot-starter-test` plus specific classes for testing web applications, based either on MVC or WebFlux
+- `spring-boot-starter-webmvc-test` and `spring-boot-starter-webflux-test`, which contain  `spring-boot-starter-test`, plus a few specific classes for testing web applications, based either on MVC or WebFlux
 
 When you create a new project using the Spring Initializr, better known as https://start.spring.io, no matter which projects you select from the dropdown list, you get the appropriate test starter as a dependency and an example test that uses the `@SpringBootTest` annotation.
 The Spring Boot Starter Test project is the testing version of the Spring Boot "batteries included" approach: it contains a curated list of dependencies that will make writing tests easier, with dedicated tooling.
