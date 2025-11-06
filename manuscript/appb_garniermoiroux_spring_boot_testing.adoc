@@ -15,28 +15,87 @@
 [#appb-title, reftext={appendix}, caption='{appendix}']
 = Beans and the ApplicationContext: dependency injection in Spring
 
-Every time you hear about Spring, there will be a mention of "beans".
+Every time you hear about Spring, there will be a mention of _beans_.
 Most users will be familiar with the concept, and even newcomers have an understanding that these are "special objects managed by Spring".
-These beans have a fundamental impact in testing, and it is worth exploring what they are exactly.
+Some Spring Boot testing techniques include manipulating those beans, and it is worth exploring what they are exactly.
 
+// TODO: rework with a code listing
 One the core technologies of Spring is it's _Inversion of Control container_, or IoC container for short.
 It is designed for a specific form of IoC, called _Dependency Injection_ (DI).
-The main idea of dependency injection is that if an instance of class A needs an instance of class B, say, as a field, instead of having A create B with `new B(...)`, that instance of B is passed to A, usually in a constructor, e.g. `public A(B instanceOfB)`.
-This way, A does not need to care about how to create an instance of B, or B's dependencies are.
-Furthermore, A can use any subclass of B. Let's say B is a data store, then there could be a JDBC-based implementation, an in-memory implementation, a Redis-based implementation, etc.
-A does not need to decide which one should be used.
+The main idea of dependency injection is that if an instance of class FooService needs an instance of class BarRepository, that dependency is not created by FooService itself, but rather passed from the outside.
+In practice, it would look something like:
 
-Spring, like other DI frameworks, allow you to express your objects and their dependencies without having to create them manually using their constructors such as  `new A(...)`.
-You simply declare that you want an instance of A, which depends on B, and Spring figures out the dependency graph (A depends on B, which depends on C and D, etc.) and instantiates the objects for you.
+[#appb-basics, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Dependency injection
+[source,java]
+----
+interface BarRepository { } // <1>
+
+// Without dependency injection
+class FooService {
+
+    private final BarRepository barRepository;
+
+    public FooService(BarRespository barRespository) {
+        this.barRepository = new SqlBarRepository(); // <2>
+    }
+
+}
+
+// With dependency injection
+class FooService {
+
+    private final BarRepository barRepository;
+
+    public FooService(BarRespository barRespository) {
+        this.barRepository = barRespository; // <3>
+    }
+
+}
+----
+
+1. The dependency we want to inject
+2. Without DI, the dependency is created by FooService
+3. With DI, it is passed from the outside
+
+There are drawbacks to not using DI.
+For example `FooService` needs to be aware of the lifecycle of `BarRepositoryImplementation`.
+It is also difficult to use a different implementation of `BarRepository`.
+With DI, `FooService` can accept alternative implementations of the repository, such as `InMemoryBarRepository` or `NoSqlBarRepository`.
+And it does not need to even know which data storage is used in the repository, and does not need to decide.
+The drawback is that you will need to instantiate both classes at the top level, for example:
+
+[#appb-manual-injection, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Injecting the dependency
+[source,java]
+----
+public class Main {
+
+    public static void main(String[] args) {
+        var barRepository = new SqlBarRepository();
+        var fooService = new FooService(barRepository);
+    }
+
+}
+----
+
+This means you now need to track the order in which your dependencies are created.
+This is cumbersome and leads to a lot of setup code.
+
+Spring, like other DI frameworks, allows you to skip this "instantiation" step.
+Instead, you express your object's dependencies, similar to what we did in listing <<appb-basics>>.
+You simply declare that you want an instance of `FooService`, which depends on `BarRepository`, and Spring figures out the dependency graph (FooService depends on BarRepository, which might depends on C and D, etc).
+Using this graph, it creates instances for you, and you do not need call `new` explicitly.
 All these objects, managed by Spring, are called _beans_.
 To "declare" what you want, you provide Spring with _configuration metadata_.
-In the early days, this was done through XML files, but today, you are likely creating Java code containing specific Spring annotations.
-There is a myriad of ways to create beans in Java, with as many subtleties, but the most common ones are: using an annotation on a given class, and using a factory method.
+In the early days of Spring, this was done through XML files.
+These days, when you create new Spring apps, you are likely writing Java code, decorated with Spring annotations.
+There is a myriad of ways to create beans Java-based configuration, but the most common ones are using an annotation on a class declaration, and using a factory method.
 
 To make a class a Spring bean, you annotate with one of the Spring stereotype annotations, such as `@Component`, `@Service`, `@Controller`, `@Repository`, etc.
 For example:
 
-[#ch2-di-component, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-component, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Creating a bean with an annotation
 [source,java]
 ----
@@ -55,11 +114,11 @@ class FooService {
 1. This class is a Spring bean
 2. It depends on another Spring bean, `BarRepository`
 
-Through the constructor signature, you can express the dependencies of your `FooService`.
+With the signature of the constructor, you can express the dependencies of your `FooService`.
 
 To create a bean using a factory method, you use the `@Bean` annotation on a configuration class, like so:
 
-[#ch2-di-factory-method, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-factory-method, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Creating a bean with an annotation
 [source,java]
 ----
@@ -83,16 +142,16 @@ class FooConfiguration {
 4. Any code you need to execute before creating your bean
 
 Dependencies are expressed through the arguments passed to the factory method.
-The factory can also use fields from the containing configuration class, which also expresses dependency.
 
-NOTE: In this book, for brevity, we use the `@Configuration` annotation.
-It is common to use it with a parameter `@Configuration(proxyBeanMethods = false)`, which is technically what most users want.
+NOTE: In this book, we use the raw `@Configuration` annotation with no parameters.
+This is a shortcut, for brevity's sake.
+It is extremely common to use it with a parameter, `@Configuration(proxyBeanMethods = false)`.
 When the default value is used, which is equivalent to set `proxyBeanMethods = true`, Spring will wrap your factory methods in proxies and ensure they always return the same instance of a bean if you call the method directly.
 This is rarely needed, so using `@Configuration(proxyBeanMethods = false)` will save you a bit of resources, however small.
 
 The Spring IoC container is called the `ApplicationContext`, and is tasked with creating instances of these beans for your.
 There are many implementations of `ApplicationContext`, with many specificities: some for web apps, others for annotation-based configurations, etc.
-In Spring Boot, the ApplicationContext is configured to scan your classpath: it finds your annotated classes, and, together with configuration that Boot provides, creates your bean in the correct order.
+In Spring Boot, the ApplicationContext is configured to scan your classpath: it finds your annotated classes, and, together with configuration that Boot provides, creates your beans in the correct order.
 As it creates beans, it stores the instances in the container so they can be easily re-used.
 Consider the very simple application definition:
 
@@ -121,15 +180,20 @@ class FooConfiguration {
 }
 ----
 
-The bean graph is very simple, as visualized in figure <<appb-figure-1>>.
+This can be visualized as a graph.
+The nodes are our bean instances, and the edges are the dependencies between beans.
+This is illustrated in figure <<appb-figure-1>>.
 
 [#appb-figure-1, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The dependency graph of our simple bean application
-image::appb_f001_garniermoiroux.png[400, 280]
+image::appb_f001_garniermoiroux.png[400,280]
 
-The order in which you'd create the beans if yoy had to do it manually is trivial: B, because it has no dependencies, then C, because it only depends on B, and then A which depends on the other two beans.
-However, for a complex application with many beans, this is much more complex.
-You can see the general algorithm that Spring follows in figure <<appb-figure-2>>.
+For such a trivial example, the order in which you would instantiate those beans is obvious: first B, because it has no dependencies, then C, because it only depends on B, and finally A which depends on the other two beans.
+For a more complex example, you would apply an algorithm.
+For example, start with the leaf nodes, that have no dependencies - in this case, B. Then, for the remaining beans in the graph, create nodes that only need dependencies that were already instantiated - in this case, C.
+Rinse and repeat until all instances have been created.
+Spring follows a different approach, starting from and entry point and recursively creating nodes as needed.
+You can see the general algorithm in practice in figure <<appb-figure-2>>.
 
 [#appb-figure-2, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The algorithm for creating beans used by Spring. On the left are the instructions that will be executed, in sequence. On the right is the state of the `ApplicationContext` at various points in the process, with the beans it contains.
@@ -139,13 +203,21 @@ This diagram shows how bean A is created.
 Spring sees that it needs two dependencies, B and C, and tries to load them from the `ApplicationContext`.
 Since they are not present, they will be created applying the same algorithm.
 B, having no dependencies, will be created and then added to the context.
-C depends on B, but by the time Spring creates C, B is already in the context and can be reused: no need to create another instance, reuse the existing singleton from the context.
+C depends on B, but by the time Spring creates C, B is already in the context and can be used: no need to create another instance, get the existing singleton from the context and inject it.
 A Spring Boot application will usually have tens or hundreds of beans in the context.
-A lot of those are not beans are created by Spring Boot - for example, depending on your application, you'll find `HttpMessageConverter`, `RestClient.Builder` or `JdbcTemplate`, which you can inject in your own code.
-Alternatively, you can register your own beans of a certain type: they will be added to the context, and Boot will back off and use your code instead of the packaged defaults.
+A lot of those are beans do not come from your Java configuration.
+Instead, they are created by Spring Boot - for example, depending on your application, you'll find `HttpMessageConverter`, `RestClient.Builder` or `JdbcTemplate`, which you can inject in your own code.
+If you don't like the defaults that Spring Boot provides, you can register your own beans of a certain type: they will be added to the context, and Boot will back off and use your code instead of creating default beans.
 
-In testing Boot applications, one of the techniques is to play with the application context and register beans selectively.
-You can provide some test-specific configuration that represents a subset of the application you're trying to test, or take the full application but replace beans selectively.
+In testing Boot applications, one of the core techniques is to leverage the application context and register beans selectively.
+You can provide some test-specific configuration that represents a subset of the application you're trying to test, or take the full application but replace some beans by test-specific variants.
+By doing this, you can prune branches from your dependency graph, when you do not need to test it in detail.
 You'll end up a with a "test application" fine-tuned for your needs.
 
-NOTE: This appendix is a gigantic over-simplification of how the Spring IoC container works. We brushed anything beyond the most basic use case. How do you handle multiple beans of the same type? How does Spring determine bean dependencies? What if there are cyclic dependencies? We'd need several chapters to explore this topic in depth, and that's well beyond the ambitions of this humble book. If you'd like to learn more, please refer to the section titled "The IoC Container" in the reference documentation: https://docs.spring.io/spring-framework/reference/core/beans.html
+NOTE: This appendix is very gentle introduction of how the Spring IoC container works.
+It is a massive oversimplification, and we brushed aside anything beyond the most basic use case.
+How do you handle multiple beans of the same type?
+How does Spring determine bean dependencies?
+What if there are cyclic dependencies?
+We'd need several chapters to explore this topic in depth, and that's well beyond the ambitions of this humble book.
+If you'd like to learn more, please refer to the section titled "The IoC Container" in the reference documentation: https://docs.spring.io/spring-framework/reference/core/beans.html
