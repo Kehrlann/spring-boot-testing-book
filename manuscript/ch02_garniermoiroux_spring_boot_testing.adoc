@@ -320,7 +320,7 @@ But gathering weather data is a core feature of our application!
 Let's write a test that ensures that our weather dashboard displays the correct information.
 To avoid parsing the HTML page to find the exact elements we want to verify, let's take a shortcut and use the JSON API that the application provides.
 It should return a response that looks something like this: `{"cityName": "<SOME CITY>", "temperature": <SOME TEMPERATURE>}`.
-Putting it all together, our test test would look like:
+Putting it all together, our test would look like:
 
 [#ch2-listing-weather-data, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Ensure that weather data is available in the API.

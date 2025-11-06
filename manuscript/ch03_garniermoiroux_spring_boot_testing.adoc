@@ -609,7 +609,7 @@ In that case, there is no way around starting multiple test apps, and the startu
 If you follow these basic principles, your test suite should remain lean and fast.
 But there's no such thing as a free lunch, and there are limitations to this caching.
 
-=== Tradeoffs, side-effects and limitations
+=== Tradeoffs, side effects and limitations
 
 The most important side effect is a direct consequence of re-using the same app between tests.
 Since all the classes remain up and running in-memory between tests and hold references to external systems like databases, message brokers, filesystem, etc, any change in one of your test will be visible to the next test.

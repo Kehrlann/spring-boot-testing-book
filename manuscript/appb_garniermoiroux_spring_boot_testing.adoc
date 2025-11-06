@@ -21,7 +21,7 @@ These beans have a fundamental impact in testing, and it is worth exploring what
 
 One the core technologies of Spring is it's _Inversion of Control container_, or IoC container for short.
 It is designed for a specific form of IoC, called _Dependency Injection_ (DI).
-The main idea of dependency injection is that if a instance of class A needs an instance of class B, say, as a field, instead of having A create B with `new B(...)`, that instance of B is passed to A, usually in a constructor, e.g. `public A(B instanceOfB)`.
+The main idea of dependency injection is that if an instance of class A needs an instance of class B, say, as a field, instead of having A create B with `new B(...)`, that instance of B is passed to A, usually in a constructor, e.g. `public A(B instanceOfB)`.
 This way, A does not need to care about how to create an instance of B, or B's dependencies are.
 Furthermore, A can use any subclass of B. Let's say B is a data store, then there could be a JDBC-based implementation, an in-memory implementation, a Redis-based implementation, etc.
 A does not need to decide which one should be used.
@@ -91,7 +91,7 @@ When the default value is used, which is equivalent to set `proxyBeanMethods = t
 This is rarely needed, so using `@Configuration(proxyBeanMethods = false)` will save you a bit of resources, however small.
 
 The Spring IoC container is called the `ApplicationContext`, and is tasked with creating instances of these beans for your.
-There are many implementations of `ApplicationContext`, with many specificities: some for web apps, others for annotatin-based configurations, etc.
+There are many implementations of `ApplicationContext`, with many specificities: some for web apps, others for annotation-based configurations, etc.
 In Spring Boot, the ApplicationContext is configured to scan your classpath: it finds your annotated classes, and, together with configuration that Boot provides, creates your bean in the correct order.
 As it creates beans, it stores the instances in the container so they can be easily re-used.
 Consider the very simple application definition:
