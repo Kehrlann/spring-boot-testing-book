@@ -244,7 +244,8 @@ This ranges from simple shortcuts for adding or checking data with various `@Ser
 
 NOTE: In our tests, we are directly interacting with repository classes, which represent the database.
 This makes our tiny example easy to understand, but tightly couples our tests to the data model.
-In a real project, prefer interacting with your services or controllers instead.
+In a real project, you should avoid coupling your tests, which verify behavior, with the data model.
+Instead, prefer interacting with your services or controllers instead.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
 I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function:
@@ -264,8 +265,8 @@ When it comes to test code specifically, JUnit, the framework we use, has its ow
 .Accessing beans with dependency injection
 ====
 We've mentioned multiple times that we're accessing beans from your application, here using an `@Autowired` annotation.
-You do not need to write specific code for this service to be created, or set it manually as a field in your test class: the framework does the heavy lifting for your.
-This is accomplished through _dependency injection_: you declare in your test that you want to access a `FooService service` by annotating it, and Spring Boot Test will _inject_ one for you, from its global set of available beans.
+You do not need to write specific code for this service to be created, or set it manually as a field in your test class: the framework does the heavy lifting for you.
+This is accomplished through _dependency injection_: when you want to access a bean `FooService service`, you annotate it with `@Autowired`, and Spring Boot Test will _inject_ tne value in the field for you, selected from the set of available beans.
 
 To discover the basics of dependency injection in Spring, please refer to Appendix B, "Beans and the ApplicationContext: dependency injection in Spring".
 ====

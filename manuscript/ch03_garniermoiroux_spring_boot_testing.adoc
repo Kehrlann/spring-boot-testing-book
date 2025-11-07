@@ -110,7 +110,7 @@ You can also access any environment property loaded in the app.
 Say we have an extremely basic application, that provides 4 beans of type `Thing`:
 
 [#ch3-listing-simple-app, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.A very, very simple app
+.A very, very simple configuration
 [source,java,indent=0]
 ----
 @Configuration
@@ -126,7 +126,7 @@ public class ThingConfiguration {
 }
 ----
 
-Listing <<ch3-listing-interact>> demonstrates the APIs for reading from the app under test:
+Listing <<ch3-listing-interact>> demonstrates the APIs you can use for accessing beans and data from the app under test:
 
 [#ch3-listing-interact, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Accessing the Spring context
@@ -145,7 +145,7 @@ You can use it both on a field of the test class, like the "things" list in `Int
 Following the semantics of `@Autowired` in Spring code, you can also pair it with `@Qualifier` to obtain a bean by name, as we do for the "redThing".
 The last supported annotation is `@Value(...)`, which allows you to access values from your configuration files like `application.properties` and `application.yml`.
 It is less frequently used in tests, but can prove useful when you want to use a property in tests, for example to verify the default configuration values for your application.
-It is the same annotation you can use in your production code, so you can even use the Spring Expression Language, or SpEL, and compute data dynamically.
+It is the same annotation that you sometimes use in your production code, so you can even use it with the Spring Expression Language, or SpEL, and compute data dynamically.
 Therefore `@Value("#{21 + 21}") int value` is a perfectly valid expression, albeit of limited value.
 Technically, you can also autowire the entire `ApplicationContext`, which then allows you to access any bean or any property in the context, at the expense of writing a little bit more code.
 This is rarely seen in the wild.
@@ -357,8 +357,8 @@ To fix the issue, we need to provide `YellowGizmo` and a `BlueWidget`.
 We could make the scope of our test bigger by adding more entries to `classes = {...}`, but it would defeat the entire purpose of this exercise: we're trying to make the test application as small as possible.
 And if went down that path, we might need to pull our dependencies' dependencies, sometimes multiple levels deep.
 To find all the classes that are required for a test to run, you'd have to slowly follow the bean graph and find all the dependencies, losing many of the benefits of the Spring IoC container along the way.
-Instead, we can write a custom `@TestConfiguration` to provide just the beans we are missing, in this case `YellowGizmo` and a `BlueWidget`.
-We do not even need to use the real classes: as long as Spring finds an implementation or a subclass of `YellowGizmo` and `BlueWidget` available, it can create a `GreenThing` instance.
+Instead, it is much easier to write a custom `@TestConfiguration` class, to provide just the beans we are missing, in this case `YellowGizmo` and a `BlueWidget`.
+We do not even need to use the real classes: as long as Spring finds an implementation or a subclass of `Gizmo` and `Widget` available, it can create a `GreenThing` instance.
 This means we can provide stub implementations, that have no behavior, and the test app will start.
 And since we are not using the real classes, we are free to ignore any dependency that the real, production code would have.
 For all the cases where you'd want to provide or replace existing beans, the Spring TestContext framework provides two handy features: mock beans and test beans.
@@ -402,7 +402,8 @@ The `Gizmo` does not need a name, because our application assumes there's only o
 However, if you refer back to the app diagram in figure <<ch3-figure-01>>, you'll notice that are multiple `Widget` beans.
 Since we rely on bean names for auto-wiring, we provide a name in the annotation itself to differentiate it from the `blackWidget`.
 Both beans being Mockito mock objects, by default, they have no behavior and provide default values to every method call, most often just a `null`.
-In our case, we don't even use the object, so you will sometimes hear it referred to as a _dummy_ object.
+In our case, we do not use the methods of the object, so default values are absolutely fine.
+These objects that you do not use in your tests are often referred to as a _dummy_ object.
 This is perfect when you only need it to satisfy a dependency without needing to actually use it in your tests.
 If your test actually needs to use code from that bean, and expects those beans to return specific values, you can always program the mock and set up your own "canned" response - this is called a _stub_.
 Although we don't use it here, we have already seen an example of stubs in the previous chapter, in listing <<ch02_garniermoiroux_spring_boot_testing.adoc#ch2-listing-mocks, 2.8>>.
@@ -421,12 +422,11 @@ There is another way to provide a bean in tests that does not rely on the Mockit
 ----
 include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=testbeans;!ignored]
 ----
+<1> A simple TestBean
+<2> TestBean with a name and method reference
+<3> Factory methods to create the beans
 
-1. A simple TestBean
-2. TestBean with a name and method reference
-3. Factory methods to create the beans
-
-This is not a mock, but instead any instance that you construct and provide.
+This is not a Mockito mock, but instead any instance that you construct yourself.
 The only thing you need to do is create a static _factory method_, which is used to create the instance of that bean.
 By default, Spring looks up a static method with a name matching that of the field in the class.
 This is a case for the `Gizmo` bean: both the field in the test class and the factory method are named `gizmo`.
@@ -439,7 +439,8 @@ And, since you control the creation of the object, you do not need to instantiat
 You could instead pass null values in the constructor if your object supports it, or create a subclass that does not rely on dependencies.
 
 TIP: If you're using Spring Boot Tests, you will likely be using `@MockitoBean`.
-On the other hand, if you're working on a Spring-based library, not an app, `@TestBean` is a good option when you don't want to bring Mockito as a dependency.
+On the other hand, if you're working on a Spring-based library, not an app, Spring Boot may not be available as a dependency.
+In that case, `@TestBean` is a good option if you don't want to bring Mockito as a dependency.
 
 In both examples in above, we have created beans that were _missing_ in the context of our test application.
 But with these annotations, it is also possible to replace beans entirely.
