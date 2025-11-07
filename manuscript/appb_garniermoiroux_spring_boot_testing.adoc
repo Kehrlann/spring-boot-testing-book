@@ -53,10 +53,9 @@ class FooService {
 
 }
 ----
-
-1. The dependency we want to inject
-2. Without DI, the dependency is created by FooService
-3. With DI, it is passed from the outside
+<1> The dependency we want to inject
+<2> Without DI, the dependency is created by FooService
+<3> With DI, it is passed from the outside
 
 There are drawbacks to not using DI.
 For example `FooService` needs to be aware of the lifecycle of `BarRepositoryImplementation`.
@@ -110,9 +109,8 @@ class FooService {
 
 }
 ----
-
-1. This class is a Spring bean
-2. It depends on another Spring bean, `BarRepository`
+<1>  This class is a Spring bean
+<2>  It depends on another Spring bean, `BarRepository`
 
 With the signature of the constructor, you can express the dependencies of your `FooService`.
 
@@ -135,11 +133,10 @@ class FooConfiguration {
 
 }
 ----
-
-1. This class contains beans
-2. This method creates a Spring bean, `FooService`
-3. It depends on another Spring bean, `BarRepository`
-4. Any code you need to execute before creating your bean
+<1> This class contains beans
+<2> This method creates a Spring bean, `FooService`
+<3> It depends on another Spring bean, `BarRepository`
+<4> Any code you need to execute before creating your bean
 
 Dependencies are expressed through the arguments passed to the factory method.
 
