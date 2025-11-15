@@ -22,12 +22,12 @@ This chapter covers
 * Simulating browser interactions with `HtmlUnit`
 * Running the full web server in tests
 * Driving a complete web browser in tests with Selenium
-* Testing client applications with MockRestServiceServer
+* Testing client applications with `MockRestServiceServer`
 
-The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and sometimes Javascript, or server-side components exposing HTTP endpoints in REST, GraphQL or any other format.
-Having some level of testing from the API down is an important part of integration testing.
-It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
-As we have discussed in the first chapter, this introduces overhead, for example provisioning test environments.
+The vast majority of Spring Boot applications are web applications, either browser-based applications with HTML and sometimes Javascript, or server-side components exposing HTTP endpoints in REST, GraphQL or any other format.
+One important category of integration tests interact with the application directly using the same interface as an end-user, be it an API or a web app.
+This is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
+As we have discussed in the first chapter, this introduces a lot of overhead: for example, you need to provision test environments.
 With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications locally, using simple JUnit tests.
 Together, we'll discover how you can test your server application by making HTTP requests, how you can automate user interaction tests, and what's available for testing "client" applications.
 
@@ -37,16 +37,21 @@ Together, we'll discover how you can test your server application by making HTTP
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
 You can find the complete code under `ch4/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch4/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-The general behavior will be very similar, but instead of doing server-only rendering, we'll sprinkle a bit of JavaScript to turn it into a little bit of a "Single Page Application".
-The general look and feel is visible in figure <<ch4-figure-01>>.
+The general behavior will be very similar, but instead of doing server-only rendering, we have springled a bit of JavaScript to turn it into a little bit of a "Single Page Application".
+
+NOTE: This example is not meant to showcase Javascript best practices, and is merely an app that we can test.
+Please do not use it as a blueprint for a real, serious, production application.
+
+The updated look and feel is rendered in figure <<ch4-figure-01>>.
 
 [#ch4-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .A screenshot of the application under test.
 image::ch04_f001_garniermoiroux.png[]
 
-The search bar features has an auto-complete that lets the user search by city.
+The search bar, which lets the user search by city, now has an auto-complete dropdown.
 Notice that there are two "Display" options, with the default "Full" display of the previous figure, and a more "Compact" display that only shows the city name and the current temperature.
-When the user access the index page of the app, they receive a fully rendered HTML page, but any subsequent calls leverage the API of the app, which returns data as JSON.
+When the user accesses the index page of the app, they receive a fully rendered HTML page, but any subsequent calls leverage the API of the app, which returns data as JSON.
+// TODO: diagram?
 To test such an application, the most common tool you would use is `MockMvcTester`.
 Remember how, in chapter 2, we leveraged it to get a main page?
 As a refresher, here is what it would look like:
@@ -57,6 +62,7 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page;!fluent-assertions]
 ----
+
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -64,12 +70,13 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <5> Check HTTP Status
 <6> Check the body
 
-In this example, we showcase testing a simple HTTP GET request, which surfaces a few APIs.
+In this example, we showcase testing a simple HTTP GET request, which surfaces a few testing APIs.
 By chaining those APIs fluently, you can perform requests and obtain a response.
 You can choose the HTTP verb to use, here with `.get()`, then which endpoint to target with `.uri("...")`.
 By calling `.exchange()`, you obtain a response object that you can make AssertJ-based assertions on.
 I've added two "styles" of assertions as an example, statement by statement, where each statement represents one assertion, and AssertJ "fluent" assertions where you chain methods.
-You can even do away with the `response` object if you'd like, thanks to a special `.assertThat()` method that drops you into assertions directly:
+They are functionally equivalent, and choosing either style boils down to personal or team preferences.
+There's even a third option: you can even do away with the `response` object, thanks to a special `.assertThat()` method that drops you into fluent assertions directly:
 
 [#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .MockMvcTester fluent assertions
@@ -80,25 +87,33 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 Notice that we never had to worry about a full URL, with a scheme, host and port, like `http://localhost:1234`.
 No need to worry about where the server is running: in fact, there is no server running!
-By default, Spring Boot Tests are configured with the "mock mvc" stack, which does not start a full web server, but only what it needs to help you run tests.
+By default, Spring Boot Tests are configured with the "mock MVC" stack, which does not start a full web server, but only the few classes it needs to help you run tests.
 This might not be immediately apparent, because `@SpringBootTest` has default values.
 With the default value explicitly spelled out, this is equivalent to `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)`.
+The main difference between this and your production application is that there is no Servlet container running, serving HTTP requests.
+Instead, `MockMvcTester` is configured to call Spring's `DispatcherServlet` and your own controller methods, directly.
 
 [NOTE]
 .The Spring MockMvc stack
 ====
 Spring Boot Tests do not start a server, and yet your application is accessible in tests.
 How is that even possible?
-To understand the Spring MockMvc stack, you need to go back to the foundation on top of which Spring WebMvc is built: the Servlet API.
-It's the Java interface that you implement when you want to respond to HTTP request.
-Usually, that code runs inside a servlet container, such as Tomcat or Jetty.
+To understand the Spring MockMvc stack, you need to go back to the foundation on top of which Spring WebMvc is built: the _Servlet API_.
+That specification defines the Java interfaces that you implement when you want to respond to HTTP request.
+User classes that implement the servlet API run inside a servlet container, such as Tomcat or Jetty.
 The container listens for incoming connections, accepts them and transforms the data from HTTP requests into a Java "request" object, prepares a "response" object, and then calls the servlet implementation with those two objects.
-Spring has a special implementation, the `DispatcherServlet`, which processes the request, finds which of your controller method to call, parses the body into your domain objects, and takes your return value to wrap it into an HTTP response.
+Spring has a special implementation, the `DispatcherServlet`, which processes the request, finds which of your controller methods to call, parses the body into your domain objects, and takes your return value to wrap it into an HTTP response.
 
 In the case of MockMvc, there is no Servlet container: the embedded Tomcat server is never started.
-When you perform a request in tests with a client, such as `MockMvcTester`, a mock request object and mock response objects are created, and a test-specific version of the `DispatcherServlet` is invoked directly instead of making real HTTP requests.
+When you perform a request in tests with a client, such as `MockMvcTester`, that client will create a mock request object, a mock response object, and invoke a test-specific version of the `DispatcherServlet`.
+It does so by calling the `service(...)` method directly, which is a method that Servlet containers themselves use.
+
+// TODO: diagram
+
 This has important implications.
-First, none of the logic implemented by at the container level is called, so things like session management is not tested.
+First, none of the logic implemented by the container itself is called: no Tomcat code is involved.
+So if you integrate with Tomcat directly, for example by writing `Valve`, that code will not be included.
+Session management, a responsibility of the container, is not invoked either.
 Second, since your test code calls `MockMvcTester`, which in turns calls the `DispatcherServlet` and your controller methods, that means that your controller code is executed in the same thread as the calling test.
 That may be useful for everything that works with thread-locals.
 Lastly, relying on the dispatcher servlet means that WebMvc is required.
