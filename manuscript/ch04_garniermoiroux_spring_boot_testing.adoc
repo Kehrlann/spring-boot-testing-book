@@ -120,10 +120,53 @@ Lastly, relying on the dispatcher servlet means that WebMvc is required.
 If your app and tests are WebFlux only, you'll need to rely on some other testing APIs.
 ====
 
+// TODO: modifying requests with RequestPostProcessor
+// idea: add a custom auth header X-Request-Signature
+
 [#ch4-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Alternatives to `MockMvcTester`
 
-TODO That's for testing reactive applications!!!
+`MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications, which fulfill a very similar purpose.
+You may encounter some of these in legacy code-bases, or tests with different stylistic preferences.
+And if develop a WebFlux-based application, you do not have access to the mock MVC stack.
+
+[#ch4-section-2-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+=== `MockMvc`, the original component
+
+`MockMvcTester` is a recent addition to the testing portfolio: it was introduced in Spring Framework `6.2` and Boot `3.4`.
+Prior to this, the accepted solution for testing MVC apps was `MockMvc`.
+It has all the bells and whistles for HTTP requests on the MockMvc stack, and is very similar to `MockMvcTester`.
+But it has two key differences: it lacks `AssertJ` integration, and the API is based on wrapping static methods.
+A typical `MockMvc` test might look something like this:
+
+[#ch4-listing-mockmvc-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.MockMvcTester fluent assertions
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
+----
+
+1. Inject `MockMvc` through the usual means
+2. Perform a get request
+3. Verify the HTTP status
+4. Verify some things on the body
+5. The body is checked with Hamcrest matchers
+
+This is very similar to the tests we've seen in the previous section, it means you need to know which static methods to import to make it work, such as `MockMvcRequestBuilders.get(...)` and others.
+This approach works and is supported, so it is not crucial to migrate your existing test suites to these classes.
+However, for new projects, or new test classes in existing projects, I'd recommend using the more recent `MockMvcTester`.
+
+NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
+You could see it as "syntactic sugar", which makes `MockMvc` nicer to user.
+
+=== `WebTestClient` for WebFlux-based applications
+
+When working on WebFlux-based applications, 
+
+=== Honorable mentions
+
+- RestTestClient
+- TestRestTemplate
 
 [#ch4-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Simulating human interaction with HtmlUnit
@@ -144,13 +187,6 @@ TODO
 == Testing client applications
 
 TODO
-
-[#ch4-listing-foobar, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.blah blah
-[source,java]
-----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/InteractWithAppTests.java[tags=interact-tests;!ignored]
-----
 
 [#ch4-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
