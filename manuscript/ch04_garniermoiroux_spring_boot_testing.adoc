@@ -93,6 +93,9 @@ With the default value explicitly spelled out, this is equivalent to `@SpringBoo
 The main difference between this and your production application is that there is no Servlet container running, serving HTTP requests.
 Instead, `MockMvcTester` is configured to call Spring's `DispatcherServlet` and your own controller methods, directly.
 
+// TODO: example POST request?
+
+[#ch4-note-mock-mvc]
 [NOTE]
 .The Spring MockMvc stack
 ====
@@ -128,7 +131,7 @@ If your app and tests are WebFlux only, you'll need to rely on some other testin
 
 `MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications, which fulfill a very similar purpose.
 You may encounter some of these in legacy code-bases, or tests with different stylistic preferences.
-And if develop a WebFlux-based application, you do not have access to the mock MVC stack.
+And if develop a WebFlux-based application, you do not have access to the MockMvc stack.
 
 [#ch4-section-2-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 === `MockMvc`, the original component
@@ -140,7 +143,7 @@ But it has two key differences: it lacks `AssertJ` integration, and the API is b
 A typical `MockMvc` test might look something like this:
 
 [#ch4-listing-mockmvc-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.MockMvcTester fluent assertions
+.A test using MockMvc
 [source,java,indent=0]
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
@@ -161,7 +164,86 @@ You could see it as "syntactic sugar", which makes `MockMvc` nicer to user.
 
 === `WebTestClient` for WebFlux-based applications
 
-When working on WebFlux-based applications, 
+When working on WebFlux-based applications, the MVC stack is not present.
+While it is possible, in some cases, to also add Spring MVC support in your tests, it will often not work: the WebFlux and MVC stacks are not designed to coexist in the same project.
+And, without MVC, there can be no MockMvc stack, and no `MockMvcTester`.
+Instead, Spring offers a test equivalent to the familiar `WebClient` used for making HTTP requests in your WebFlux app.
+This utility is called `WebTestClient`.
+You need a specific WebFlux testing module in your build file, that we mentioned briefly in chapter 1:
+
+[#ch4-listing-webflux-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.WebFlux testing dependencies
+[source,xml,indent=0]
+----
+include::../code/ch4/weather/pom.xml[tags=webflux-test-dependency]
+----
+
+This module is added to your `pom.xml` whenever you create a new Spring Reactive Web project on the Spring Initializr, and should already be present in most projects.
+
+The API of `WebTestClient` should be familiar.
+It is similar to the regular `WebClient`, which in turn inspired `RestClient` and `MockMvcTester`, so they share the kind of fluent API.
+A typical test would look something like:
+
+[#ch4-listing-webclient-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A WebTestClient test
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
+----
+
+1. Auto-configure the class with a test client
+2. Inject the client
+3. Make requests with a fluent builder
+4. Assert on the result
+
+Our test here is configured with a dedicated annotation, `@AutoConfigurerWebTestClient`, which makes a `WebTestClient` bean available in the context.
+You can use the usual fluent APIs to make web requests, very similar to the `MockMvcTester` example from section <<ch4-section-1>>.
+The key difference is that there are dedicated assertion methods on the result, and no direct integration with AssertJ.
+However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, introduced a bridge to that library:
+
+[#ch4-listing-webclient-test-assert, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Bridging WebTestClient and AssertJ
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
+----
+
+1. Execute request
+2. Transform the result to an AssertJ-compatible response
+3. Use AssertJ to make assertions
+
+It is almost exactly similar to `MockMvcTester`, with a single additional line.
+Using some common AssertJ patterns, it is even possible to get rid of this extra step.
+If you'd like to learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
+Using built-in assertions or AssertJ boils down to stylistic preferences.
+If you have a portfolio of Spring projects both WebFlux and WebMVC, and you'd like to align on a single style, AssertJ is a common denominator.
+
+[NOTE]
+.WebTestClient, under the hood
+====
+We've discussed how the MockMvc stack works in section <<ch4-section-1>>.
+WebFlux does not rely on the Servlet spec, and there is no Servlet container, that is, no Tomcat server.
+Instead, traffic is served by Netty, and the core Spring abstraction is the `HttpHandler`.
+When you use  `@AutoConfigureWebTestClient` does not start a web server to handle requests, but instead adapts the `WebTestClient` to call the test app's `HttpHandler` directly, without going through the full Netty stack.
+
+A remarkable detail of `WebTestClient` is that the `exchange()` method, which performs requests, is blocking.
+The `WebClient` that you use in your production code, on the other hand, is fully reactive and returns `Mono<...>` objects.
+There's a very simple explanation: test methods are not reactive!
+That's fine, even if you run tests in parallel, you're likely not running thousands of test methods at the exact same time.
+You will not encounter any of the web-scale bottlenecks that Reactor helped solve in the first place.
+Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns the result.
+====
+
+While it was initially designed with WebFlux in mind, `WebTestClient` can also be added to a regular WebMVC project, with the MockMvc stack.
+It is possible, but rather unusual.
+To achieve this, there is a specific dependency you need in your project:
+
+[#ch4-listing-webtestclient-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.WebTestClient dependency for MockMvc projects
+[source,xml,indent=0]
+----
+include::../code/ch4/weather/pom.xml[tags=webtestclient-test-dependency]
+----
 
 === Honorable mentions
 
