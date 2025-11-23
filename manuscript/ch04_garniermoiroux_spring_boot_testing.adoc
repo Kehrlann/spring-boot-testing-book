@@ -62,7 +62,6 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page;!fluent-assertions]
 ----
-
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -148,12 +147,11 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
-
-1. Inject `MockMvc` through the usual means
-2. Perform a get request
-3. Verify the HTTP status
-4. Verify some things on the body
-5. The body is checked with Hamcrest matchers
+<1> Inject `MockMvc` through the usual means
+<2> Perform a get request
+<3> Verify the HTTP status
+<4> Verify some things on the body
+<5> The body is checked with Hamcrest matchers
 
 This is very similar to the tests we've seen in the previous section, it means you need to know which static methods to import to make it work, such as `MockMvcRequestBuilders.get(...)` and others.
 This approach works and is supported, so it is not crucial to migrate your existing test suites to these classes.
@@ -190,11 +188,10 @@ A typical test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
-
-1. Auto-configure the class with a test client
-2. Inject the client
-3. Make requests with a fluent builder
-4. Assert on the result
+<1> Auto-configure the class with a test client
+<2> Inject the client
+<3> Make requests with a fluent builder
+<4> Assert on the result
 
 Our test here is configured with a dedicated annotation, `@AutoConfigurerWebTestClient`, which makes a `WebTestClient` bean available in the context.
 You can use the usual fluent APIs to make web requests, very similar to the `MockMvcTester` example from section <<ch4-section-1>>.
@@ -207,10 +204,9 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
-
-1. Execute request
-2. Transform the result to an AssertJ-compatible response
-3. Use AssertJ to make assertions
+<1> Execute request
+<2> Transform the result to an AssertJ-compatible response
+<3> Use AssertJ to make assertions
 
 It is almost exactly similar to `MockMvcTester`, with a single additional line.
 Using some common AssertJ patterns, it is even possible to get rid of this extra step.
