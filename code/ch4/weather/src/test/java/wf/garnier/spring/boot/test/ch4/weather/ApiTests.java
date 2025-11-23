@@ -1,6 +1,7 @@
 package wf.garnier.spring.boot.test.ch4.weather;
 
 import java.util.Arrays;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.Customization;
@@ -14,8 +15,8 @@ import wf.garnier.spring.boot.test.ch4.weather.selection.Selection;
 import wf.garnier.spring.boot.test.ch4.weather.selection.SelectionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -75,7 +76,7 @@ class ApiTests {
 		assertThat(response).hasStatus(HttpStatus.OK); // <5>
 		assertThat(response).bodyText().contains("<h1>Weather App</h1>"); // <6>
 
-		// Assert fluently
+		// Same assertions, but fluent-style
 		assertThat(response)
 			.hasStatus(HttpStatus.OK) // <5>
 			.bodyText().contains("<h1>Weather App</h1>"); // <6>
@@ -152,9 +153,7 @@ class ApiTests {
 
 		//@formatter:off
 		var response = mvc.delete()
-			.uri("/api/city")
-			.contentType(MediaType.APPLICATION_JSON)
-			.content("{ \"id\": %s }".formatted(paris.getId()))
+			.uri("/api/city/{id}", paris.getId())
 			.exchange();
 		//@formatter:on
 
@@ -164,9 +163,7 @@ class ApiTests {
 
 	@Test
 	void unselectMissingCity() {
-		var response = mvc.delete().uri("/api/city").contentType(MediaType.APPLICATION_JSON).content("""
-				{ "id": %s }
-				""".formatted(paris.getId())).exchange();
+		var response = mvc.delete().uri("/api/city/{id}", paris.getId()).exchange();
 
 		assertThat(response).hasStatus(HttpStatus.NO_CONTENT);
 		assertThat(selectionRepository.count()).isEqualTo(0);

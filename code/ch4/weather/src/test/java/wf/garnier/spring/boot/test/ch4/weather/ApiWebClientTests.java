@@ -10,23 +10,29 @@ import wf.garnier.spring.boot.test.ch4.weather.selection.Selection;
 import wf.garnier.spring.boot.test.ch4.weather.selection.SelectionRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.reactive.server.assertj.WebTestClientResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.when;
 
+// tag::class[]
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureWebTestClient // <1>
 class ApiWebClientTests {
 
-	@Autowired
-	private WebTestClient client;
+	// end::class[]
 
+	// tag::web-test-client[]
+	@Autowired
+	private WebTestClient client; // <2>
+
+	// end::web-test-client[]
 	@Autowired
 	private SelectionRepository selectionRepository;
 
@@ -50,16 +56,33 @@ class ApiWebClientTests {
 		when(weatherService.getCurrentWeather(anyDouble(), anyDouble())).thenReturn(new WeatherData(20, 0, 0));
 	}
 
+	// tag::test[]
 	@Test
 	void indexPageLoads() {
+		//@formatter:off
 		client.get()
 			.uri("/")
-			.exchange()
-			.expectStatus()
-			.isOk()
-			.expectBody(String.class)
-			.value(body -> assertThat(body).contains("<h1>Weather App</h1>"));
+			.exchange() // <3>
+			.expectStatus() // <4>
+			.isOk() // <4>
+			.expectBody(String.class) // <4>
+			.value(body -> // <4>
+                assertThat(body).contains("<h1>Weather App</h1>") // <4>
+            );
+		//@formatter:on
 	}
+	// end::test[]
+
+	// tag::test-assertj[]
+	@Test
+	void assertjVariant() {
+		var webClientResponse = client.get().uri("/").exchange(); // <1>
+		var response = WebTestClientResponse.from(webClientResponse); // <2>
+		assertThat(response).hasStatusOk() // <3>
+			.bodyText()
+			.contains("<h1>Weather App</h1>");
+	}
+	// end::test-assertj[]
 
 	@Test
 	void indexPageHasSelectedCity() {
@@ -116,30 +139,26 @@ class ApiWebClientTests {
 	void unselectCity() {
 		selectCity("Paris");
 
-		var body = "{ \"id\": %s }".formatted(paris.getId());
-
-		client.method(org.springframework.http.HttpMethod.DELETE)
-			.uri("/api/city")
-			.contentType(MediaType.APPLICATION_JSON)
-			.bodyValue(body)
+		//@formatter:off
+		client.delete()
+			.uri("/api/city/{id}", paris.getId())
 			.exchange()
 			.expectStatus()
 			.isNoContent();
+		//@formatter:on
 
 		assertThat(selectionRepository.count()).isEqualTo(0);
 	}
 
 	@Test
 	void unselectMissingCity() {
-		var body = "{ \"id\": %s }".formatted(paris.getId());
-
-		client.method(org.springframework.http.HttpMethod.DELETE)
-			.uri("/api/city")
-			.contentType(MediaType.APPLICATION_JSON)
-			.bodyValue(body)
+		//@formatter:off
+		client.delete()
+			.uri("/api/city/{id}", paris.getId())
 			.exchange()
 			.expectStatus()
 			.isNoContent();
+		//@formatter:on
 
 		assertThat(selectionRepository.count()).isEqualTo(0);
 	}
@@ -243,4 +262,7 @@ class ApiWebClientTests {
 		return city;
 	}
 
+	// tag::class[]
+
 }
+// end::class[]
