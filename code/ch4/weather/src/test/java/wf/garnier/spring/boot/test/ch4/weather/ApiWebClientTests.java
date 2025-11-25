@@ -256,6 +256,40 @@ class ApiWebClientTests {
 			.isEqualTo(0);
 	}
 
+	/// This test uses a _generic_ {@link WebTestClient} to call {@code manning.com}.
+	/// It does **NOT** use the auto-configured, auto-wired instance, which points to
+	/// the app under test.
+	// tag::webtestclient-manning[]
+	@Test
+	void testManningWebsite() {
+		var client = WebTestClient.bindToServer().build(); // <1>
+
+		//@formatter:off
+		client.get()
+			.uri("https://www.manning.com/terms-of-use") // <2>
+			.exchange() // <3>
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.value(b -> assertThat(b)
+				.containsIgnoringCase("General terms of Use")
+			);
+		//@formatter:on
+		// tag::ignored[]
+		// You can also build a WebTestClient with a base-url, so you can call the path
+		// directly.
+		var manningClient = WebTestClient.bindToServer().baseUrl("https://www.manning.com").build();
+		manningClient.get()
+			.uri("/terms-of-use")
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(String.class)
+			.value(b -> assertThat(b).containsIgnoringCase("General terms of Use"));
+		// end::ignored[]
+	}
+	// end::webtestclient-manning[]
+
 	private City selectCity(String name) {
 		var city = this.cityRepository.findByNameIgnoreCase(name).get();
 		selectionRepository.save(new Selection(city));
