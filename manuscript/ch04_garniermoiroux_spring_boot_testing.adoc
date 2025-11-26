@@ -193,7 +193,9 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <3> Make requests with a fluent builder
 <4> Assert on the result
 
-Our test here is configured with a dedicated annotation, `@AutoConfigurerWebTestClient`, which makes a `WebTestClient` bean available in the context.
+Our test is configured with the default `@SpringBootTest` annotation, which implies an environment of type `WebEnvironment.Mock`.
+This means that the Reactive web server, in this case Netty, is not started in these tests.
+By using `@AutoConfigurerWebTestClient`, your test app will be configured with a  `WebTestClient` bean, which you can autowire like any other bean.
 You can use the usual fluent APIs to make web requests, very similar to the `MockMvcTester` example from section <<ch4-section-1>>.
 The key difference is that there are dedicated assertion methods on the result, and no direct integration with AssertJ.
 However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, introduced a bridge to that library:
@@ -254,9 +256,11 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <2> Point the client to a full URL
 <3> Use like a regular client
 
-// TODO: why do I even have this?
+This is a subtle configuration difference that may trip you up if you've never encountered it.
+This is different from what we've showcased at the beginning of the section, with the `WebEnvironment.MOCK` stack.
+Using the mock stack is fairly common, but network-enabled `WebTestClient` is much less frequently used.
 
-While it was initially designed with WebFlux in mind, `WebTestClient` can also be added to a regular WebMVC project, with the MockMvc stack.
+NOTE: While it was initially designed with WebFlux in mind, `WebTestClient` can also be added to a regular WebMVC project, with the MockMvc stack.
 To make it work, you need to add the `org.springframework.boot:spring-boot-starter-webclient-test` dependency to your project, in the test scope.
 Please beware that while it is technically possible, it is highly unusual.
 This may fit certain niche use-cases, such as a project where you are transitioning from WebFlux to WebMvc, and would like to keep the tests intact.
