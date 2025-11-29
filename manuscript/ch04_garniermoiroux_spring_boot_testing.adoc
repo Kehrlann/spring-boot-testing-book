@@ -115,7 +115,7 @@ It does so by calling the `service(...)` method directly, which is a method that
 This has important implications.
 First, none of the logic implemented by the container itself is called: no Tomcat code is involved.
 So if you integrate with Tomcat directly, for example by writing `Valve`, that code will not be included.
-Session management, a responsibility of the container, is not invoked either.
+Session management, or error page management, both a responsibility of the container, are not invoked either.
 Second, since your test code calls `MockMvcTester`, which in turns calls the `DispatcherServlet` and your controller methods, that means that your controller code is executed in the same thread as the calling test.
 That may be useful for everything that works with thread-locals.
 Lastly, relying on the dispatcher servlet means that WebMvc is required.
@@ -132,7 +132,7 @@ If your app and tests are WebFlux only, you'll need to rely on some other testin
 You may encounter some of these in legacy code-bases, or tests with different stylistic preferences.
 And if develop a WebFlux-based application, you do not have access to the MockMvc stack.
 
-[#ch4-section-2-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+[#ch4-section-2-1, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `MockMvc`, the original component
 
 `MockMvcTester` is a recent addition to the testing portfolio: it was introduced in Spring Framework `6.2` and Boot `3.4`.
@@ -160,6 +160,7 @@ However, for new projects, or new test classes in existing projects, I'd recomme
 NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
 You could see it as "syntactic sugar", which makes `MockMvc` nicer to user.
 
+[#ch4-section-2-2, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `WebTestClient` for WebFlux-based applications
 
 When working on WebFlux-based applications, the MVC stack is not present.
@@ -265,15 +266,46 @@ To make it work, you need to add the `org.springframework.boot:spring-boot-start
 Please beware that while it is technically possible, it is highly unusual.
 This may fit certain niche use-cases, such as a project where you are transitioning from WebFlux to WebMvc, and would like to keep the tests intact.
 
+[#ch4-section-2-3, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Other alternatives
 
-- RestTestClient
-- TestRestTemplate
+Spring Boot tests offers two other testing HTTP clients, that you may encounter from time to time.
+The first is the `RestTestClient`, just introduced in Spring Framework 7 and Boot 4. It's a test-specific version of `RestClient`, and works just like `WebTestClient`, except it's tailored to the MVC stack rather than WebFlux.
+The API is almost exactly the same as `WebTestClient`.
+And like that reactive client, it can both connect to mock servers like `MockMvc` does, and make real HTTP requests over the network.
+We won't dive into usage details, as it is almost a copy-paste of the previous section, but here's an example test:
+
+[#ch4-listing-restttestclient, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A RestTestClient-based test
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiRestTestClientTests.java[tags=class;resttestclient;test]
+----
+
+Compare it to the `WebTestClient` examples in listings <<ch4-listing-webclient-test>> and <<ch4-listing-webclient-test-assert>>, and you'll notice it is exactly the same test with the word "rest" swapped out for "rest".
+When running tests with the MockMvc stack, using either `MockMvcTester` or `RestTestClient` boils down to stylistic preferences.
+
+One last testing client you may encounter in older codebases is Spring Boot's `TestRestTemplate`, the testing alternative to `RestTemplate`.
+Both will be deprecated as of Spring Framework 7.1 and Boot 4.2, and will be removed in the next major versions.
+While it is acceptable to keep these in existing tests for now, do not rely on them in your new test suited, and use the more modern alternatives we discussed earlier in this chapter.
 
 [#ch4-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Simulating human interaction with HtmlUnit
 
-TODO
+In the first sections of this chapter, we've tested our application by making HTTP requests to various API endpoints, as if we were using cURL or Postman.
+But not all applications are pure backend, REST-based apps.
+Our weather app has an HTML front-end, with a bit of Javascript, and users interact with it using a browser, not cURL!
+To gain more confidence that the app functions as intended, we can get closer to the "end-to-end" side of the testing spectrum, and simulate browser interactions.
+Using `MockMvcTester` or the other test clients, it is possible to get the HTML content of the page, parse it, and perform some interactions.
+But it was not designed for this kind of usage, and it would get cumbersome quite quickly.
+There's an obviously much better solution: browsers.
+They were designed specifically to display and interact with HTML, and are a natural fit.
+As we'll discuss in detail in section <<ch4-section-5>>, you _can_ run a full-fledged web browser from your tests, but it comes with a few constraints.
+But before we think going all-in a web browser, we can use the _HtmlUnit_ project as a stepping stone.
+As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-Less browser for Java programs".
+GUI-Less means that it does not display anything to the screen, and "for Java programs" means that, to make it do things, you have to write some java code.
+Think of it as a lightweight alternative to a browser, specifically for Java.
+It's a great fit for tests, and Spring Boot Tests have direct integration with the library!
 
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests

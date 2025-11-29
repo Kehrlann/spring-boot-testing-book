@@ -14,6 +14,10 @@
 
 - Fix TOC
 
+== Chapter 4
+
+- RestTemplate / TestRestTemplate: already deprecated?
+
 == Chapter 8 - Junit
 
 Discuss JUnit 4 vs JUnit 5/6
