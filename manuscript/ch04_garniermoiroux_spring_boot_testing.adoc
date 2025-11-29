@@ -51,6 +51,11 @@ image::ch04_f001_garniermoiroux.png[]
 The search bar, which lets the user search by city, now has an auto-complete dropdown.
 Notice that there are two "Display" options, with the default "Full" display of the previous figure, and a more "Compact" display that only shows the city name and the current temperature.
 When the user accesses the index page of the app, they receive a fully rendered HTML page, but any subsequent calls leverage the API of the app, which returns data as JSON.
+
+NOTE: For all tests we write in this section, we have set up a mock bean to return canned weather data.
+We also have a utility function called `selectCity` which acts as if the user had selected a city.
+If you need a refresher, we have covered both these topics in chapter 2.
+
 // TODO: diagram?
 To test such an application, the most common tool you would use is `MockMvcTester`.
 Remember how, in chapter 2, we leveraged it to get a main page?
@@ -60,8 +65,9 @@ As a refresher, here is what it would look like:
 .Basic MockMvcTester-based test
 [source,java]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page;!fluent-assertions]
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
+
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -69,20 +75,87 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <5> Check HTTP Status
 <6> Check the body
 
+This very simple tests ensures that when the user has selected the city of Paris in the app, it shows up somewhere on the page.
+For now, we don't care much about the structure of the page, just that the text shows up.
 In this example, we showcase testing a simple HTTP GET request, which surfaces a few testing APIs.
 By chaining those APIs fluently, you can perform requests and obtain a response.
 You can choose the HTTP verb to use, here with `.get()`, then which endpoint to target with `.uri("...")`.
 By calling `.exchange()`, you obtain a response object that you can make AssertJ-based assertions on.
 I've added two "styles" of assertions as an example, statement by statement, where each statement represents one assertion, and AssertJ "fluent" assertions where you chain methods.
 They are functionally equivalent, and choosing either style boils down to personal or team preferences.
-There's even a third option: you can even do away with the `response` object, thanks to a special `.assertThat()` method that drops you into fluent assertions directly:
+There's even a third option: you can even do away with the `response` object, thanks to a special `.assertThat()` method that drops you into fluent assertions directly.
+Here's the same functionally the same test, but using fluent assertions directly:
 
 [#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .MockMvcTester fluent assertions
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=index-page;!extract-response]
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=fluent-assertions]
 ----
+
+This is just syntactic sugar, and you may choose whichever variation suits you best.
+My personal preference is creating an intermediate variable holding the response, because it allows me to split the "act" part of the test from the assertions.
+
+We've written an extremely simple test that looks up data in the HTML from the index page.
+But HTML is not `MockMvcTester` 's strong suit, and it shows when the test above fails.
+The error messages contains the entire page as a single string, sometimes hundreds of lines long, and looks something like:
+
+----
+Expecting actual:
+    "<!DOCTYPE html>
+<html>
+... full HTML page ...
+</html>
+"
+to contain:
+  "Paris (France)"
+----
+
+That is not easy to debug, and there are much better ways to test HTML, which we'll discuss in sections <<ch4-section-3>> and <<ch4-section-5>>.
+However, `MockMvcTester` excels at testing REST-like APIs, working with JSON.
+For example, we can look at the JSON that our frontend app gets when you refresh the weather data.
+To do this, the Javascript app calls `GET /api/weather` and gets JSON back, that may look something like:
+
+[source,json]
+----
+[
+  {
+    "cityName": "Bogotá",
+    "country": "Colombia",
+    "cityId": 63,
+    "weather": "Clear sky",
+    "temperature": 13.9,
+    "windSpeed": 4.4
+  },
+  {
+    "cityName": "Paris",
+    "country": "France",
+    "cityId": 37,
+    "weather": "Partly cloudy",
+    "temperature": 9.1,
+    "windSpeed": 6.7
+  }
+]
+----
+
+Assuming we have mocked the service that returns actual weather data, we can write a test for this endpoint:
+
+[#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.MockMvcTester API tests
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test]
+----
+
+This test follows the usual Arrange/Act/Assert structure: select a city, make a request, verify the result.
+Since our endpoint returns JSON, we don't want to assert
+
+// TODO
+// TODO
+// TODO
+// TODO
+
+// TODO: example GET request on an API endpoint., and POST.
 
 Notice that we never had to worry about a full URL, with a scheme, host and port, like `http://localhost:1234`.
 No need to worry about where the server is running: in fact, there is no server running!
@@ -91,8 +164,6 @@ This might not be immediately apparent, because `@SpringBootTest` has default va
 With the default value explicitly spelled out, this is equivalent to `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)`.
 The main difference between this and your production application is that there is no Servlet container running, serving HTTP requests.
 Instead, `MockMvcTester` is configured to call Spring's `DispatcherServlet` and your own controller methods, directly.
-
-// TODO: example POST request?
 
 [#ch4-note-mock-mvc]
 [NOTE]
@@ -147,6 +218,7 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
+
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
 <3> Verify the HTTP status
@@ -189,6 +261,7 @@ A typical test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
+
 <1> Auto-configure the class with a test client
 <2> Inject the client
 <3> Make requests with a fluent builder
@@ -207,6 +280,7 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
+
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
 <3> Use AssertJ to make assertions
@@ -253,6 +327,7 @@ An example test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
+
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
 <3> Use like a regular client
@@ -305,7 +380,24 @@ But before we think going all-in a web browser, we can use the _HtmlUnit_ projec
 As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-Less browser for Java programs".
 GUI-Less means that it does not display anything to the screen, and "for Java programs" means that, to make it do things, you have to write some java code.
 Think of it as a lightweight alternative to a browser, specifically for Java.
-It's a great fit for tests, and Spring Boot Tests have direct integration with the library!
+It's a great fit for tests, and Spring Boot Test has support for the library.
+To use it, add it the dependency to your project:
+
+[#ch4-listing-webflux-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.HtmlUnit dependency
+[source,xml,indent=0]
+----
+include::../code/ch4/weather/pom.xml[tags=htmlunit]
+----
+
+The core class of HtmlUnit is the `WebClient`.
+It has the same name as Spring's reactive `WebClient`, but completely different capabilities.
+When you import it, be careful that you select the correct package in your IDE: you want to use `org.htmlunit.WebClient`.
+When you use the MockMvc stack, Spring Boot Tests auto-configures one for you, which you can inject in your tests.
+In the methods of the `WebClient`, you'll find methods when you work with the DOM and Javascript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
+Let's write a test that shows how you can look up elements in the page.
+If you refer back to figure <<ch4-figure-01>>, you can see that each "weather" card has the name of the city and the country on one line, follow by, with one item per line, temperature, wind speed and weather conditions.
+Let's assume for our tests that we set up some mocks to return weather data
 
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests
