@@ -1,5 +1,8 @@
 package wf.garnier.spring.boot.test.ch4.weather;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import wf.garnier.spring.boot.test.ch4.weather.city.City;
@@ -12,20 +15,30 @@ import wf.garnier.spring.boot.test.ch4.weather.selection.SelectionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.test.web.servlet.client.assertj.RestTestClientResponse;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.data.Percentage.withPercentage;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.when;
 
+// tag::class[]
 @SpringBootTest
 @AutoConfigureRestTestClient
 class ApiRestTestClientTests {
 
+	// end::class[]
+	// tag::resttestclient[]
 	@Autowired
 	private RestTestClient client;
+
+	// end::resttestclient[]
 
 	@Autowired
 	private SelectionRepository selectionRepository;
@@ -50,16 +63,27 @@ class ApiRestTestClientTests {
 		when(weatherService.getCurrentWeather(anyDouble(), anyDouble())).thenReturn(new WeatherData(20, 0, 0));
 	}
 
+	//@formatter:off
+    // tag::test[]
 	@Test
 	void indexPageLoads() {
-		client.get()
-			.uri("/")
-			.exchange()
-			.expectStatus()
-			.isOk()
+		// without assertj
+		client.get().uri("/").exchange()
+			.expectStatus().isOk()
 			.expectBody(String.class)
-			.value(body -> assertThat(body).contains("<h1>Weather App</h1>"));
+			.value(body -> assertThat(body)
+    			.contains("<h1>Weather App</h1>")
+			);
+
+		// with assertj
+		var rawResponse = client.get().uri("/").exchange();
+		var response = RestTestClientResponse.from(rawResponse);
+		assertThat(response).hasStatusOk()
+			.bodyText()
+			.contains("<h1>Weather App</h1>");
 	}
+    // end::test[]
+	//@formatter:on
 
 	@Test
 	void indexPageHasSelectedCity() {
@@ -156,6 +180,40 @@ class ApiRestTestClientTests {
 				  }
 				]
 				""".formatted(paris.getId()));
+
+		client.get()
+			.uri("/api/weather")
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(new ParameterizedTypeReference<List<WeatherResponse>>() {
+			})
+			.value(wrs -> assertThat(wrs).hasSize(1).first().satisfies(wr -> {
+				assertThat(wr.cityName()).isEqualTo("Paris");
+				assertThat(wr.temperature()).isCloseTo(20, withPercentage(10));
+			}));
+	}
+
+	/**
+	 * {@link RestTestClient}, unlike {@link MockMvcTester}, supports any format that your
+	 * app supports, using the usual {@link HttpMessageConverter}.
+	 */
+	@Test
+	void getWeatherXml() {
+		selectCity("Paris");
+
+		client.get()
+			.uri("/api/weather")
+			.accept(MediaType.APPLICATION_XML)
+			.exchange()
+			.expectStatus()
+			.isOk()
+			.expectBody(new ParameterizedTypeReference<List<WeatherResponse>>() {
+			})
+			.value(wrs -> assertThat(wrs).hasSize(1).first().satisfies(wr -> {
+				assertThat(wr.cityName()).isEqualTo("Paris");
+				assertThat(wr.temperature()).isCloseTo(20, withPercentage(10));
+			}));
 	}
 
 	@Test
@@ -235,5 +293,12 @@ class ApiRestTestClientTests {
 		selectionRepository.save(new Selection(city));
 		return city;
 	}
+	// tag::class[]
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	record WeatherResponse(String cityName, String country, Double temperature) {
+
+	}
 
 }
+// end::class[]

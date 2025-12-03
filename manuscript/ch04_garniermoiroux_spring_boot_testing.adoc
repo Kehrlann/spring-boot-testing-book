@@ -144,18 +144,44 @@ Assuming we have mocked the service that returns actual weather data, we can wri
 .MockMvcTester API tests
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test]
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test;!json-convertto]
 ----
 
 This test follows the usual Arrange/Act/Assert structure: select a city, make a request, verify the result.
-Since our endpoint returns JSON, we don't want to assert
+Our endpoint returns JSON, and, to test the content, we need something that is aware of the structure of the result.
+The `MockMvcTester` AssertJ integration dedicated JSON assertions.
+They come in two flavors, one which asserts on the whole object, and one which allows you to traverse the JSON tree to make assertions.
+Both are present in the listing above.
+The first usage we have is `.isLenientlyEqualTo(...)`, which compares the request result to a JSON fragment _leniently_: it does not care about the order of properties, and it ignores any property from the result that are not in the expected JSON string.
+This allows you to assert only on the stable properties from the result: the city name and country, which are constants, and weather data which we have hardcoded in our stub implementation of the weather service.
+It also allows you to ignore data you do not want to focus on.
+In this example, we have omitted the `cityId` in the expected JSON chunk, because hardcoding "37" in the JSON response would be awkward to read.
+In the example, we also use `.extractingPath(...)` to perform assertions on the value at a given JSON path.
+This "path" representation is made possible by the `com.jayway.jsonpath:json-path` library, which Spring Boot Tests conveniently bring it.
+In our example, we use the expression `$.[0].cityId`.
+Every JsonPath expression starts with a `$`, which is the root element.
+In this case, it is the outer array.
+We then get the first element of this array with `.[0]`, and from this first element, we extract the `.cityId` property, and compare it to the ID of Paris.
 
-// TODO
-// TODO
-// TODO
-// TODO
+If you prefer working with objects rather than raw JSON, there is also a variant that allows you to do so.
+Assuming you have a `WeatherResponse` object which represents the HTTP response of your API, you can write:
 
-// TODO: example GET request on an API endpoint., and POST.
+[#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.MockMvcTester converting to Java objects
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=json-convertto]
+----
+
+Here, by calling `.convertTo(...)`, we turn the response into Java object, which we can then test with regular AssertJ assertions.
+Since the API returns a list of objects, we have wrap the `WeatherResponse` into a `list(...)` to get an assertion on `List<WeatherResponse>`.
+Here we're testing the name of the city, and, just to showcase some less common AssertJ assertions, we check that the temperature is within given bounds.
+To transform JSON responses into objects, Spring Boot Tests is using the app's registered `HttpMessageConverter` s, which is the core Spring mechanism for converting to and from HTTP responses.
+You'll find these converters are also used by the `RestTemplate` and its successor, the `RestClient`, to deserialize HTTP responses Java objects.
+Unlike these clients, though, `MockMvcTester` can only deserialize JSON responses, which is apparent when you call the `.bodyJson()` method.
+
+
+// TODO: example and POST.
 
 Notice that we never had to worry about a full URL, with a scheme, host and port, like `http://localhost:1234`.
 No need to worry about where the server is running: in fact, there is no server running!
@@ -297,6 +323,8 @@ There's a very simple explanation: test methods are not reactive!
 That's fine, even if you run tests in parallel, you're likely not running thousands of test methods at the exact same time.
 You will not encounter any of the web-scale bottlenecks that Reactor helped solve in the first place.
 Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns the result.
+
+// TODO: serialize body, which MockMvcTester cannot do
 
 [NOTE]
 .WebTestClient, under the hood
