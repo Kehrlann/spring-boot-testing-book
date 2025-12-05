@@ -67,7 +67,6 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
-
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -140,7 +139,7 @@ To do this, the Javascript app calls `GET /api/weather` and gets JSON back, that
 
 Assuming we have mocked the service that returns actual weather data, we can write a test for this endpoint:
 
-[#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-api-tests, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .MockMvcTester API tests
 [source,java,indent=0]
 ----
@@ -166,7 +165,7 @@ We then get the first element of this array with `.[0]`, and from this first ele
 If you prefer working with objects rather than raw JSON, there is also a variant that allows you to do so.
 Assuming you have a `WeatherResponse` object which represents the HTTP response of your API, you can write:
 
-[#ch4-listing-fluent-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-json-convertto, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .MockMvcTester converting to Java objects
 [source,java,indent=0]
 ----
@@ -179,17 +178,30 @@ Here we're testing the name of the city, and, just to showcase some less common 
 To transform JSON responses into objects, Spring Boot Tests is using the app's registered `HttpMessageConverter` s, which is the core Spring mechanism for converting to and from HTTP responses.
 You'll find these converters are also used by the `RestTemplate` and its successor, the `RestClient`, to deserialize HTTP responses Java objects.
 Unlike these clients, though, `MockMvcTester` can only deserialize JSON responses, which is apparent when you call the `.bodyJson()` method.
+If you are producing JSON, you need to deserialize the body explicitly, for example using Jackson, or use an alternative to `MockMvcTester`.
 
+To send data, you can either use `.formField(fieldName, fieldValue)` to emulate form data, or, in a more general case, send a string or byte array with `.content(...)`.
+If you go for the second option, `MockMvcTester` will not perform any conversion or serialization of any kind, and you will need to set the content type of the request:
 
-// TODO: example and POST.
+[#ch4-listing-post-request, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.MockMvcTester POST request
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=post-request]
+----
 
-Notice that we never had to worry about a full URL, with a scheme, host and port, like `http://localhost:1234`.
-No need to worry about where the server is running: in fact, there is no server running!
+We're sending a JSON POST request, and spelling out that we want the `Content-Type` header to be `application/json`.
+We're JSON body of the request by assembling strings manually, but you could use the serialization library of your choice, such as Jackson's `ObjectMapper` or the more recent `JsonMapper`.
+If you prefer relying on Spring to do the serialization for your, you'd have to use one of the alternatives to `MockMvcTester`, that we'll explore in the following sections.
+
+Notice that in all the listings until now, we never had to worry about a full URL, with a scheme, host and port, like `http://localhost:1234`.
+Instead, we made requests by only specifying the path we want to call in the application, such as `/api/city`.
+No need to worry about the port on which the test app's web server is listening: in fact, there is no server running!
 By default, Spring Boot Tests are configured with the "mock MVC" stack, which does not start a full web server, but only the few classes it needs to help you run tests.
 This might not be immediately apparent, because `@SpringBootTest` has default values.
 With the default value explicitly spelled out, this is equivalent to `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)`.
 The main difference between this and your production application is that there is no Servlet container running, serving HTTP requests.
-Instead, `MockMvcTester` is configured to call Spring's `DispatcherServlet` and your own controller methods, directly.
+Instead, `MockMvcTester` is configured to bypass all the network stack and webserver logic, and your own controller methods plus the Spring logic that wraps it.
 
 [#ch4-note-mock-mvc]
 [NOTE]
@@ -219,8 +231,29 @@ Lastly, relying on the dispatcher servlet means that WebMvc is required.
 If your app and tests are WebFlux only, you'll need to rely on some other testing APIs.
 ====
 
-// TODO: modifying requests with RequestPostProcessor
-// idea: add a custom auth header X-Request-Signature
+`MockMvcTester` offers lots of methods for customizing the HTTP requests you are sending.
+We've seen `.contentType(...)` in our examples, but there are plenty, such as:
+
+* `.accept(...)`
+* `.header(...)`
+* `.queryParam(...)`
+* `.cookie(...)`
+* `.apiVersion(...)`
+* ... and many, many more
+
+If you find yourself customizing all requests in your tests in the same way, you can use the `RequestPostProcessor` API to encapsulate all these method calls into one:
+
+[#ch4-listing-request-post-processor, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using a RequestPostProcessor
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=request-post-processor]
+----
+
+We introduce a static method, `.apiUser`, which allows us to set the `accept` header, an `x-answer` custom header and a cookie value to a MockMvc request.
+You can then combine it with `MockMvcTester` using the `.with(...)` method.
+This is perfect for reusing it in every test without having to set both headers and the cookie manually.
+We will see concrete examples implemented in Spring in chapter 7, "Testing security configurations".
 
 [#ch4-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Alternatives to `MockMvcTester`
@@ -244,7 +277,6 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
-
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
 <3> Verify the HTTP status
@@ -287,7 +319,6 @@ A typical test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
-
 <1> Auto-configure the class with a test client
 <2> Inject the client
 <3> Make requests with a fluent builder
@@ -306,7 +337,6 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
-
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
 <3> Use AssertJ to make assertions
@@ -355,7 +385,6 @@ An example test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
-
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
 <3> Use like a regular client
@@ -411,7 +440,7 @@ Think of it as a lightweight alternative to a browser, specifically for Java.
 It's a great fit for tests, and Spring Boot Test has support for the library.
 To use it, add it the dependency to your project:
 
-[#ch4-listing-webflux-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-htmlunit-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .HtmlUnit dependency
 [source,xml,indent=0]
 ----
