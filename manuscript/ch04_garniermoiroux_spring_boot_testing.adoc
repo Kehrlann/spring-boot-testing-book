@@ -52,7 +52,7 @@ The search bar, which lets the user search by city, now has an auto-complete dro
 Notice that there are two "Display" options, with the default "Full" display of the previous figure, and a more "Compact" display that only shows the city name and the current temperature.
 When the user accesses the index page of the app, they receive a fully rendered HTML page, but any subsequent calls leverage the API of the app, which returns data as JSON.
 
-NOTE: For all tests we write in this chapter, we have set up a mock bean to return canned weather data.
+NOTE: For all tests we write in this chapter, we have set up a mock bean to return canned responses from the weather service: every city will have "Clear sky" with 20.0°C and no wind.
 We also have a utility function called `selectCity` which acts as if the user had selected a city.
 If you need a refresher, we have covered both these topics in chapter 2.
 
@@ -67,6 +67,7 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
+
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -277,6 +278,7 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
+
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
 <3> Verify the HTTP status
@@ -319,6 +321,7 @@ A typical test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
+
 <1> Auto-configure the class with a test client
 <2> Inject the client
 <3> Make requests with a fluent builder
@@ -337,6 +340,7 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
+
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
 <3> Use AssertJ to make assertions
@@ -385,6 +389,7 @@ An example test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
+
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
 <3> Use like a regular client
@@ -447,7 +452,7 @@ To use it, add it the dependency to your project:
 include::../code/ch4/weather/pom.xml[tags=htmlunit]
 ----
 
-The core class of HtmlUnit is the `WebClient`.
+The core class of HtmlUnit is the `WebClient`, which simulates the browser.
 It has the same name as Spring's reactive `WebClient`, but completely different capabilities.
 When you import it, be careful that you select the correct package in your IDE: you want to use `org.htmlunit.WebClient`.
 When you use the MockMvc stack, Spring Boot Tests auto-configures one for you, which you can inject in your tests.
@@ -456,19 +461,59 @@ Let's write a test that shows how you can look up elements in the page.
 If you refer back to figure <<ch4-figure-01>>, you can see that each "weather" card has the name of the city and the country on one line, followed by temperature, wind speed and weather conditions, each on their own line.
 
 [#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.HtmlUnit dependency
+.HtmlUnit basic test
 [source,java,indent=0]
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
 ----
-<1> The org.htmulnit.WebClient
+
+<1> The WebClient from org.htmlunit
 <2> Making a request returns an HtmlPage
 <3> CSS query to find elements on the page
 <4> There's a single weather card
 <5> Extract the text from the card
 
 Thanks to `@AutoConfigureMockMvc`, there's a `WebCient` bean available in our test context, which we can inject.
-It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead 
+It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead you can just use the path of the request.
+Instead of getting HTML as a raw string, this client parses the response and exposes an `HtmlPage`, which you can use with familiar web DOM APIs, such as `.getElementById(...)`.
+Here we're using `.querySelectorAll(...)` to find all HTML elements that match a given CSS selector query.
+Those are the "cards" that display weather information about the cities the users has selected.
+In this test, we only selected Paris, so there's a single card displayed, and the weather data matches the mock responses we pre-configured.
+By default, `.querySelectorAll(...)` returns a list of `DomNode`, which is the most abstract type possible: it's any "element in the DOM tree".
+As such, they are mostly used to navigate the tree, with methods for getting parent, child or sibling nodes.
+But they also allow you to access any attribute, such as ID or classes, and their text content, which is enough to make basic assertions about the information that's visible on the page.
+
+But `HtmlUnit` is much richer!
+It offers more specialized types than a simple `DomNode`, and allows you to check the visibility of an element, type text into input fields, click items, and even run some Javascript code.
+There's a bit of Javascript in our web page: when a user wants to select a city, they type the name of the city in a field, and an auto-complete popup shows up.
+They can then select on the city of their choice from the dropdown, and the card will be added to the page without reloading the full page.
+We can write a test for this behavior:
+
+[#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.HtmlUnit executing Javascript
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
+----
+
+<1> Type into an input field
+<2> Click on an element
+<3> Wait for JS http requests to finish
+
+In this test, we simulate some interactions: the user selects the search input field and types "bogot".
+The autocomplete will show a single result, Bogotá.
+The user then clicks on the result, and a weather card for Bogotá is added to the page.
+To simulate user interactions, we use the `.type(...)` method on the input, and the `.click(...)` method on the first auto-complete result.
+Here we ask the `.querySelector("input#citySearch")` to return a specific type `HtmlInput`.
+It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing the text box.
+For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`, which it exposes a `.click()` method.
+Both the "type" and "click" actions trigger some Javascript on the page.
+When the user inputs data in the city search text box, the page makes HTTP requests to the backend to get matching cities and display auto-complete results.
+And when they click on an entry, the page calls the API endpoint that selects the city, and refreshes weather data on the page.
+This Javascript code runs asynchronously on the page, taking a few milliseconds to get the answer back from our server.
+We want our tests to ensure that these operations are completed before moving on to the next steps.
+Since the `WebClient` is simulating the browser, it is responsible for running Javascript on the page, so we can tell it to wait until JS code has finished executing.
+This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms timeout, after which the `WebClient` will stop waiting and test execution will resume.
 
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests

@@ -1,0 +1,33 @@
+name: Run tests
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 25 for x64
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: Chapter 1
+        run: |
+          root=$PWD
+          cd ch1/maven
+          mvn --batch-mode test
+
+          cd "${root}/ch1/widget"
+          mvn --batch-mode test
+      - name: Chapter 2
+        run: |
+          cd ch2/weather
+          mvn --batch-mode test
+      - name: Chapter 3
+        run: |
+          cd ch3/configuration
+          mvn --batch-mode test
+      - name: Chapter 4
+        run: |
+          cd ch4/weather
+          mvn --batch-mode test
