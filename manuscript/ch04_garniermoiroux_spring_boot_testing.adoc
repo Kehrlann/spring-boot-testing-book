@@ -489,7 +489,7 @@ There's a bit of Javascript in our web page: when a user wants to select a city,
 They can then select on the city of their choice from the dropdown, and the card will be added to the page without reloading the full page.
 We can write a test for this behavior:
 
-[#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-htmlunit-test-javascript, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .HtmlUnit executing Javascript
 [source,java,indent=0]
 ----
@@ -514,6 +514,33 @@ This Javascript code runs asynchronously on the page, taking a few milliseconds 
 We want our tests to ensure that these operations are completed before moving on to the next steps.
 Since the `WebClient` is simulating the browser, it is responsible for running Javascript on the page, so we can tell it to wait until JS code has finished executing.
 This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms timeout, after which the `WebClient` will stop waiting and test execution will resume.
+
+But for all its features, HtmlUnit only has limited support for Javascript.
+If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, a version of the Javascript language that came out in 2015. But JS is a very active language, with a new release every year.
+Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
+These scripts are functionally equivalent.
+However, if you try to load the page with HtmlUnit, for example by doing `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
+
+----
+missing ; before statement (http://localhost/js/modern.js#11)
+----
+
+The error looks like a parsing error, but only hint at the actual error is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
+And this brings us back to the beginning of this section: HtmlUnit is not a "full-fledged browser".
+It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a completed replacement for a full web browser.
+
+[NOTE]
+.Javascript support in HtmlUnit
+====
+HtmlUnit is a Java implementation of a web browser.
+Using only Java, it builds an internal representation of the DOM and allows you to interact with it.
+A regular browser has a dedicated Javascript engine, a subsystem that parses and runs all JS code.
+In Chrome, for example, it is called V8.
+In HtmlUnit, this engine is implemented in Java, so all JS codes runs inside the JVM.
+It is based on a slightly modified version of a project called Rhino, by Mozilla (https://github.com/mozilla/rhino).
+It does not support all modern JS features, as we've seen above with the `async` keyword.
+If you're curious about what features are included and what's missing, take a peek at Rhino's compatibility matrix at https://mozilla.github.io/rhino/compat/engines.html.
+====
 
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests
