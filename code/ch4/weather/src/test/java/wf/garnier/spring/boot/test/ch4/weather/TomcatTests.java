@@ -1,19 +1,24 @@
 package wf.garnier.spring.boot.test.ch4.weather;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import wf.garnier.spring.boot.test.ch4.weather.infrastructure.TomcatAccessRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import org.springframework.test.web.servlet.client.RestTestClient;
+import org.springframework.test.web.servlet.client.assertj.RestTestClientResponse;
 import org.springframework.web.client.RestClient;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class TomcatAccessRepositoryTests {
+class TomcatTests {
 
 	@Nested
 	@SpringBootTest
@@ -33,21 +38,64 @@ class TomcatAccessRepositoryTests {
 			assertThat(repo.getAccessRecords()).isEmpty();
 		}
 
+		// tag::no-body-error[]
+		@Test
+		void doesNotDisplayCustom404Page() {
+			var response = mvc.get().uri("/does-not-exist").exchange();
+
+			assertThat(response).hasStatus(HttpStatus.NOT_FOUND)
+				.hasErrorMessage("No static resource does-not-exist.")
+				.bodyText()
+				.isEmpty();
+		}
+		// end::no-body-error[]
+
 	}
 
 	@Nested
+	// tag::class[]
 	@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+	@AutoConfigureRestTestClient
 	class FullServerTests {
 
+		// end::class[]
+		// tag::local-server-port[]
 		@LocalServerPort
 		int port;
+
+		// end::local-server-port[]
+		// tag::rest-test-client[]
+		@Autowired
+		RestTestClient testClient;
+
+		// end::rest-test-client[]
 
 		@Autowired
 		TomcatAccessRepository repo;
 
+		RestClient restClient;
+
+		@BeforeEach
+		void setUp() {
+			restClient = RestClient.builder().baseUrl("http://localhost:%s".formatted(port)).build();
+		}
+
+		// tag::test[]
+		@Test
+		void displaysCustom404Page() {
+			var responseSpec = testClient.get().uri("/does-not-exist").accept(MediaType.TEXT_HTML).exchange();
+
+			var response = RestTestClientResponse.from(responseSpec);
+			assertThat(response).hasStatus(HttpStatus.NOT_FOUND)
+				.bodyText()
+				.containsIgnoringCase("404 NOT FOUND")
+				.containsIgnoringCase("This is not the page you are looking for");
+		}
+		// end::test[]
+
 		@Test
 		void recordsAccess() {
-			var response = RestClient.create().get().uri("http://localhost:%s/api/weather".formatted(port)).retrieve();
+			var response = restClient.get().uri("/api/weather".formatted(port)).retrieve();
 
 			assertThat(response.toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.OK);
 			assertThat(repo.getAccessRecords()).hasSize(1)
@@ -57,9 +105,12 @@ class TomcatAccessRepositoryTests {
 		}
 
 		/**
-		 * Sanity check on the ringbuffer behavior. If this was truly important, the
-		 * {@code RingBuffer} class should be a separate class, with dedicated tests... or
-		 * even better, an off-the-shelf implementation ;)
+		 * Our {@link TomcatAccessRepository} stores data in a ring buffer. This test
+		 * performs a sanity check on the ring buffer behavior.
+		 * <p>
+		 * If this was production code the {@code RingBuffer} class should be a separate
+		 * class, with dedicated tests... or even better, an off-the-shelf implementation
+		 * ;)
 		 */
 		@Test
 		void ringBuffer() {
@@ -87,6 +138,9 @@ class TomcatAccessRepositoryTests {
 				.isEqualTo("/api/city");
 		}
 
+		// tag::class[]
+
 	}
+	// end::class[]
 
 }

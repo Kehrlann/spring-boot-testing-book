@@ -202,7 +202,7 @@ By default, Spring Boot Tests are configured with the "mock MVC" stack, which do
 This might not be immediately apparent, because `@SpringBootTest` has default values.
 With the default value explicitly spelled out, this is equivalent to `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)`.
 The main difference between this and your production application is that there is no Servlet container running, serving HTTP requests.
-Instead, `MockMvcTester` is configured to bypass all the network stack and webserver logic, and your own controller methods plus the Spring logic that wraps it.
+Instead, `MockMvcTester` is configured to bypass all the network stack and web server logic, and your own controller methods plus the Spring logic that wraps it.
 
 [#ch4-note-mock-mvc]
 [NOTE]
@@ -263,7 +263,7 @@ We will see concrete examples implemented in Spring in chapter 7, "Testing secur
 You may encounter some of these in legacy code-bases, or tests with different stylistic preferences.
 And if develop a WebFlux-based application, you do not have access to the MockMvc stack.
 
-[#ch4-section-2-1, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-1, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `MockMvc`, the original component
 
 `MockMvcTester` is a recent addition to the testing portfolio: it was introduced in Spring Framework `6.2` and Boot `3.4`.
@@ -292,7 +292,7 @@ However, for new projects, or new test classes in existing projects, I'd recomme
 NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
 You could see it as "syntactic sugar", which makes `MockMvc` nicer to user.
 
-[#ch4-section-2-2, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-2, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `WebTestClient` for WebFlux-based applications
 
 When working on WebFlux-based applications, the MVC stack is not present.
@@ -403,13 +403,13 @@ To make it work, you need to add the `org.springframework.boot:spring-boot-start
 Please beware that while it is technically possible, it is highly unusual.
 This may fit certain niche use-cases, such as a project where you are transitioning from WebFlux to WebMvc, and would like to keep the tests intact.
 
-[#ch4-section-2-3, {section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-3, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Other alternatives
 
 Spring Boot tests offers two other testing HTTP clients, that you may encounter from time to time.
 The first is the `RestTestClient`, just introduced in Spring Framework 7 and Boot 4. It's a test-specific version of `RestClient`, and works just like `WebTestClient`, except it's tailored to the MVC stack rather than WebFlux.
 The API is almost exactly the same as `WebTestClient`.
-And like that reactive client, it can both connect to mock servers like `MockMvc` does, and make real HTTP requests over the network.
+And like that reactive client, it can both connect to mock servers like `MockMvcTester` does, and make real HTTP requests over the network.
 We won't dive into usage details, as it is almost a copy-paste of the previous section, but here's an example test:
 
 [#ch4-listing-restttestclient, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -545,7 +545,56 @@ If you're curious about what features are included and what's missing, take a pe
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests
 
-TODO
+Up to this, we've run all our tests using the Mock MVC stack, or its WebFlux equivalent, without ever starting a live web server.
+We mentioned earlier that when you don't have a web server, you'll be missing certain features in your tests.
+For example, handling exceptions and rendering error pages is handled by the servlet container - think: web server - in WebMVC, and so is session handling.
+Of course, any code that is tied to your specific server implementation, such as a custom Tomcat valve, also requires a full server to run.
+To demonstrate this, let's test our app's custom 404 page.
+If you navigate to a page that doesn't exist, say http://localhost:8080/does-not-exist, you should see a very simple page with a message "404 - NOT FOUND" and "This is not the page you are looking for".
+This page is a simple HTML file, found at `src/main/resources/public/error/404.html`.
+Whenever you try to access a URL that does not exist, Spring signals that a 404 HTTP error should be emitted, and Tomcat serves the appropriate file if it finds one in the default directory.
+If you try to test that with the Mock MVC stack, the body of the page will be empty, because there's no Tomcat to serve our `404.html` page:
+
+[#ch4-no-error-page, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.No error page in MockMvc
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=no-body-error]
+----
+
+`MockMvcTester` lets you know that the status is HTTP 404, and gives you access to Spring's internal error message, but stops there.
+If you want to test this feature, you need to run the Tomcat server.
+The `@SpringBootTest` annotation makes it very easy with the `webEnvironment` parameter.
+You have 4 possible values:
+
+- *MOCK*: A "mock" server is created and exposes your controllers to your tests, but the web server is not starte.
+This is the default.
+- *NONE*: No web capabilities are enabled for your tests.
+This makes most sense for non-web scenarios, for example CLIs or batch apps.
+- *RANDOM_PORT*: The embedded web server is started for the tests, on a random, available port.
+This is the recommended way to run your tests with the web server.
+- *DEFINED_PORT*: The embedded web server is started for the tests, on whatever port is defined in the `server.port` property, or on port 8080 by default.
+This may be useful if you need to know the running port before the app starts, for configuration purposes.
+
+Running on a defined port risks conflicting with whatever other process is running on the machine.
+And if you're running multiple tests contexts, you will need to assign a separate port to each so they don't conflict.
+This is why the recommended approach is to use a random port: before starting your test app, Spring Boot Tests will try to find an available port, and use that.
+
+Of course, we're not using the MOCK stack, so we can't use `MockMvcTester`, and we can't just use a regular HTTP client, say `RestClient`, and point it to the path we want to test.
+Instead, we need a way to communicate with the web server over the network, albeit locally on your computer.
+There's two ways to do this: you can either obtain the port of the running server from Spring Boot Tests using the `@LocalServerPort` annotation, or use an auto-configured `RestTestClient` or `WebTestClient` that we introduced in sections <<ch4-section-2-2>> and <<ch4-section-2-3>>.
+In that case, Spring Boot Tests set the base url of these clients, and you do not need to handle the port manually:
+
+[#ch4-listing-fullserver-tests, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Full web server tests
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;local-server-port;rest-test-client;test]
+----
+
+<1> Type into an input field
+<2> Click on an element
+<3> Wait for JS http requests to finish
 
 [#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing through a real web browser with Selenium

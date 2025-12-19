@@ -246,7 +246,7 @@ class HtmlUnitTests {
 		citySearchInput.type(KeyboardEvent.DOM_VK_DOWN); // "Down arrow"
 		citySearchInput.type(KeyboardEvent.DOM_VK_RETURN); // "Enter"
 
-		webClient.waitForBackgroundJavaScript(1000); // wait weather data
+		webClient.waitForBackgroundJavaScript(1000); // wait for weather data
 
 		var cities = page.querySelectorAll(".cities-grid .card");
 
