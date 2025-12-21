@@ -83,9 +83,15 @@ class TomcatTests {
 		// tag::test[]
 		@Test
 		void displaysCustom404Page() {
-			var responseSpec = testClient.get().uri("/does-not-exist").accept(MediaType.TEXT_HTML).exchange();
+			//@formatter:off
+			var responseSpec = testClient.get()
+					.uri("/does-not-exist")
+					.accept(MediaType.TEXT_HTML)
+					.exchange();
+			//@formatter:on
 
 			var response = RestTestClientResponse.from(responseSpec);
+
 			assertThat(response).hasStatus(HttpStatus.NOT_FOUND)
 				.bodyText()
 				.containsIgnoringCase("404 NOT FOUND")
@@ -93,9 +99,36 @@ class TomcatTests {
 		}
 		// end::test[]
 
+		// tag::use-local-server-port[]
+		@Test
+		void testWithPort() {
+			// tag::ignored[]
+			var restClient = RestClient.builder()
+				.defaultStatusHandler((code) -> code.equals(HttpStatus.NOT_FOUND), (request, response) -> {
+					// skip http 404 errors
+				})
+				.build();
+			// end::ignored[]
+			//@formatter:off
+			var response = restClient
+					.get()
+					.uri("http://localhost:%s/does-not-exit".formatted(port))
+					.accept(MediaType.TEXT_HTML)
+					.retrieve();
+			//@formatter:on
+
+			// ... tests ...
+			// tag::ignored[]
+			assertThat(response.toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+			assertThat(response.body(String.class)).containsIgnoringCase("404 NOT FOUND")
+				.containsIgnoringCase("This is not the page you are looking for");
+			// end::ignored[]
+		}
+		// end::use-local-server-port[]
+
 		@Test
 		void recordsAccess() {
-			var response = restClient.get().uri("/api/weather".formatted(port)).retrieve();
+			var response = restClient.get().uri("/api/weather").retrieve();
 
 			assertThat(response.toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.OK);
 			assertThat(repo.getAccessRecords()).hasSize(1)

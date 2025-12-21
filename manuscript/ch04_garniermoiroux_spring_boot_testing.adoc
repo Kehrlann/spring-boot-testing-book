@@ -582,19 +582,56 @@ This is why the recommended approach is to use a random port: before starting yo
 
 Of course, we're not using the MOCK stack, so we can't use `MockMvcTester`, and we can't just use a regular HTTP client, say `RestClient`, and point it to the path we want to test.
 Instead, we need a way to communicate with the web server over the network, albeit locally on your computer.
-There's two ways to do this: you can either obtain the port of the running server from Spring Boot Tests using the `@LocalServerPort` annotation, or use an auto-configured `RestTestClient` or `WebTestClient` that we introduced in sections <<ch4-section-2-2>> and <<ch4-section-2-3>>.
-In that case, Spring Boot Tests set the base url of these clients, and you do not need to handle the port manually:
+The simplest way is to use an auto-configured `RestTestClient` or `WebTestClient` that we introduced in sections <<ch4-section-2-2>> and <<ch4-section-2-3>>.
+Spring Boot Tests sets the base url of your client, and you do not need to care about the port on which your app is running.
+In practice, this looks like:
 
 [#ch4-listing-fullserver-tests, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Full web server tests
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;local-server-port;rest-test-client;test]
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;rest-test-client;test]
 ----
 
-<1> Type into an input field
-<2> Click on an element
-<3> Wait for JS http requests to finish
+This test showcases the "error dispatch" handled by Tomcat with the actual The structure and APIs used are exactly the same as a regular Mock MVC test.
+You may observe that it slighlty slower because it loads more components, and you'll see a line indicating that the server is running, on a random port:
+
+----
+[...] Tomcat started on port 50327 (http) with context path '/'
+----
+
+If you run the same test again, you'll see that the port number has changed.
+If you need to access the port value, use the `@LocalServerPort` annotation:
+
+[#ch4-listing-localserverport, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Access the port of the running test app
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=local-server-port;use-local-server-port;!ignored]
+----
+
+Test-wise, this might be useful if you are checking some configuration values or specific log lines, or if you are testing multi-component systems where you connect your app under test to some other external application.
+And since there's an actual server running, you can access it independently of your tests.
+Simply place a breakpoint inside a test, then run the test in debug mode.
+The execution will stop at that breakpoint.
+Grab the value of the local server port from the variable in the example above, and navigate to it using your usual web browser.
+For the specific example we showcased earlier, this would be `http://localhost:50327`.
+This will give you a view of the state of the application during the execution of your test.
+You can use it to debug your tests, verifying what the app looks like after this or that API call, without relying on the tests themselves.
+You can also experiment with your tests, by changing the data during a test run.
+But remember that what you see in your browser is not exactly the values that are in your test.
+It is a separate view, external to your test, and there might be discrepancies, variables that were recorded before the breakpoint might be different if you re-compute the value in your browser, etc.
+
+[TIP]
+====
+In Eclipse and VS Code, simply placing a breakpoint and debugging the test is enough to access the running application.
+However, if you are using IntelliJ IDEA, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-02>>.
+Right-click on the breakpoint, and select Suspend > Thread.
+Otherwise, everything will be suspended, including your test app, which will not be able to serve HTTP traffic.
+[#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Configuring breakpoints in IntelliJ IDEA
+image::ch04_f002_garniermoiroux.png[]
+====
 
 [#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing through a real web browser with Selenium
