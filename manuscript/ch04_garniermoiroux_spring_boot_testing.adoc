@@ -67,7 +67,6 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
-
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -278,7 +277,6 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
-
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
 <3> Verify the HTTP status
@@ -321,7 +319,6 @@ A typical test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
-
 <1> Auto-configure the class with a test client
 <2> Inject the client
 <3> Make requests with a fluent builder
@@ -340,7 +337,6 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
-
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
 <3> Use AssertJ to make assertions
@@ -389,7 +385,6 @@ An example test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
-
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
 <3> Use like a regular client
@@ -466,7 +461,6 @@ If you refer back to figure <<ch4-figure-01>>, you can see that each "weather" c
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
 ----
-
 <1> The WebClient from org.htmlunit
 <2> Making a request returns an HtmlPage
 <3> CSS query to find elements on the page
@@ -495,7 +489,6 @@ We can write a test for this behavior:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
 ----
-
 <1> Type into an input field
 <2> Click on an element
 <3> Wait for JS http requests to finish
@@ -660,13 +653,12 @@ include::../code/ch4/weather/pom.xml[tags=selenium]
 With that, you can set up your tests.
 You will need a bit of boilerplate code before you can actually run the tests:
 
-[#ch4-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-selenium-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Selenium test setup
 [source,java]
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=class;setup-webdriver]
 ----
-
 <1> Setup the driver server
 <2> Create an instance of a browser
 <3> Configure the browser
