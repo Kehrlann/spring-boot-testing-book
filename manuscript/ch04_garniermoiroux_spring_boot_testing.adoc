@@ -643,7 +643,7 @@ If you want to learn more, take a moment to read the first chapter of the specif
 
 To use Selenium in your project, first add the dependency:
 
-[#ch4-listing-webflux-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch4-listing-selenium-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Selenium testing dependencies
 [source,xml,indent=0]
 ----
@@ -666,7 +666,6 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 This setup has more code than our usual tests.
 This is because Spring Boot Tests does not have opinions on how you should configure Selenium, which browser to use, and what options you need to pass.
-
 
 [#ch4-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing client applications
