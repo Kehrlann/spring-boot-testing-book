@@ -3,10 +3,6 @@
 .SHELLFLAGS = -c
 MAKEFLAGS += --silent
 
-.PHONY: remove-blank-lines
-remove-blank-lines: manuscript/*.adoc
-	./resources/remove_blank_line.awk $^
-
 html: manuscript/*.adoc
 	asciidoctor \
 	    --destination-dir html/ \
@@ -15,8 +11,10 @@ html: manuscript/*.adoc
 	    --trace \
 	    $^
 
-pdf: manuscript/*.adoc
-	$(MAKE) remove-blank-lines
+# Pattern rule: each PDF depends on its corresponding .adoc file
+pdf/%.pdf: manuscript/%.adoc
+	@mkdir -p pdf/
+	./resources/remove_blank_line.awk $<
 	asciidoctor-pdf \
 	    --destination-dir pdf/ \
 	    --attribute pdf-theme=manning \
@@ -24,4 +22,12 @@ pdf: manuscript/*.adoc
 	    --require ./resources/remove_formatter_comments.rb \
 	    --require ./resources/sectnumoffset-treeprocessor.rb \
 	    --trace \
-	    $^
+	    $<
+
+# Get list of all .adoc files
+ADOC_FILES := $(wildcard manuscript/*.adoc)
+# Convert to PDF targets
+PDF_FILES := $(patsubst manuscript/%.adoc,pdf/%.pdf,$(ADOC_FILES))
+
+# Main pdf target: depends on all PDF files (each handles its own preprocessing)
+pdf: $(PDF_FILES)
