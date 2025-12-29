@@ -37,7 +37,7 @@ Together, we'll discover how you can test your server application by making HTTP
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
 You can find the complete code under `ch4/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch4/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-The general behavior will be very similar, but instead of doing server-only rendering, we have springled a bit of JavaScript to turn it into a little bit of a "Single Page Application".
+The general behavior will be very similar, but instead of doing server-only rendering, we have sprinkled a bit of JavaScript to turn it into a little bit of a "Single Page Application".
 
 NOTE: This example is not meant to showcase Javascript best practices, and is merely an app that we can test.
 Please do not use it as a blueprint for a real, serious, production application.
@@ -154,7 +154,7 @@ Both are present in the listing above.
 The first usage we have is `.isLenientlyEqualTo(...)`, which compares the request result to a JSON fragment _leniently_: it does not care about the order of properties, and it ignores any property from the result that are not in the expected JSON string.
 This allows you to assert only on the stable properties from the result: the city name and country, which are constants, and weather data which we have hardcoded in our stub implementation of the weather service.
 It also allows you to ignore data you do not want to focus on.
-In this example, we have omitted the `cityId` in the expected JSON chunk, because hardcoding "37" in the JSON response would be awkward to read.
+In this example, we omit the `cityId` in the expected JSON chunk, because hardcoding "37" in the JSON response would be awkward to read.
 In the example, we also use `.extractingPath(...)` to perform assertions on the value at a given JSON path.
 This "path" representation is made possible by the `com.jayway.jsonpath:json-path` library, which Spring Boot Tests conveniently bring it.
 In our example, we use the expression `$.[0].cityId`.
@@ -662,10 +662,28 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <1> Setup the driver server
 <2> Create an instance of a browser
 <3> Configure the browser
-<4> After the test, shut down
+<4> Shut down selenium after the test is finished
 
-This setup has more code than our usual tests.
-This is because Spring Boot Tests does not have opinions on how you should configure Selenium, which browser to use, and what options you need to pass.
+Perhaps surprisingly, this setup has more code than our usual tests.
+The reason is that Spring Boot Tests does not have opinions on how you should configure Selenium, and requires you to choose which browser to use and how to configure it.
+The second notable thing here is that we use `@BeforeAll` and `@AfterAll` instead of our usual `@BeforeEach` and `@AfterEach` setup methods.
+Here, JUnit will run `startChromeBrowser` once before all tests, and `stopChromeBrowser` after all tests in the file have finished executing.
+Creating a new browser instance takes more than 1 second, so to keep execution times low you want to avoid doing it before every single test.
+The flipside of this is that the browser window is reused across tests, meaning that any local state is shared across tests.
+
+TIP: If you need to reset cookies between tests, you may use `driver.manage().deleteAllCookies();`.
+
+For our example, we use a `ChromeDriverService`, but you may swap it out for any driver you'd like, such as `SafariDriverService`, `EdgeDriverService` or `GeckoDriverService` for Firefox.
+The only pre-requisite for this to work is that there is a version of the chosen browser installed on your local machine, and Selenium will do the rest.
+The `ChromeDriver` instance represents a browser instance, that we launch in `--headless` mode, without any UI displayed.
+This prevents Chrome from opening visible windows when you run your tests.
+This configuration is required for CI environments, where there are no displays, and a browser with a GUI won't start.
+Locally, this also avoids unexpectedly losing focus because Chrome just popped as the foremost window.
+When you are debugging your tests and want to observe the interactions, removing this option allows you to see the tests being executed in real time.
+The last configuration is the _implicit wait_ of the web driver.
+This makes the driver wait when you look for an element on the page that's not present.
+In our single page app, most interactions are asynchronous and our HTML elements may take a few microseconds to be displayed.
+
 
 [#ch4-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing client applications
