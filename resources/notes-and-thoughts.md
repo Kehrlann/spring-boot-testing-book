@@ -1,5 +1,9 @@
 # Notes and thoughts
 
+## For Doug:
+
+- Should I refer to the test file for a given section by name? Because I have many test files.
+
 ## Questions
 
 `@MockitoBean` uses `org.springframework.test.context.bean.override.BeanOverrideStrategy#WRAP` ... does it build the
@@ -24,4 +28,4 @@ ArchUnit testing
 ### Open
 
 - Use java 25
--  //@formatter:off //@formatter:on
+- //@formatter:off //@formatter:on

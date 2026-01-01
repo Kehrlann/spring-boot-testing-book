@@ -1,6 +1,5 @@
 package wf.garnier.spring.boot.test.ch4.weather;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import org.junit.jupiter.api.AfterAll;
@@ -51,6 +50,7 @@ class SeleniumTests {
 	@LocalServerPort int port;
 	static ChromeDriverService driverService;
 	static WebDriver driver;
+	private String baseUrl;
 	//@formatter:on
 
 	@BeforeAll
@@ -66,22 +66,22 @@ class SeleniumTests {
 
 	@AfterAll
 	static void stopChromeBrowser() {
-		driver.close(); // <4>
+		driver.quit(); // <4>
 		driverService.stop(); // <4>
 	}
 	// end::setup-webdriver[]
 
 	@BeforeEach
-	void setUp() throws IOException {
+	void setUp() {
+		baseUrl = "http://localhost:%s/?q=modern".formatted(port);
 		selectionRepository.deleteAll();
 		when(weatherService.getCurrentWeather(anyDouble(), anyDouble())).thenReturn(new WeatherData(20, 0, 0));
-		ChromeDriverService.createDefaultService().start();
 	}
 
 	@Test
 	void mainPage() {
 		selectCity("Paris");
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		var cities = driver.findElements(By.cssSelector(".cities-grid > .card > .full-display"));
 
@@ -97,7 +97,7 @@ class SeleniumTests {
 
 	@Test
 	void mainPageNoCities() {
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		var cities = driver.findElements(By.cssSelector(".cities-grid > .card"));
 
@@ -109,7 +109,7 @@ class SeleniumTests {
 		selectCity("Paris");
 		selectCity("Delhi");
 
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		var cities = driver.findElements(By.cssSelector(".cities-grid > .card > .full-display > .card-title"))
 			.stream()
@@ -132,7 +132,7 @@ class SeleniumTests {
 		void initialDefaultFullDisplay() {
 			selectCity("Paris");
 
-			driver.get("http://localhost:" + port + "/?mode=modern");
+			driver.get(baseUrl);
 
 			assertDisplay(DisplayMode.FULL);
 		}
@@ -141,7 +141,7 @@ class SeleniumTests {
 		void initialFullDisplay() {
 			selectCity("Paris");
 
-			driver.get("http://localhost:" + port + "/?mode=modern&display=full");
+			driver.get(baseUrl + "&display=full");
 
 			assertDisplay(DisplayMode.FULL);
 		}
@@ -150,7 +150,7 @@ class SeleniumTests {
 		void initialCompactDisplay() {
 			selectCity("Paris");
 
-			driver.get("http://localhost:" + port + "/?mode=modern&display=compact");
+			driver.get(baseUrl + "&display=compact");
 
 			assertDisplay(DisplayMode.COMPACT);
 		}
@@ -159,7 +159,7 @@ class SeleniumTests {
 		void toggleDisplay() {
 			selectCity("Paris");
 
-			driver.get("http://localhost:" + port + "/?mode=modern");
+			driver.get(baseUrl);
 
 			driver.findElement(By.id("button-display-compact")).click();
 			assertDisplay(DisplayMode.COMPACT);
@@ -188,7 +188,7 @@ class SeleniumTests {
 		driver.manage().timeouts().implicitlyWait(Duration.ZERO);
 		selectCity("Paris");
 
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		driver.findElement(By.cssSelector("form[data-role=\"delete-city\"] > button")).click();
 		new FluentWait<>(driver).withTimeout(Duration.ofSeconds(1))
@@ -198,24 +198,37 @@ class SeleniumTests {
 		assertThat(driver.findElements(By.cssSelector(".cities-grid .card"))).isEmpty();
 	}
 
+	// tag::autocomplete-test[]
 	@Test
 	void autocomplete() {
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		// Arrange
+		driver.get("http://localhost:" + port + "/?mode=modern"); // <1>
 
-		var citySearchInput = driver.findElement(By.id("citySearch"));
-		citySearchInput.sendKeys("jak");
+		// Act
+		var citySearchInput = driver.findElement(By.id("citySearch")); // <2>
+		citySearchInput.sendKeys("jak"); // <3>
 
-		var autocompleteResults = driver.findElement(By.id("cityResults"))
-			.findElements(By.cssSelector(".autocomplete-item"))
-			.stream()
-			.map(element -> element.getText().trim());
-
-		assertThat(autocompleteResults).contains("Djakotomé (Benin)", "Jakarta (Indonesia)", "Kamirenjaku (Japan)");
+		// Assert
+		var autocompleteResults = // <4>
+				driver.findElement(By.id("cityResults"))
+					.findElements(By.cssSelector(".autocomplete-item"))
+					.stream()
+					.map(WebElement::getText)
+					.map(String::trim);
+		//@formatter:off
+		assertThat(autocompleteResults) // <5>
+			.containsExactly( // <5>
+					"Djakotomé (Benin)",
+					"Jakarta (Indonesia)",
+					"Kamirenjaku (Japan)"
+			);
+		//@formatter:on
 	}
+	// end::autocomplete-test[]
 
 	@Test
 	void addCityWithKeyboard() {
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		WebElement citySearchInput = driver.findElement(By.id("citySearch"));
 		citySearchInput.sendKeys("Paris");
@@ -231,7 +244,7 @@ class SeleniumTests {
 
 	@Test
 	void addCityWithMouse() {
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		var citySearchInput = driver.findElement(By.id("citySearch"));
 		citySearchInput.sendKeys("Paris");
@@ -244,7 +257,7 @@ class SeleniumTests {
 
 	@Test
 	void addCityWithKeyboardMultipleChoices() {
-		driver.get("http://localhost:" + port + "/?mode=modern");
+		driver.get(baseUrl);
 
 		var citySearchInput = driver.findElement(By.id("citySearch"));
 		citySearchInput.sendKeys("Ank");

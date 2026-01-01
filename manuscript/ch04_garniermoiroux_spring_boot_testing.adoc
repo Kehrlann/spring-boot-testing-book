@@ -683,7 +683,70 @@ When you are debugging your tests and want to observe the interactions, removing
 The last configuration is the _implicit wait_ of the web driver.
 This makes the driver wait when you look for an element on the page that's not present.
 In our single page app, most interactions are asynchronous and our HTML elements may take a few microseconds to be displayed.
+Instead of having to add test code to explicitly wait until they are present, we can leverage the web driver's implicit wait.
+Lastly, it's important to clean up after the tests are finished, so we don't have lingering open browsers and processes.
 
+[WARNING]
+====
+Here use a browser for the whole test class, but it will not be reused between classes.
+If you want to use a single browser for the whole test session, you can provide a custom `@TestConfiguration` you'd reuse across tests, as demonstrated in chapter 3.
+
+However, beware: Spring Boot Tests assign all beans of type `WebDriver` to a specific Spring scope, and this will end up creating many browser instances.
+If you want to override this behavior, use the `@Scope("singleton")` scope on your `@Bean WebDriver`.
+
+See the file called `SeleniumDriverAsBeanTests.java` in the sample project for an example.
+====
+
+With all that Selenium set up in place, we can finally use it in our tests.
+Let's write a test that shows that when users type in our auto-complete search box, it displays a list of cities that match the search query:
+
+[#ch4-listing-selenium-autocomplete-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Test the auto-completion feature with Selenium
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=autocomplete-test]
+----
+<1> Navigate to the page under test
+<2> Find the auto-complete box
+<3> Type "jak"
+<4> Get the list of auto-complete results
+<5> Verify the values from the dropdown
+
+To test the page, we need to point our browser to our backend application, which we do by performing a `driver.get()` request.
+The url is a full, absolute URL, using the random port number that Spring Boot Tests assigned to our test application, which we obtained via `@LocalServerPort` in the setup we did in listing <<ch4-listing-selenium-setup>> above.
+As a side note, we use the `?mode=modern` parameter, which loads the _modern_ Javascript version of our application, which HtmlUnit was not able to handle in section <<ch4-section-3>>.
+When we perform HTTP requests with the driver, the page is loaded in the live browser, and you can start interacting with it.
+That's what we do when we type into the search field.
+First, we locate the field with Selenium's DSL, `driver.findElement()`, to which we pass a query, `By.id("citySearch")`.
+This is the Selenium equivalent to the `window.getElementById("citySearch")` call using the native DOM API.
+Then we can simulate sending keypress events to that field, which is what the user does when they type, with `citySearchInput.sendKeys("jak")`.
+When our app detect those key presses, it performs an autocomplete search, by issuing HTTP requests to our backend, and displays results.
+We can look for those results by finding the div with `id=cityResult` on the page, again with `.findElement()`.
+Thanks to the implicit wait we added to our setup in listing <<ch4-listing-selenium-setup>>, we do not have to write code to wait for the background JavaScript to finish loading results.
+Instead, Selenium will run the "find" query until an element shows up, or until the implicit wait timeout (1s) is reached.
+In this `#cityResult` div, there are multiple child elements, that represent individual results.
+We look these up using `.findElements()`, plural, which returns a list.
+Here, we use a different query, `By.css(...)`, the Selenium counterpart to the browser's `window.querySelectorAll()`, and then extract and clean up the text from these results.
+Finally, we can assert that exactly three cities should be displayed, in the following order: Djakotomé, Jakarta and Kamirenjaku.
+
+[NOTE]
+.Browser management with Selenium
+====
+Selenium uses a _web driver manager_ to determine which executables it will use for the web driver and the browser itself.
+Using the name of the browser, for example "chrome" when you use `ChromeDriverService`, and some heuristics, it will find the browser installed on your machine, detect its version and the associated web driver.
+If it can't find the driver on your machine, it will download one for you.
+Of course, you can override this behavior.
+For the driver, use  `ChromeDriverService.usingDriverExecutable(...)`, and for the browser executable itself, use `ChromeOptions.setBinary()`.
+
+If you want to see which versions your tests are using, you can turn on logging for Selenium with the usual Spring Boot property, `logging.level.org.openqa.selenium=DEBUG`.
+This will print out which browser executable the Selenium Driver Manager found, the version, the version of the driver, etc.
+
+If you want to learn more about the Selenium Driver Manager, take a look at the official documentation at: www.selenium.dev/documentation/selenium_manager/
+====
+
+Selenium is very powerful tool, but it's also very broad, and we can't possibly cover all the use-cases in this book, we'd have to dedicate multiple chapters to it.
+In fact, there are whole books about it!
+See for example _Hands-On Selenium WebDriver with Java_ by Boni Garcia (O'Reilly, 2022).
 
 [#ch4-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing client applications
