@@ -3,6 +3,10 @@
 .SHELLFLAGS = -c
 MAKEFLAGS += --silent
 
+.PHONY: remove-blank-lines
+remove-blank-lines: manuscript/*.adoc
+	./resources/remove_blank_line.awk $^
+
 html: manuscript/*.adoc
 	asciidoctor \
 	    --destination-dir html/ \
