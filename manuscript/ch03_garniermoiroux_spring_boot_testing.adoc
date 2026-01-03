@@ -337,7 +337,7 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 
 By using `classes = { ThingConfiguration.class }`, we ensure that only the beans in `ThingConfiguration` will be loaded, and nothing from your custom code.
 The classes can be either `@Configuration` classes containing beans, or singleton bean classes annotated with `@Component`, `@Service`, `@Repository`, etc.
-Since Spring Boot auto-configurations are loaded from your main application class annotated with `@SpringBootApplication`, they are not included here, and will not be loaded either.
+Since Spring Boot autoconfigurations are loaded from your main application class annotated with `@SpringBootApplication`, they are not included here, and will not be loaded either.
 Please note that if your `ThingConfiguration` has annotations which triggers other classes being present, such as `@Import`, `@ComponentScan`, `@EnableConfigurationProperties`, etc, those annotations will be used.
 In that case, your test app may contain many more beans than you expected.
 To avoid those issues, you must structure your code in a way that is composable, and avoid using a single giant configuration class that pulls the entire universe in your application.
@@ -575,7 +575,7 @@ Here is a non-comprehensive list of annotations and parameters that you should a
 - Adding a profile with `@ActiveProfile(...)`
 - Selecting configuration classes manually, through `@SpringBootApplication(classes = ...)`
 - Adding configuration classes with `@TestConfiguration`
-- Adding auto-configuration classes, for example with `@AutoConfigureMockMvc`
+- Adding autoconfiguration classes, for example with `@AutoConfigureMockMvc`
 - Overriding beans with `@MockitoBean`, `@MockitoSpyBean` and `@TestBean`
 - Forcing a cache eviction through `@DirtiesContext`
 - Any Spring TestContext Framework customization, not detailed here, that you may want to try out (context initializers, context loaders, adding a parent context, ...)
