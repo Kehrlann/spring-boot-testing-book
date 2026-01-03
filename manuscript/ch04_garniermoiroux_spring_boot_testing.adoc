@@ -22,14 +22,13 @@ This chapter covers
 * Simulating browser interactions with `HtmlUnit`
 * Running the full web server in tests
 * Driving a complete web browser in tests with Selenium
-* Testing client applications with `MockRestServiceServer`
 
 The vast majority of Spring Boot applications are web applications, either browser-based applications with HTML and sometimes Javascript, or server-side components exposing HTTP endpoints in REST, GraphQL or any other format.
 One important category of integration tests interact with the application directly using the same interface as an end-user, be it an API or a web app.
 This is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
 As we have discussed in the first chapter, this introduces a lot of overhead: for example, you need to provision test environments.
 With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications locally, using simple JUnit tests.
-Together, we'll discover how you can test your server application by making HTTP requests, how you can automate user interaction tests, and what's available for testing "client" applications.
+Together, we'll discover how you can test your server application by making HTTP requests and how you can automate user interaction tests.
 
 [#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing Servlet applications with `MockMvcTester`
@@ -748,28 +747,18 @@ Selenium is very powerful tool, but it's also very broad, and we can't possibly 
 In fact, there are whole books about it!
 See for example _Hands-On Selenium WebDriver with Java_ by Boni Garcia (O'Reilly, 2022).
 
-[#ch4-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Testing client applications
-
-TODO
+Selenium is the reference for browser-based testing in the backend world, but recent alternatives, that originated in the frontend world, should be taken into account when deciding your test stack.
+If you are developing a single-page app, a very rich frontend with a lot of business logic, chances are you've used a JavaScript or TypeScript-based framework, such as Angular, React or Vue.
+In that case, it means you have significant JS expertise in your team, and you should JS-based testing tools, such as Cypress or Playwright.
 
 [#ch4-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
 
-- A good point
-- An interesting side note
-- A subtle point
-- Some tradeoffs
-
-
-// The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and Javascript, or server-side components exposing HTTP endpoints in Rest or GraphQL. Having some level of testing from the API down is an important part of testing, often called “integration” or “component” testing. It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application. This introduces overhead, for example provisioning test environments. In this chapter, we will cover the tools and infrastructure that Spring offers to test HTTP applications locally, using simple unit tests. We will see how to test servlet and reactive applications, how to automate user interaction tests, and how to test client applications.
-//
-// 1. Testing Servlet applications with MockMvcTester
-// 2. Testing Reactive web applications: WebTestClient
-// 3. Using a lightweight web browser to simulate human interaction, with HtmlUnit
-// 4. Running the full web server in tests
-// 5. Driving a complete web browser in tests with Selenium
-// 6. Testing client applications with MockRestServiceServer
-
-// QUestion: graphql
-// Question: TestRestClient
+- The majority of Spring Boot applications are web apps, and Spring Boot Tests has dedicated tooling for those use-cases.
+- There are two ways to run a test app, either with a "mock" web stack or with a full web server.
+- The mock MVC stack is lightweight, easy to test with `MockMvcTester`, and should cover 90% of your testing use-cases.
+- If you need to test capabilities of your web server, such as error dispatch or session handling, use `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)`, along with `RestTestClient` or `WebTestClient`.
+- `MockMvcTester` and the `*TestClient` s are best for testing APIs.
+If you want to test HTML or JavaScript, use either HtmlUnit or Selenium.
+- HtmlUnit works with the mock MVC stack, it runs 100% on the JVM, and is lightweight, but it doesn't perfectly emulate a web browser.
+- Selenium requires a full web browser, is bigger and slower, but is better suited for more JavaScript-heavy applications.

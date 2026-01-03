@@ -17,6 +17,7 @@
 == Chapter 4
 
 - RestTemplate / TestRestTemplate: already deprecated?
+- Removed: "Testing client applications with `MockRestServiceServer`", should this go somewhere else?
 
 == Chapter 8 - Junit
 
