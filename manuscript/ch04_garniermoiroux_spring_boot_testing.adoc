@@ -17,18 +17,21 @@
 
 This chapter covers
 
-* Testing Spring web applications with `MockMvcTester`
-* Using alternatives to `MockMvcTester`
-* Simulating browser interactions with `HtmlUnit`
+* Testing Spring web applications with `MockMvcTester` and alternatives
 * Running the full web server in tests
+* Simulating browser interactions with `HtmlUnit`
 * Driving a complete web browser in tests with Selenium
 
 The vast majority of Spring Boot applications are web applications, either browser-based applications with HTML and sometimes JavaScript, or server-side components exposing HTTP endpoints in REST, GraphQL or any other format.
-One important category of integration tests interact with the application directly using the same interface as an end-user, be it an API or a web app.
+Some integration tests interact with the application using the same interface as an end-user, be it an API or a web app.
 This is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application.
-As we have discussed in the first chapter, this introduces a lot of overhead: for example, you need to provision test environments.
-With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications locally, using simple JUnit tests.
-Together, we'll discover how you can test your server application by making HTTP requests and how you can automate user interaction tests.
+In the first chapter, we called these _end-to-end_ tests, and we discussed the overhead they incurred: for example, you need to provision test environments.
+With the web being a core part of the framework, Spring Boot Tests has many options for testing HTTP applications without going all out on end-to-end tests.
+With those, you can write simple unit tests that run locally on your development machine, with minimal setup.
+There are two broad categories of scenarios you'd want to test in web applications.
+First, you can test APIs, usually JSON-based, by issuing direct HTTP calls.
+Second, you can interact with website apps through a browser, at the HTML level, by clicking buttons and typing into fields instead of focusing on the HTTP layer.
+Let's see what this looks like in practice.
 
 [#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing Servlet applications with `MockMvcTester`
