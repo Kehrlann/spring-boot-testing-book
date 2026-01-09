@@ -39,9 +39,10 @@ Let's see what this looks like in practice.
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
 You can find the complete code under `ch4/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch4/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-The general behavior will be very similar, but instead of doing server-only rendering, we have sprinkled a bit of JavaScript to turn it into a little bit of a "Single Page Application".
+The general behavior will be very similar to the app from chapter 2, but instead of doing server-only rendering, we have sprinkled the sample a bit of JavaScript to turn it into something of a "Single Page Application".
 
-NOTE: This example is not meant to showcase JavaScript best practices, and is merely an app that we can test.
+NOTE: This example is not meant to showcase JavaScript best practices.
+It is merely an app that we write tests for.
 Please do not use it as a blueprint for a real, serious, production application.
 
 The updated look and feel is rendered in figure <<ch4-figure-01>>.
@@ -51,12 +52,12 @@ The updated look and feel is rendered in figure <<ch4-figure-01>>.
 image::ch04_f001_garniermoiroux.png[]
 
 The search bar, which lets the user search by city, now has an auto-complete dropdown.
-Notice that there are two "Display" options, with the default "Full" display of the previous figure, and a more "Compact" display that only shows the city name and the current temperature.
-When the user accesses the index page of the app, they receive a fully rendered HTML page, but any subsequent calls leverage the API of the app, which returns data as JSON.
+When the user accesses the index page of the app, they receive a fully rendered HTML page.
+Any subsequent interaction with the page triggers JavaScript code, which calls the HTTP APIs, reads JSON responses and update the page accordingly.
 
 NOTE: For all tests we write in this chapter, we have set up a mock bean to return canned responses from the weather service: every city will have "Clear sky" with 20.0°C and no wind.
-We also have a utility function called `selectCity` which acts as if the user had selected a city.
-If you need a refresher, we have covered both these topics in chapter 2.
+We also have a utility function called `selectCity` which adds cities to the user's preferences.
+If you need a refresher, we have covered both mocks and helper functions in chapter 2.
 
 // TODO: diagram?
 To test such an application, the most common tool you would use is `MockMvcTester`.
