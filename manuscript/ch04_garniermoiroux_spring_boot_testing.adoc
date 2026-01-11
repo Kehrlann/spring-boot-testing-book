@@ -69,7 +69,6 @@ As a refresher, here is what it would look like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
-
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
 <3> The URI
@@ -217,7 +216,7 @@ As we mentioned earlier, Spring has alternatives to `MockMvcTester`, and those o
 Notice that in all the listings until now, we never use an absolute URL, with a scheme, host and port, like `http://localhost:1234`.
 Instead, we made requests by only specifying the path we want to call in the application, such as `/api/city`.
 No need to worry about the port on which the test app's web server is listening: in fact, there is no server running!
-By default, Spring Boot Tests are configured with the _Mock MVC_ stack, which does not start a full web server, and only loads the components it needs to allow for HTTP-like tests.
+By default, Spring Boot Tests are configured with the _Mock MVC stack_, which does not start a full web server, and only loads the components it needs to allow for HTTP-like tests.
 This might not be immediately apparent, because the `@SpringBootTest` annotation has default values for all its parameters.
 But if we spell out the defaults, this is equivalent to using `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)`.
 The main difference between this and your production application is that there is no Servlet container, such as Tomcat, running and serving HTTP requests.
@@ -226,19 +225,20 @@ Spring will perform its usual logic, such as finding which of your controller me
 
 [#ch4-note-mock-mvc]
 [NOTE]
-.The Spring MockMvc stack
+.The Spring Mock MVC stack
 ====
 Spring Boot Tests do not start a server, and yet your application is accessible in tests.
 How is that even possible?
-To understand the Spring MockMvc stack, you need to go back to the foundation on top of which Spring WebMvc is built: the _Servlet API_.
-That specification defines the Java interfaces that you implement when you want to respond to HTTP request.
+To understand the Spring Mock MVC stack, you need to go back to the foundation on top of which Spring WebMvc is built: the _Servlet API_.
+That specification defines the Java interfaces that represent the logical elements involved in serving HTTP traffic, such as request, response, cookies, etc.
 User classes that implement the servlet API run inside a servlet container, such as Tomcat or Jetty.
-The container listens for incoming connections, accepts them and transforms the data from HTTP requests into a Java "request" object, prepares a "response" object, and then calls the servlet implementation with those two objects.
-Spring has a special implementation, the `DispatcherServlet`, which processes the request, finds which of your controller methods to call, parses the body into your domain objects, and takes your return value to wrap it into an HTTP response.
+A Servlet is a request handler, registered with the container for a specific path or path pattern.
+The container listens for incoming connections, accepts them and transforms the data from HTTP requests into a Java "request" object, prepares a "response" object, and then calls `.service(...)` on the appropriate Servlet.
+Spring has a special implementation, the `DispatcherServlet`, which processes the request, finds which of your controller methods to call, parses the body into your domain objects, invokes the method, and finally wraps the return value into an HTTP response object that it hands back to the Servlet container.
 
 In the case of MockMvc, there is no Servlet container: the embedded Tomcat server is never started.
 When you perform a request in tests with a client, such as `MockMvcTester`, that client will create a mock request object, a mock response object, and invoke a test-specific version of the `DispatcherServlet`.
-It does so by calling the `service(...)` method directly, which is a method that Servlet containers themselves use.
+In practice, when you execute an HTTP request `MockMvcTester`, it calls the `service(...)` method directly instead of issuing a network call.
 
 // TODO: diagram
 
@@ -249,11 +249,12 @@ Session management, or error page management, both a responsibility of the conta
 Second, since your test code calls `MockMvcTester`, which in turns calls the `DispatcherServlet` and your controller methods, that means that your controller code is executed in the same thread as the calling test.
 That may be useful for everything that works with thread-locals.
 Lastly, relying on the dispatcher servlet means that WebMvc is required.
-If your app and tests are WebFlux only, you'll need to rely on some other testing APIs.
+If your app and tests are WebFlux only, you can't use the Mock MVC stack.
+Head over to section <<ch4-section-2-2>> to learn how to test WebFlux apps with `WebTestClient`.
 ====
 
 `MockMvcTester` offers lots of methods for customizing the HTTP requests you are sending.
-We've seen `.contentType(...)` in our examples, but there are plenty, such as:
+We've seen `.contentType(...)` in our examples, and here are a few others you might encounter:
 
 * `.accept(...)`
 * `.header(...)`
@@ -262,7 +263,7 @@ We've seen `.contentType(...)` in our examples, but there are plenty, such as:
 * `.apiVersion(...)`
 * ... and many, many more
 
-If you find yourself customizing all requests in your tests in the same way, you can use the `RequestPostProcessor` API to encapsulate all these method calls into one:
+If you find yourself customizing all requests in your tests in the same way, for example, setting a header or a specific cookie on every request, you can use the `RequestPostProcessor` API to encapsulate all these method calls into one:
 
 [#ch4-listing-request-post-processor, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using a RequestPostProcessor
@@ -271,7 +272,7 @@ If you find yourself customizing all requests in your tests in the same way, you
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=request-post-processor]
 ----
 
-We introduce a static method, `.apiUser`, which allows us to set the `accept` header, an `x-answer` custom header and a cookie value to a MockMvc request.
+We introduce a static method, `.apiUser()`, which allows us to set the `accept` header, an `x-answer` custom header and a cookie value to a MockMvc request.
 You can then combine it with `MockMvcTester` using the `.with(...)` method.
 This is perfect for reusing it in every test without having to set both headers and the cookie manually.
 We will see concrete examples implemented in Spring in chapter 7, "Testing security configurations".
@@ -279,17 +280,17 @@ We will see concrete examples implemented in Spring in chapter 7, "Testing secur
 [#ch4-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Alternatives to `MockMvcTester`
 
-`MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications, which fulfill a very similar purpose.
-You may encounter some of these in legacy code-bases, or tests with different stylistic preferences.
-And if develop a WebFlux-based application, you do not have access to the MockMvc stack.
+`MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications.
+You may encounter some of these in legacy codebases, or tests with different stylistic preferences.
+If you develop a WebFlux-based application, you need an alternative to `MockMvcTester` that works with WebFlux.
 
 [#ch4-section-2-1, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `MockMvc`, the original component
 
-`MockMvcTester` is a recent addition to the testing portfolio: it was introduced in Spring Framework `6.2` and Boot `3.4`.
-Prior to this, the accepted solution for testing MVC apps was `MockMvc`.
-It has all the bells and whistles for HTTP requests on the MockMvc stack, and is very similar to `MockMvcTester`.
-But it has two key differences: it lacks `AssertJ` integration, and the API is based on wrapping static methods.
+`MockMvcTester` is a recent addition to the testing toolkit: it was introduced in Spring Framework `6.2` and Boot `3.4`.
+Prior to this, the common solution for testing MVC apps was `MockMvc`, and you will likely encounter it in older projects.
+It has all the bells and whistles for HTTP requests on the Mock MVC stack, and is very similar to `MockMvcTester`.
+But it has two key differences: it lacks `AssertJ` integration, and the API is based on static methods rather than a fluent API with chained methods.
 A typical `MockMvc` test might look something like this:
 
 [#ch4-listing-mockmvc-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -298,29 +299,29 @@ A typical `MockMvc` test might look something like this:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
-
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
 <3> Verify the HTTP status
-<4> Verify some things on the body
-<5> The body is checked with Hamcrest matchers
+<4> The body is checked with Hamcrest matchers
 
-This is very similar to the tests we've seen in the previous section, it means you need to know which static methods to import to make it work, such as `MockMvcRequestBuilders.get(...)` and others.
+This is very similar to the tests we've seen in the previous section.
+However, you need to know which static methods to import to make it work, such as `MockMvcRequestBuilders.get(...)`, `MockMvcResultMatchers.status()` and others.
+The test is also, in my opinion, harder to read.
 This approach works and is supported, so it is not crucial to migrate your existing test suites to these classes.
 However, for new projects, or new test classes in existing projects, I'd recommend using the more recent `MockMvcTester`.
 
 NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
-You could see it as "syntactic sugar", which makes `MockMvc` nicer to user.
+You could see it as syntactic sugar, which makes `MockMvc` nicer to use.
 
 [#ch4-section-2-2, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `WebTestClient` for WebFlux-based applications
 
 When working on WebFlux-based applications, the MVC stack is not present.
 While it is possible, in some cases, to also add Spring MVC support in your tests, it will often not work: the WebFlux and MVC stacks are not designed to coexist in the same project.
-And, without MVC, there can be no MockMvc stack, and no `MockMvcTester`.
-Instead, Spring offers a test equivalent to the familiar `WebClient` used for making HTTP requests in your WebFlux app.
-This utility is called `WebTestClient`.
-You need a specific WebFlux testing module in your build file, that we mentioned briefly in chapter 1:
+And, without MVC, there can be no Mock MVC stack, and `MockMvcTester` is not available.
+Instead, Spring offers a test utility called `WebTestClient`.
+It is the testing equivalent of `WebClient`, that you use in your production code to make HTTP requests to third-party services.
+To use `WebTestClient`, you need a specific WebFlux testing module in your build file, that we mentioned briefly in chapter 1:
 
 [#ch4-listing-webflux-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .WebFlux testing dependencies
@@ -329,25 +330,24 @@ You need a specific WebFlux testing module in your build file, that we mentioned
 include::../code/ch4/weather/pom.xml[tags=webflux-test-dependency]
 ----
 
-This module is added to your `pom.xml` whenever you create a new Spring Reactive Web project on the Spring Initializr, and should already be present in most projects.
+This module is added to your `pom.xml` whenever you create a new Spring Reactive Web project on the Spring Initializr, and should already be present in most projects that will make use of it.
 
 The API of `WebTestClient` should be familiar.
-It is similar to the regular `WebClient`, which in turn inspired `RestClient` and `MockMvcTester`, so they share the kind of fluent API.
+It is similar to the regular `WebClient`, which in turn inspired `RestClient` and `MockMvcTester`, so they share the same kind of fluent API.
 A typical test would look something like:
 
 [#ch4-listing-webclient-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.A WebTestClient test
+.A WebTestClient-based test
 [source,java,indent=0]
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
-
 <1> Autoconfigure the class with a test client
 <2> Inject the client
 <3> Make requests with a fluent builder
 <4> Assert on the result
 
-Our test is configured with the default `@SpringBootTest` annotation, which implies an environment of type `WebEnvironment.Mock`.
+Our test are configured with the default `@SpringBootTest` annotation, which implies an environment of type `WebEnvironment.Mock`.
 This means that the Reactive web server, in this case Netty, is not started in these tests.
 By using `@AutoConfigurerWebTestClient`, your test app will be configured with a  `WebTestClient` bean, which you can autowire like any other bean.
 You can use the usual fluent APIs to make web requests, very similar to the `MockMvcTester` example from section <<ch4-section-1>>.
@@ -360,22 +360,22 @@ However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, i
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
-
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
 <3> Use AssertJ to make assertions
 
-It is almost exactly similar to `MockMvcTester`, with a single additional line.
-Using some common AssertJ patterns, it is even possible to get rid of this extra step.
-If you'd like to learn more, please refer to chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries".
-Using built-in assertions or AssertJ boils down to stylistic preferences.
+It is almost a carbon copy of our `MockMvcTester` tests, with a single additional line.
+And this extra line of code is not even required!
+As we'll cover chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries", it is even possible to encapsulate this step with AssertJ.
+Using built-in assertions versus AssertJ boils down to stylistic preferences.
 If you have a portfolio of Spring projects both WebFlux and WebMVC, and you'd like to align on a single style, AssertJ is a common denominator.
 
 A remarkable detail of `WebTestClient` is that the `exchange()` method, which performs requests, is blocking.
-The `WebClient` that you use in your production code, on the other hand, is fully reactive and returns `Mono<...>` objects.
-There's a very simple explanation: test methods are not reactive!
-That's fine, even if you run tests in parallel, you're likely not running thousands of test methods at the exact same time.
-You will not encounter any of the web-scale bottlenecks that Reactor helped solve in the first place.
+The `WebClient` that you use in your production code, on the other hand, is fully reactive, with reactive return types based on `Mono<...>`.
+There's a very simple explanation for this difference: test methods are not reactive.
+And that's fine!
+Reactor was created to handle non-blocking, IO-bound workloads.
+Your tests will not encounter any of the web-scale bottlenecks that Reactor helped solve in the first place, even if you run them all in parallel.
 Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns the result.
 
 // TODO: serialize body, which MockMvcTester cannot do
@@ -383,22 +383,22 @@ Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns 
 [NOTE]
 .WebTestClient, under the hood
 ====
-The `WebTestClient` is very similar to the `WebClient` designed for your production applications.
+The `WebTestClient` is very similar to the `WebClient` that you use in your production applications.
 The both wrap an `ExchangeFunction`, which is the Spring WebFlux abstraction for asynchronously turning an HTTP request into an HTTP response.
 They each have dedicated features and characteristics, though.
 `WebTestClient` has utilities for capturing outgoing requests and incoming responses, and for making assertions.
 On the other hand, `WebClient` is more extensible and has production-related features, such as observability integration.
 
-We've discussed how the MockMvc stack works in section <<ch4-section-1>>.
+We've discussed how the Mock MVC stack works in section <<ch4-section-1>>.
 WebFlux does not rely on the Servlet spec, and there is no Servlet container, that is, no Tomcat server.
 Instead, traffic is served by Netty, and the core Spring abstraction is the `HttpHandler`.
 When you use  `@AutoConfigureWebTestClient` does not start a web server to handle requests, but instead adapts the client's `ExchangeFunction` to call the test app's `HttpHandler` directly, without going through the full Netty stack.
 
-But `WebTestClient` doesn't have to call the handler directly.
-It can wrap any `ExchangFunction`, which means that it can also be used as a regular HTTP client!
+It is worth mentioning that `WebTestClient` doesn't have to call the handler directly.
+It can wrap any `ExchangFunction`, which means that it can also be used as a regular HTTP client.
 ====
 
-There is another, fundamental difference with the MockMvc stack, which might not be apparent at first.
+There is another, fundamental difference with the Mock MVC stack, which might not be apparent at first.
 Unlike MockMvc, you can use `WebTestClient` to make real HTTP requests.
 You need to create an instance programmatically, rather than inject the autoconfigured client, and specify the full URL you would like to use, including the scheme and fully qualified domain name.
 An example test would look something like:
@@ -409,18 +409,17 @@ An example test would look something like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
-
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
 <3> Use like a regular client
 
 This is a subtle configuration difference that may trip you up if you've never encountered it.
-This is different from what we've showcased at the beginning of the section, with the `WebEnvironment.MOCK` stack.
-Using the mock stack is fairly common, but network-enabled `WebTestClient` is much less frequently used.
+Using `.bindToServer()` turns the `WebTestClient` into a network-capable HTTP client, unlike what we've seen so far with the `WebEnvironment.MOCK` configuration parameter.
+Using the mock stack in tests is extremely common, but `WebTestClient` with the full network stack is much less frequently used.
 
-NOTE: While it was initially designed with WebFlux in mind, `WebTestClient` can also be added to a regular WebMVC project, with the MockMvc stack.
+NOTE: While it was initially designed with WebFlux in mind, `WebTestClient` can also be added to a regular WebMVC project, with the Mock MVC stack.
 To make it work, you need to add the `org.springframework.boot:spring-boot-starter-webclient-test` dependency to your project, in the test scope.
-Please beware that while it is technically possible, it is highly unusual.
+Keep in mind that while it is technically possible, it is highly unusual.
 This may fit certain niche use-cases, such as a project where you are transitioning from WebFlux to WebMvc, and would like to keep the tests intact.
 
 [#ch4-section-2-3, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
@@ -440,28 +439,28 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 ----
 
 Compare it to the `WebTestClient` examples in listings <<ch4-listing-webclient-test>> and <<ch4-listing-webclient-test-assert>>, and you'll notice it is exactly the same test with the word "rest" swapped out for "rest".
-When running tests with the MockMvc stack, using either `MockMvcTester` or `RestTestClient` boils down to stylistic preferences.
+When running tests with the Mock MVC stack, using either `MockMvcTester` or `RestTestClient` boils down to stylistic preferences.
 
 One last testing client you may encounter in older codebases is Spring Boot's `TestRestTemplate`, the testing alternative to `RestTemplate`.
 Both will be deprecated as of Spring Framework 7.1 and Boot 4.2, and will be removed in the next major versions.
-While it is acceptable to keep these in existing tests for now, do not rely on them in your new test suited, and use the more modern alternatives we discussed earlier in this chapter.
+While it is acceptable to keep these in existing tests for now, do not rely on them in your new test suite, and instead use one of the solutions we've discussed earlier in this chapter.
 
 [#ch4-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Simulating human interaction with HtmlUnit
 
 In the first sections of this chapter, we've tested our application by making HTTP requests to various API endpoints, as if we were using cURL or Postman.
 But not all applications are pure backend, REST-based apps.
-Our weather app has an HTML front-end, with a bit of JavaScript, and users interact with it using a browser, not cURL!
+Our weather app has an HTML front-end, with a bit of JavaScript, and users interact with it using a browser, not by making HTTP calls with cURL!
 To gain more confidence that the app functions as intended, we can get closer to the "end-to-end" side of the testing spectrum, and simulate browser interactions.
 Using `MockMvcTester` or the other test clients, it is possible to get the HTML content of the page, parse it, and perform some interactions.
 But it was not designed for this kind of usage, and it would get cumbersome quite quickly.
 There's an obviously much better solution: browsers.
 They were designed specifically to display and interact with HTML, and are a natural fit.
 As we'll discuss in detail in section <<ch4-section-5>>, you _can_ run a full-fledged web browser from your tests, but it comes with a few constraints.
-But before we think going all-in a web browser, we can use the _HtmlUnit_ project as a stepping stone.
-As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-Less browser for Java programs".
-GUI-Less means that it does not display anything to the screen, and "for Java programs" means that, to make it do things, you have to write some java code.
-Think of it as a lightweight alternative to a browser, specifically for Java.
+But before we think about going all-in on using a real web browser, we can use the _HtmlUnit_ project as a stepping stone.
+As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-less browser for Java programs".
+GUI-less means that it does not display anything on the screen, and "for Java programs" means that, to make it do things, you have to write some Java code.
+Think of it as a lightweight alternative to a browser, specifically created for Java.
 It's a great fit for tests, and Spring Boot Test has support for the library.
 To use it, add it the dependency to your project:
 
@@ -475,10 +474,11 @@ include::../code/ch4/weather/pom.xml[tags=htmlunit]
 The core class of HtmlUnit is the `WebClient`, which simulates the browser.
 It has the same name as Spring's reactive `WebClient`, but completely different capabilities.
 When you import it, be careful that you select the correct package in your IDE: you want to use `org.htmlunit.WebClient`.
-When you use the MockMvc stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
+When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
 In the methods of the `WebClient`, you'll find methods when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
-Let's write a test that shows how you can look up elements in the page.
-If you refer back to figure <<ch4-figure-01>>, you can see that each "weather" card has the name of the city and the country on one line, followed by temperature, wind speed and weather conditions, each on their own line.
+
+If you refer back to the screenshot in figure <<ch4-figure-01>>, you can see that each "weather card" has the name of the city and the country on one line, followed by temperature, wind speed and weather conditions, each on their own line.
+Let's use `HtmlUnit` to find the weather card and check its contents:
 
 [#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .HtmlUnit basic test
@@ -486,27 +486,27 @@ If you refer back to figure <<ch4-figure-01>>, you can see that each "weather" c
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
 ----
-
 <1> The WebClient from org.htmlunit
-<2> Making a request returns an HtmlPage
+<2> Making a GET request returns an HtmlPage
 <3> CSS query to find elements on the page
 <4> There's a single weather card
 <5> Extract the text from the card
 
 Thanks to `@AutoConfigureMockMvc`, there's a `WebCient` bean available in our test context, which we can inject.
 It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead you can just use the path of the request.
-Instead of getting HTML as a raw string, this client parses the response and exposes an `HtmlPage`, which you can use with familiar web DOM APIs, such as `.getElementById(...)`.
+The `WebClient` parses the response's HTML body and exposes an `HtmlPage`, which you can interact with using familiar web DOM APIs, such as `.getElementById(...)`.
 Here we're using `.querySelectorAll(...)` to find all HTML elements that match a given CSS selector query.
 Those are the "cards" that display weather information about the cities the users has selected.
 In this test, we only selected Paris, so there's a single card displayed, and the weather data matches the mock responses we pre-configured.
 By default, `.querySelectorAll(...)` returns a list of `DomNode`, which is the most abstract type possible: it's any "element in the DOM tree".
 As such, they are mostly used to navigate the tree, with methods for getting parent, child or sibling nodes.
-But they also allow you to access any attribute, such as ID or classes, and their text content, which is enough to make basic assertions about the information that's visible on the page.
+They also allow you to access any attribute, such as ID or classes, and their text content.
+Here, the text is enough to make basic assertions about the information that's visible on the page.
 
 But `HtmlUnit` is much richer!
-It offers more specialized types than a simple `DomNode`, and allows you to check the visibility of an element, type text into input fields, click items, and even run some JavaScript code.
+It offers more specialized types than the humble `DomNode`, and allows you to check the visibility of an element, type text into input fields, click items, and even run some JavaScript code.
 There's a bit of JavaScript in our web page: when a user wants to select a city, they type the name of the city in a field, and an auto-complete popup shows up.
-They can then select on the city of their choice from the dropdown, and the card will be added to the page without reloading the full page.
+They can then select on the city of their choice from the dropdown, and the card will be added to the current document without reloading the full page.
 We can write a test for this behavior:
 
 [#ch4-listing-htmlunit-test-javascript, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -515,7 +515,6 @@ We can write a test for this behavior:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
 ----
-
 <1> Type into an input field
 <2> Click on an element
 <3> Wait for JS http requests to finish
@@ -525,16 +524,18 @@ The autocomplete will show a single result, Bogotá.
 The user then clicks on the result, and a weather card for Bogotá is added to the page.
 To simulate user interactions, we use the `.type(...)` method on the input, and the `.click(...)` method on the first auto-complete result.
 Here we ask the `.querySelector("input#citySearch")` to return a specific type `HtmlInput`.
-It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing the text box.
+It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing characters into the text box.
 For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`, which it exposes a `.click()` method.
 Both the "type" and "click" actions trigger some JavaScript on the page.
 When the user inputs data in the city search text box, the page makes HTTP requests to the backend to get matching cities and display auto-complete results.
 And when they click on an entry, the page calls the API endpoint that selects the city, and refreshes weather data on the page.
-This JavaScript code runs asynchronously on the page, taking a few milliseconds to get the answer back from our server.
+This JavaScript code runs asynchronously in the background, taking a few milliseconds to get the answer back from our server.
 We want our tests to ensure that these operations are completed before moving on to the next steps.
 Since the `WebClient` is simulating the browser, it is responsible for running JavaScript on the page, so we can tell it to wait until JS code has finished executing.
 This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms timeout, after which the `WebClient` will stop waiting and test execution will resume.
 
+So you can do quite a lot with HtmlUnit, including executing JavaScript ... in Java!
+Quite a feat, isn't it?
 But for all its features, HtmlUnit only has limited support for JavaScript.
 If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, a version of the JavaScript language that came out in 2015. But JS is a very active language, with a new release every year.
 Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
@@ -547,7 +548,7 @@ missing ; before statement (http://localhost/js/modern.js#11)
 
 The error looks like a parsing error, but only hint at the actual error is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
 And this brings us back to the beginning of this section: HtmlUnit is not a "full-fledged browser".
-It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a completed replacement for a full web browser.
+It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a complete replacement for a full web browser.
 
 [NOTE]
 .JavaScript support in HtmlUnit
@@ -565,12 +566,12 @@ If you're curious about what features are included and what's missing, take a pe
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests
 
-Up to this, we've run all our tests using the Mock MVC stack, or its WebFlux equivalent, without ever starting a live web server.
+Up to this point, we've run all our tests using the Mock MVC stack, or its WebFlux equivalent, without ever starting a live web server.
 We mentioned earlier that when you don't have a web server, you'll be missing certain features in your tests.
-For example, handling exceptions and rendering error pages is handled by the servlet container - think: web server - in WebMVC, and so is session handling.
+For example, in WebMVC, handling exceptions and rendering error pages is handled by the servlet container (that's the web server, like Tomcat), and so is session handling.
 Of course, any code that is tied to your specific server implementation, such as a custom Tomcat valve, also requires a full server to run.
 To demonstrate this, let's test our app's custom 404 page.
-If you navigate to a page that doesn't exist, say http://localhost:8080/does-not-exist, you should see a very simple page with a message "404 - NOT FOUND" and "This is not the page you are looking for".
+If you navigate to a page that doesn't exist, say http://localhost:8080/does-not-exist, you should see a bare-bones page with a message "404 - NOT FOUND" and "This is not the page you are looking for".
 This page is a simple HTML file, found at `src/main/resources/public/error/404.html`.
 Whenever you try to access a URL that does not exist, Spring signals that a 404 HTTP error should be emitted, and Tomcat serves the appropriate file if it finds one in the default directory.
 If you try to test that with the Mock MVC stack, the body of the page will be empty, because there's no Tomcat to serve our `404.html` page:
@@ -583,20 +584,20 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 ----
 
 `MockMvcTester` lets you know that the status is HTTP 404, and gives you access to Spring's internal error message, but stops there.
-If you want to test this feature, you need to run the Tomcat server.
-The `@SpringBootTest` annotation makes it very easy with the `webEnvironment` parameter.
+If you want to test the error page itself, you need to run the Tomcat server.
+The `@SpringBootTest` annotation makes it very easy by changing the `webEnvironment` parameter.
 You have 4 possible values:
 
-- *MOCK*: A "mock" server is created and exposes your controllers to your tests, but the real web server is not created.
+- *MOCK*: A "mock" server is created and exposes your controllers to your tests, but the real web server is not started.
 This is the default.
 - *NONE*: No web capabilities are enabled for your tests.
 This makes most sense for non-web scenarios, for example CLIs or batch apps.
 - *RANDOM_PORT*: The embedded web server is started for the tests, on a random, available port.
 This is the recommended way to run your tests with the web server.
 - *DEFINED_PORT*: The embedded web server is started for the tests, on whatever port is defined in the `server.port` property, or on port 8080 by default.
-This may be useful if you need to know the running port before the app starts, for configuration purposes.
+This may be useful if you need to know the port on which the application is listening in advance, for example for configuration purposes.
 
-Running on a defined port risks conflicting with whatever other process is running on the machine.
+Running on a defined port risks conflicting with whatever other process is executing on the machine.
 And if you're running multiple tests contexts, you will need to assign a separate port to each so they don't conflict.
 This is why the recommended approach is to use a random port: before starting your test app, Spring Boot Tests will try to find an available port, and use that.
 
@@ -613,15 +614,18 @@ In practice, this looks like:
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;rest-test-client;test]
 ----
 
-This test showcases the "error dispatch" handled by Tomcat with the actual The structure and APIs used are exactly the same as a regular Mock MVC test.
-You may observe that it slightly slower because it loads more components, and you'll see a line indicating that the server is running, on a random port:
+This test showcases the "error dispatch" handled by Tomcat with the actual error page that end-users would see.
+The structure and APIs used are exactly the same as a regular Mock MVC test.
+You may observe that this test is slightly slower to execute because it loads more components.
+Looking at the output logs you'll see a line indicating that the server is running, on a random port:
 
 ----
 [...] Tomcat started on port 50327 (http) with context path '/'
 ----
 
 If you run the same test again, you'll see that the port number has changed.
-If you need to access the port value, use the `@LocalServerPort` annotation:
+If you need to access the port value, use the `@LocalServerPort` annotation.
+In the listing below, we use the port with a regular, non-test `RestClient`:
 
 [#ch4-listing-localserverport, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Access the port of the running test app
@@ -632,15 +636,16 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 Test-wise, this might be useful if you are checking some configuration values or specific log lines, or if you are testing multi-component systems where you connect your app under test to some other external application.
 And since there's an actual server running, you can access it independently of your tests.
-Simply place a breakpoint inside a test, then run the test in debug mode.
+Simply place a breakpoint inside a test, then run it in debug mode in your IDE.
 The execution will stop at that breakpoint.
 Grab the value of the local server port from the variable in the example above, and navigate to it using your usual web browser.
 For the specific example we showcased earlier, this would be `http://localhost:50327`.
-This will give you a view of the state of the application during the execution of your test.
+In your browser, you will see the test app, and the data you'll see is whatever your test code added up until the breakpoint.
+For example, if your test selects Kuala Lumpur, then you'll see a weather card for that city.
 You can use it to debug your tests, verifying what the app looks like after this or that API call, without relying on the tests themselves.
 You can also experiment with your tests, by changing the data during a test run.
 But remember that what you see in your browser is not exactly the values that are in your test.
-It is a separate view, external to your test, and there might be discrepancies, variables that were recorded before the breakpoint might be different if you re-compute the value in your browser, etc.
+It is a separate view into the test app, external to your test, and there might be discrepancies, variables that were recorded before the breakpoint might be different, because they were captured a few steps earlier.
 
 [TIP]
 ====
@@ -677,8 +682,14 @@ To use Selenium in your project, first add the dependency:
 include::../code/ch4/weather/pom.xml[tags=selenium]
 ----
 
-With that, you can set up your tests.
-You will need a bit of boilerplate code before you can actually run the tests:
+Selenium has more moving pieces than the test utilities we've presented so far, and requires a more involved setup.
+So before getting into the tests themselves, let's discuss the available configuration options.
+
+[#ch4-section-5-1, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== Configuring Selenium
+
+Before running tests, you will need to set up Selenium, and decide on a few things.
+This will involve a bit of boilerplate:
 
 [#ch4-listing-selenium-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Selenium test setup
@@ -686,77 +697,22 @@ You will need a bit of boilerplate code before you can actually run the tests:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=class;setup-webdriver]
 ----
-
 <1> Set up the driver server
 <2> Create an instance of a browser
-<3> Configure the browser
+<3> Additional configuration
 <4> Shut down selenium after the test is finished
 
-Perhaps surprisingly, this setup has more code than our usual tests.
+Strikingly, this setup has way more code than our examples so far.
 The reason is that Spring Boot Tests does not have opinions on how you should configure Selenium, and requires you to choose which browser to use and how to configure it.
 The second notable thing here is that we use `@BeforeAll` and `@AfterAll` instead of our usual `@BeforeEach` and `@AfterEach` setup methods.
-Here, JUnit will run `startChromeBrowser` once before all tests, and `stopChromeBrowser` after all tests in the file have finished executing.
+With this, JUnit will run `startChromeBrowser` once before all tests, and `stopChromeBrowser` after all tests in the file have finished executing.
 Creating a new browser instance takes more than 1 second, so to keep execution times low you want to avoid doing it before every single test.
 The flipside of this is that the browser window is reused across tests, meaning that any local state is shared across tests.
 
-TIP: If you need to reset cookies between tests, you may use `driver.manage().deleteAllCookies();`.
+TIP: If you need to reset cookies between tests, for example to log out a test user created in a given test, you may use `driver.manage().deleteAllCookies();`.
 
 For our example, we use a `ChromeDriverService`, but you may swap it out for any driver you'd like, such as `SafariDriverService`, `EdgeDriverService` or `GeckoDriverService` for Firefox.
-The only pre-requisite for this to work is that there is a version of the chosen browser installed on your local machine, and Selenium will do the rest.
-The `ChromeDriver` instance represents a browser instance, that we launch in `--headless` mode, without any UI displayed.
-This prevents Chrome from opening visible windows when you run your tests.
-This configuration is required for CI environments, where there are no displays, and a browser with a GUI won't start.
-Locally, this also avoids unexpectedly losing focus because Chrome just popped as the foremost window.
-When you are debugging your tests and want to observe the interactions, removing this option allows you to see the tests being executed in real time.
-The last configuration is the _implicit wait_ of the web driver.
-This makes the driver wait when you look for an element on the page that's not present.
-In our single page app, most interactions are asynchronous and our HTML elements may take a few microseconds to be displayed.
-Instead of having to add test code to explicitly wait until they are present, we can leverage the web driver's implicit wait.
-Lastly, it's important to clean up after the tests are finished, so we don't have lingering open browsers and processes.
-
-[WARNING]
-====
-Here use a browser for the whole test class, but it will not be reused between classes.
-If you want to use a single browser for the whole test session, you can provide a custom `@TestConfiguration` you'd reuse across tests, as demonstrated in chapter 3.
-
-However, beware: Spring Boot Tests assign all beans of type `WebDriver` to a specific Spring scope, and this will end up creating many browser instances.
-If you want to override this behavior, use the `@Scope("singleton")` scope on your `@Bean WebDriver`.
-
-See the file called `SeleniumDriverAsBeanTests.java` in the sample project for an example.
-====
-
-With all that Selenium set up in place, we can finally use it in our tests.
-Let's write a test that shows that when users type in our auto-complete search box, it displays a list of cities that match the search query:
-
-[#ch4-listing-selenium-autocomplete-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Test the auto-completion feature with Selenium
-[source,java,indent=0]
-----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=autocomplete-test]
-----
-
-<1> Navigate to the page under test
-<2> Find the auto-complete box
-<3> Type "jak"
-<4> Get the list of auto-complete results
-<5> Verify the values from the dropdown
-
-To test the page, we need to point our browser to our backend application, which we do by performing a `driver.get()` request.
-The url is a full, absolute URL, using the random port number that Spring Boot Tests assigned to our test application, which we obtained via `@LocalServerPort` in the setup we did in listing <<ch4-listing-selenium-setup>> above.
-As a side note, we use the `?mode=modern` parameter, which loads the _modern_ JavaScript version of our application, which HtmlUnit was not able to handle in section <<ch4-section-3>>.
-When we perform HTTP requests with the driver, the page is loaded in the live browser, and you can start interacting with it.
-That's what we do when we type into the search field.
-First, we locate the field with Selenium's DSL, `driver.findElement()`, to which we pass a query, `By.id("citySearch")`.
-This is the Selenium equivalent to the `window.getElementById("citySearch")` call using the native DOM API.
-Then we can simulate sending keypress events to that field, which is what the user does when they type, with `citySearchInput.sendKeys("jak")`.
-When our app detect those key presses, it performs an autocomplete search, by issuing HTTP requests to our backend, and displays results.
-We can look for those results by finding the div with `id=cityResult` on the page, again with `.findElement()`.
-Thanks to the implicit wait we added to our setup in listing <<ch4-listing-selenium-setup>>, we do not have to write code to wait for the background JavaScript to finish loading results.
-Instead, Selenium will run the "find" query until an element shows up, or until the implicit wait timeout (1s) is reached.
-In this `#cityResult` div, there are multiple child elements, that represent individual results.
-We look these up using `.findElements()`, plural, which returns a list.
-Here, we use a different query, `By.css(...)`, the Selenium counterpart to the browser's `window.querySelectorAll()`, and then extract and clean up the text from these results.
-Finally, we can assert that exactly three cities should be displayed, in the following order: Djakotomé, Jakarta and Kamirenjaku.
+As long as that there is a version of the chosen browser installed on your local machine, and Selenium will be able to start the matching driver service.
 
 [NOTE]
 .Browser management with Selenium
@@ -773,13 +729,80 @@ This will print out which browser executable the Selenium Driver Manager found, 
 If you want to learn more about the Selenium Driver Manager, take a look at the official documentation at: www.selenium.dev/documentation/selenium_manager/
 ====
 
+The `ChromeDriver` instance represents a browser instance, that we launch in `--headless` mode, without any UI displayed.
+This prevents Chrome from opening visible windows when you run your tests.
+This configuration is required for CI environments, where there are no displays, and a browser with a GUI won't start.
+Locally, this also avoids unexpectedly losing focus because Chrome just popped as the foremost window.
+But when you are debugging your tests and want to observe the interactions, removing this option allows you to see the tests being executed in real time, live in the browser Selenium is currently driving.
+
+The last configuration is the _implicit wait_ of the web driver, including a timeout for how long the driver should wait.
+This makes the driver wait when you look for an element on the page that's not present.
+So if your test says, "get element with id #popup", the driver will try to find it in the loop, until it is present on the page, or until the driver times out.
+And all of this without cluttering your tests with extra lines of code to wait for this or that element to be visible.
+This is important for our single page app, because most interactions are asynchronous.
+When the user makes a change, the JavaScript code makes HTTP requests, and when they complete, JavaScript updates the page with the data from the response.
+Instead of having to add test code to explicitly wait until they are present, we can leverage the web driver's implicit wait.
+Lastly, it's important to clean up after the tests are finished, so we don't have lingering open browsers and processes.
+
+[WARNING]
+====
+Here we use a single browser instance for the whole test class, but it will not be reused between classes.
+If you want to use a single browser for the whole test session, you can provide a custom `@TestConfiguration` you'd reuse across tests, as demonstrated in chapter 3.
+
+However, beware: Spring Boot Tests assign all beans of type `WebDriver` to a specific Spring scope, and this will end up creating many browser instances.
+That's the exact opposite of what you're trying to achieve!
+If you want to override this behavior, use the `@Scope("singleton")` scope on your `@Bean WebDriver`.
+
+See the file called `SeleniumDriverAsBeanTests.java` in the sample project for an example.
+====
+
+With all that set up out of the way, we can finally start writing our tests!
+
+[#ch4-section-5-2, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== Writing Selenium tests
+
+Let's create a test that shows that when users type in our auto-complete search box, it displays a list of cities that match the search query:
+
+[#ch4-listing-selenium-autocomplete-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Test the auto-completion feature with Selenium
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=autocomplete-test]
+----
+<1> Navigate to the page under test
+<2> Find the auto-complete box
+<3> Type "jak"
+<4> Get the list of auto-complete results
+<5> Verify the values from the dropdown
+
+To test the page, we need to point our browser to our backend application, which we do by performing a `driver.get()` request.
+The url is a full, absolute URL, using the random port number that Spring Boot Tests assigned to our test application, which we obtained via `@LocalServerPort` in the setup from listing <<ch4-listing-selenium-setup>>.
+As a side note, we use the `?mode=modern` parameter, to load the _modern_ JavaScript version of our application.
+If you remember, HtmlUnit was not able to handle in section <<ch4-section-3>>, but it works perfectly in Selenium.
+When we perform HTTP requests with the driver, the page is loaded in the live browser, and you can start interacting with it.
+That's what we do when we type into the search field.
+First, we locate the field with Selenium's `driver.findElement()`, to which we pass a query, `By.id("citySearch")`.
+This is the Selenium equivalent to the `window.getElementById("citySearch")` call using the native DOM API.
+Then we can simulate the user typing into the field, by calling `citySearchInput.sendKeys("jak")`.
+This launch triggers the same event as someone typing on a keyboard, `keydown`, `keyup`, etc.
+
+When our app detects those key presses, it performs an autocomplete search, by issuing HTTP requests to our backend, and displays results.
+We can look for those results by finding the div with `id=cityResult` on the page, again with `.findElement()`.
+Unlike in the HtmlUnit tests, we do not need to add code to wait for those elements to appear, thanks to the implicit wait we added in <<ch4-listing-selenium-setup>>.
+Instead, Selenium will run the "find" query until an element shows up, or until the implicit wait timeout (1s) is reached.
+In this `#cityResult` div, there are multiple child elements, that represent individual results.
+We look these up using `.findElements()`, plural, which returns a list.
+Here, we use a different query, `By.css(...)`, the Selenium counterpart to the browser's `window.querySelectorAll()`, and then extract and clean up the text from these results.
+Finally, we can assert that exactly three cities should be displayed, in the following order: Djakotomé, Jakarta and Kamirenjaku.
+
 Selenium is very powerful tool, but it's also very broad, and we can't possibly cover all the use-cases in this book, we'd have to dedicate multiple chapters to it.
 In fact, there are whole books about it!
 See for example _Hands-On Selenium WebDriver with Java_ by Boni Garcia (O'Reilly, 2022).
 
-Selenium is the reference for browser-based testing in the backend world, but recent alternatives, that originated in the frontend world, should be taken into account when deciding your test stack.
-If you are developing a single-page app, a very rich frontend with a lot of business logic, chances are you've used a JavaScript or TypeScript-based framework, such as Angular, React or Vue.
-In that case, it means you have significant JS expertise in your team, and you should JS-based testing tools, such as Cypress or Playwright.
+Selenium is the reference for browser-based testing in the backend world.
+But it's not the only option, and there are more recent alternatives, that originated in the frontend world, often written for JavaScript or TypeScript.
+If you are developing a single-page app, a very rich frontend with a lot of business logic, chances are you've used a JS (or TS) framework, such as Angular, React or Vue.
+In that case, it means you have significant expertise in your team, and you should consider using JS-based testing tools, such as Cypress or Playwright.
 
 [#ch4-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
@@ -788,7 +811,7 @@ In that case, it means you have significant JS expertise in your team, and you s
 - There are two ways to run a test app, either with a "mock" web stack or with a full web server.
 - The mock MVC stack is lightweight, easy to test with `MockMvcTester`, and should cover 90% of your testing use-cases.
 - If you need to test capabilities of your web server, such as error dispatch or session handling, use `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)`, along with `RestTestClient` or `WebTestClient`.
-- `MockMvcTester` and the `*TestClient` s are best for testing APIs.
+- `MockMvcTester` and the `*TestClient` alternatives are best for testing APIs.
 If you want to test HTML or JavaScript, use either HtmlUnit or Selenium.
 - HtmlUnit works with the mock MVC stack, it runs 100% on the JVM, and is lightweight, but it doesn't perfectly emulate a web browser.
 - Selenium requires a full web browser, is bigger and slower, but is better suited for more JavaScript-heavy applications.
