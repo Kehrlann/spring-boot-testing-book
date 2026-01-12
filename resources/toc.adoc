@@ -36,14 +36,13 @@ Both the Spring Framework and Spring Boot provide tools to simplify setting up, 
 
 === 4. Testing web applications
 
-The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and Javascript, or server-side components exposing HTTP endpoints in Rest or GraphQL. Having some level of testing from the API down is an important part of testing, often called “integration” or “component” testing. It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application. This introduces overhead, for example provisioning test environments. In this chapter, we will cover the tools and infrastructure that Spring offers to test HTTP applications locally, using simple unit tests. We will see how to test servlet and reactive applications, how to automate user interaction tests, and how to test client applications.
+The vast majority of Spring Boot applications are web-applications, either browser-based applications with HTML and Javascript, or server-side components exposing HTTP endpoints in Rest or GraphQL. Having some level of testing from the API down is an important part of testing, often called “integration” or “component” testing. It is often implemented as “black box” testing: the application is deployed to a dedicated environment, and tests are executed against the running application. This introduces overhead, for example provisioning test environments. In this chapter, we will cover the tools and infrastructure that Spring offers to test HTTP applications locally, using simple unit tests. We will see how to test servlet and reactive applications, how to automate user interaction tests.
 
 1. Testing Servlet applications with MockMvcTester
 2. Testing Reactive web applications: WebTestClient
 3. Using a lightweight web browser to simulate human interaction, with HtmlUnit
 4. Running the full web server in tests
 5. Driving a complete web browser in tests with Selenium
-6. Testing client applications with MockRestServiceServer
 
 === 5. Testing Subsets of an Application
 
