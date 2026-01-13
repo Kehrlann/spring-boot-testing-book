@@ -1,5 +1,10 @@
 = Meeting notes
 
+== 2026-01-13
+
+- Section 4.1 title of the section is only addressed a page later. Maybe we should add an intro paragraph.
+- Remove a few "However", "leverage", "impact"
+
 == 2025-06-03
 
 With Doug
