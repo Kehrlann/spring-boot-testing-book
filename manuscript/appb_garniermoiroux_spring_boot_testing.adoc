@@ -83,13 +83,13 @@ This is cumbersome and leads to a lot of setup code.
 
 Spring, like other DI frameworks, allows you to skip this "instantiation" step.
 Instead, you express your object's dependencies, similar to what we did in listing <<appb-basics>>.
-You simply declare that you want an instance of `FooService`, which depends on `BarRepository`, and Spring figures out the dependency graph (FooService depends on BarRepository, which might depends on C and D, etc).
+You simply declare that you want an instance of `FooService`, which depends on `BarRepository`, and Spring figures out the dependency graph (FooService depends on BarRepository, which might depend on C and D, etc).
 Using this graph, it creates instances for you, and you do not need call `new` explicitly.
 All these objects, managed by Spring, are called _beans_.
 To "declare" what you want, you provide Spring with _configuration metadata_.
 In the early days of Spring, this was done through XML files.
 These days, when you create new Spring apps, you are likely writing Java code, decorated with Spring annotations.
-There is a myriad of ways to create beans Java-based configuration, but the most common ones are using an annotation on a class declaration, and using a factory method.
+There is a myriad of ways to create beans Java-based configuration, but the most common ones are using an annotation on a class declaration and using a factory method.
 
 To make a class a Spring bean, you annotate with one of the Spring stereotype annotations, such as `@Component`, `@Service`, `@Controller`, `@Repository`, etc.
 For example:
@@ -146,7 +146,7 @@ It is extremely common to use it with a parameter, `@Configuration(proxyBeanMeth
 When the default value is used, which is equivalent to set `proxyBeanMethods = true`, Spring will wrap your factory methods in proxies and ensure they always return the same instance of a bean if you call the method directly.
 This is rarely needed, so using `@Configuration(proxyBeanMethods = false)` will save you a bit of resources, however small.
 
-The Spring IoC container is called the `ApplicationContext`, and is tasked with creating instances of these beans for your.
+The Spring IoC container is called the `ApplicationContext`, and is tasked with creating instances of these beans for you.
 There are many implementations of `ApplicationContext`, with many specificities: some for web apps, others for annotation-based configurations, etc.
 In Spring Boot, the ApplicationContext is configured to scan your classpath: it finds your annotated classes, and, together with configuration that Boot provides, creates your beans in the correct order.
 As it creates beans, it stores the instances in the container so they can be easily re-used.
@@ -183,7 +183,7 @@ This is illustrated in figure <<appb-figure-1>>.
 
 [#appb-figure-1, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The dependency graph of our simple bean application
-image::appb_f001_garniermoiroux.png[400,280]
+image::appb_f001_garniermoiroux.png[230,580]
 
 For such a trivial example, the order in which you would instantiate those beans is obvious: first B, because it has no dependencies, then C, because it only depends on B, and finally A which depends on the other two beans.
 For a more complex example, you would apply an algorithm.
