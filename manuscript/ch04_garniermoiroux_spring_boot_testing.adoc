@@ -60,8 +60,8 @@ We also have a utility function called `selectCity` which adds cities to the use
 If you need a refresher, we have covered both mocks and helper functions in chapter 2.
 
 To test such an application, the most common tool you would use is `MockMvcTester`.
-Remember how, in chapter 2, we leveraged it to get a main page?
-As a refresher, here is what it would look like:
+Remember how, in chapter 2, we used it in a test to make an HTTP request that returned the main page of the app?
+As a refresher, here is what a basic would look like with our weather application:
 
 [#ch4-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Basic MockMvcTester-based test
@@ -112,7 +112,7 @@ to contain:
   "Paris (France)"
 ----
 
-That is not pleasant to debug, and there are much better ways to test HTML, which we'll discuss later in this chapter, in sections <<ch4-section-3>> and <<ch4-section-5>>.
+That is not pleasant to debug, and there are much better ways to test HTML, which we'll discuss later in this chapter.
 Unless you're doing very simple sanity checks on an HTML page, such as "is this or that string present", like we did in this example, you wouldn't rely on `MockMvcTester` for HTML-focused tests.
 
 However, `MockMvcTester` truly excels at testing REST-like APIs, and at working with JSON.
@@ -149,6 +149,9 @@ Assuming we have mocked the service that returns actual weather data, we can wri
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test;!json-convertto;!json-path-and-convertto]
 ----
+<1> Make assertions on the JSON response
+<2> Check the body as a whole, with lenient rules
+<3> Check the value at a specific path
 
 This test follows the usual Arrange / Act / Assert structure: select a city / make a request / verify the result.
 Our endpoint returns JSON, and, to test the content, we can rely on the `MockMvcTester` AssertJ integration, with dedicated JSON assertions.
@@ -162,7 +165,7 @@ In this example, we omit the `cityId` in the expected JSON chunk, because hardco
 
 But we do want to ensure that the city ID is correct.
 So we use the  `.extractingPath(...)` to check the value of a given nested JSON parameter.
-To perform JSON parsing and traversal, Spring Boot Tests leverages one the dependencies it brings, the `com.jayway.jsonpath:json-path` library.
+To perform JSON parsing and traversal, Spring Boot Tests brings the `com.jayway.jsonpath:json-path` library as a dependency.
 In our example, we use the expression `$.[0].cityId`.
 Every JsonPath expression starts with a `$`, which is the root element.
 In this case, it is the outer array.
@@ -281,10 +284,11 @@ We will see concrete examples implemented in Spring in chapter 7, "Testing secur
 == Alternatives to `MockMvcTester`
 
 `MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications.
-You may encounter some of these in legacy codebases, or tests with different stylistic preferences.
+You may encounter some of these tools in older codebases, created when the newer alternatives did not exist yet.
+Others you may find in newer projects, but with different stylistic preferences.
 If you develop a WebFlux-based application, you need an alternative to `MockMvcTester` that works with WebFlux.
 
-[#ch4-section-2-1, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-1, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `MockMvc`, the original component
 
 `MockMvcTester` is a recent addition to the testing toolkit: it was introduced in Spring Framework `6.2` and Boot `3.4`.
@@ -313,7 +317,7 @@ However, for new projects, or new test classes in existing projects, I'd recomme
 NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
 You could see it as syntactic sugar, which makes `MockMvc` nicer to use.
 
-[#ch4-section-2-2, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-2, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === `WebTestClient` for WebFlux-based applications
 
 When working on WebFlux-based applications, the MVC stack is not present.
@@ -368,7 +372,7 @@ It is almost a carbon copy of our `MockMvcTester` tests, with a single additiona
 And this extra line of code is not even required!
 As we'll cover chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries", it is even possible to encapsulate this step with AssertJ.
 Using built-in assertions versus AssertJ boils down to stylistic preferences.
-If you have a portfolio of Spring projects both WebFlux and WebMVC, and you'd like to align on a single style, AssertJ is a common denominator.
+If you have a portfolio of Spring projects, some in WebFlux and some in WebMVC, and you'd like to align on a single style, AssertJ is a common denominator.
 
 A remarkable detail of `WebTestClient` is that the `exchange()` method, which performs requests, is blocking.
 The `WebClient` that you use in your production code, on the other hand, is fully reactive, with reactive return types based on `Mono<...>`.
@@ -422,7 +426,7 @@ To make it work, you need to add the `org.springframework.boot:spring-boot-start
 Keep in mind that while it is technically possible, it is highly unusual.
 This may fit certain niche use-cases, such as a project where you are transitioning from WebFlux to WebMvc, and would like to keep the tests intact.
 
-[#ch4-section-2-3, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-2-3, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Other alternatives
 
 Spring Boot tests offers two other testing HTTP clients, that you may encounter from time to time.
@@ -438,7 +442,8 @@ We won't dive into usage details, as it is almost a copy-paste of the previous s
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiRestTestClientTests.java[tags=class;resttestclient;test]
 ----
 
-Compare it to the `WebTestClient` examples in listings <<ch4-listing-webclient-test>> and <<ch4-listing-webclient-test-assert>>, and you'll notice it is exactly the same test with the word "rest" swapped out for "rest".
+Compare it to the `WebTestClient` examples in listings <<ch4-listing-webclient-test>> and <<ch4-listing-webclient-test-assert>>, and you'll notice that the only differences are the autoconfiguration annotation and the type of our `client`, in this case `RestTestClient`.
+Other than that, it is exactly the same test: the structure is identical and both clients use the same method names.
 When running tests with the Mock MVC stack, using either `MockMvcTester` or `RestTestClient` boils down to stylistic preferences.
 
 One last testing client you may encounter in older codebases is Spring Boot's `TestRestTemplate`, the testing alternative to `RestTemplate`.
@@ -477,8 +482,13 @@ When you import it, be careful that you select the correct package in your IDE: 
 When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
 In the methods of the `WebClient`, you'll find methods when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
 
-If you refer back to the screenshot in figure <<ch4-figure-01>>, you can see that each "weather card" has the name of the city and the country on one line, followed by temperature, wind speed and weather conditions, each on their own line.
-Let's use `HtmlUnit` to find the weather card and check its contents:
+In our application, when the user selects a city, it creates "weather card", as pictured in <<ch4-figure-02>>. On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
+
+[#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.A weather card for the city of Paris
+image::ch04_f002_garniermoiroux.png[194,380]
+
+Let's use `HtmlUnit` to find the card in our HTML document, and check its contents:
 
 [#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .HtmlUnit basic test
@@ -525,7 +535,8 @@ The user then clicks on the result, and a weather card for Bogotá is added to t
 To simulate user interactions, we use the `.type(...)` method on the input, and the `.click(...)` method on the first auto-complete result.
 Here we ask the `.querySelector("input#citySearch")` to return a specific type `HtmlInput`.
 It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing characters into the text box.
-For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`, which it exposes a `.click()` method.
+For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`.
+This type is slightly more specialized than `DomNode`, and exposes a `.click()` method.
 Both the "type" and "click" actions trigger some JavaScript on the page.
 When the user inputs data in the city search text box, the page makes HTTP requests to the backend to get matching cities and display auto-complete results.
 And when they click on an entry, the page calls the API endpoint that selects the city, and refreshes weather data on the page.
@@ -546,7 +557,7 @@ However, if you try to load the page with HtmlUnit, for example by doing `webCli
 missing ; before statement (http://localhost/js/modern.js#11)
 ----
 
-The error looks like a parsing error, but only hint at the actual error is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
+The error looks like a parsing error, but the only hint about the actual issue is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
 And this brings us back to the beginning of this section: HtmlUnit is not a "full-fledged browser".
 It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a complete replacement for a full web browser.
 
@@ -613,11 +624,14 @@ In practice, this looks like:
 ----
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;rest-test-client;test]
 ----
+<1> Autoconfiguration to make RestTestClient available
+<2> Inject the RestTestClient in the test
+<3> Make requests using the path to your endpoint
 
 This test showcases the "error dispatch" handled by Tomcat with the actual error page that end-users would see.
 The structure and APIs used are exactly the same as a regular Mock MVC test.
 You may observe that this test is slightly slower to execute because it loads more components.
-Looking at the output logs you'll see a line indicating that the server is running, on a random port:
+Looking at the output logs you'll see a line indicating that the server is running on a random port:
 
 ----
 [...] Tomcat started on port 50327 (http) with context path '/'
@@ -650,12 +664,13 @@ It is a separate view into the test app, external to your test, and there might 
 [TIP]
 ====
 In Eclipse and VS Code, simply placing a breakpoint and debugging the test is enough to access the running application.
-However, if you are using IntelliJ IDEA, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-02>>.
+However, if you are using IntelliJ IDEA, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-03>>.
 Right-click on the breakpoint, and select Suspend > Thread.
 Otherwise, everything will be suspended, including your test app, which will not be able to serve HTTP traffic.
-[#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+
+[#ch4-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Configuring breakpoints in IntelliJ IDEA
-image::ch04_f002_garniermoiroux.png[]
+image::ch04_f003_garniermoiroux.png[]
 ====
 
 [#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -685,7 +700,7 @@ include::../code/ch4/weather/pom.xml[tags=selenium]
 Selenium has more moving pieces than the test utilities we've presented so far, and requires a more involved setup.
 So before getting into the tests themselves, let's discuss the available configuration options.
 
-[#ch4-section-5-1, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-5-1, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Configuring Selenium
 
 Before running tests, you will need to set up Selenium, and decide on a few things.
@@ -712,7 +727,7 @@ The flipside of this is that the browser window is reused across tests, meaning 
 TIP: If you need to reset cookies between tests, for example to log out a test user created in a given test, you may use `driver.manage().deleteAllCookies();`.
 
 For our example, we use a `ChromeDriverService`, but you may swap it out for any driver you'd like, such as `SafariDriverService`, `EdgeDriverService` or `GeckoDriverService` for Firefox.
-As long as that there is a version of the chosen browser installed on your local machine, and Selenium will be able to start the matching driver service.
+As long as that there is a version of the chosen browser installed on your local machine, Selenium will be able to start the matching driver service.
 
 [NOTE]
 .Browser management with Selenium
@@ -741,7 +756,7 @@ So if your test says, "get element with id #popup", the driver will try to find 
 And all of this without cluttering your tests with extra lines of code to wait for this or that element to be visible.
 This is important for our single page app, because most interactions are asynchronous.
 When the user makes a change, the JavaScript code makes HTTP requests, and when they complete, JavaScript updates the page with the data from the response.
-Instead of having to add test code to explicitly wait until they are present, we can leverage the web driver's implicit wait.
+Instead of having to add test code to explicitly wait until they are present, we can configure the web driver's implicit wait once, and it will be used every time we try to find an HTML element in our tests.
 Lastly, it's important to clean up after the tests are finished, so we don't have lingering open browsers and processes.
 
 [WARNING]
@@ -758,7 +773,7 @@ See the file called `SeleniumDriverAsBeanTests.java` in the sample project for a
 
 With all that set up out of the way, we can finally start writing our tests!
 
-[#ch4-section-5-2, reftext={section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+[#ch4-section-5-2, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Writing Selenium tests
 
 Let's create a test that shows that when users type in our auto-complete search box, it displays a list of cities that match the search query:
@@ -777,8 +792,8 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 To test the page, we need to point our browser to our backend application, which we do by performing a `driver.get()` request.
 The url is a full, absolute URL, using the random port number that Spring Boot Tests assigned to our test application, which we obtained via `@LocalServerPort` in the setup from listing <<ch4-listing-selenium-setup>>.
-As a side note, we use the `?mode=modern` parameter, to load the _modern_ JavaScript version of our application.
-If you remember, HtmlUnit was not able to handle in section <<ch4-section-3>>, but it works perfectly in Selenium.
+As a side note, we use the `?mode=modern` parameter to load the _modern_ JavaScript version of our application.
+If you remember, HtmlUnit was not able to handle our `modern.js` JavaScript file in section <<ch4-section-3>>, but it works perfectly in Selenium.
 When we perform HTTP requests with the driver, the page is loaded in the live browser, and you can start interacting with it.
 That's what we do when we type into the search field.
 First, we locate the field with Selenium's `driver.findElement()`, to which we pass a query, `By.id("citySearch")`.
@@ -800,7 +815,7 @@ In fact, there are whole books about it!
 See for example _Hands-On Selenium WebDriver with Java_ by Boni Garcia (O'Reilly, 2022).
 
 Selenium is the reference for browser-based testing in the backend world.
-But it's not the only option, and there are more recent alternatives, that originated in the frontend world, often written for JavaScript or TypeScript.
+But it's not the only option, and there are more recent alternatives that originated in the frontend world, often written for JavaScript or TypeScript.
 If you are developing a single-page app, a very rich frontend with a lot of business logic, chances are you've used a JS (or TS) framework, such as Angular, React or Vue.
 In that case, it means you have significant expertise in your team, and you should consider using JS-based testing tools, such as Cypress or Playwright.
 
