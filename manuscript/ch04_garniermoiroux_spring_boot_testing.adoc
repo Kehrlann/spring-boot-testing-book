@@ -115,7 +115,7 @@ to contain:
 That is not pleasant to debug, and there are much better ways to test HTML, which we'll discuss later in this chapter.
 Unless you're doing very simple sanity checks on an HTML page, such as "is this or that string present", like we did in this example, you wouldn't rely on `MockMvcTester` for HTML-focused tests.
 
-However, `MockMvcTester` truly excels at testing REST-like APIs, and at working with JSON.
+On the other hand, `MockMvcTester` truly excels at testing REST-like APIs, and at working with JSON.
 For example, we can validate the JSON response that our frontend app gets when you refresh the weather data.
 Our JavaScript app calls `GET /api/weather` and gets JSON back, that may look something like:
 
@@ -308,11 +308,12 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <3> Verify the HTTP status
 <4> The body is checked with Hamcrest matchers
 
-This is very similar to the tests we've seen in the previous section.
-However, you need to know which static methods to import to make it work, such as `MockMvcRequestBuilders.get(...)`, `MockMvcResultMatchers.status()` and others.
+This is very similar to the tests we've seen in the previous section, but with many static methods, such as `MockMvcRequestBuilders.get(...)`, `MockMvcResultMatchers.status()` and others.
+Your IDE usually doesn't have autocompletion for these, and you'll have to remember them by heart or reuse code from another test.
+By contrast, `MockMvcTester` 's fluent API is easily discoverable through autocomplete.
 The test is also, in my opinion, harder to read.
 This approach works and is supported, so it is not crucial to migrate your existing test suites to these classes.
-However, for new projects, or new test classes in existing projects, I'd recommend using the more recent `MockMvcTester`.
+For new tests, though, I'd recommend using the more recent `MockMvcTester`.
 
 NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
 You could see it as syntactic sugar, which makes `MockMvc` nicer to use.
@@ -356,7 +357,7 @@ This means that the Reactive web server, in this case Netty, is not started in t
 By using `@AutoConfigurerWebTestClient`, your test app will be configured with a  `WebTestClient` bean, which you can autowire like any other bean.
 You can use the usual fluent APIs to make web requests, very similar to the `MockMvcTester` example from section <<ch4-section-1>>.
 The key difference is that there are dedicated assertion methods on the result, and no direct integration with AssertJ.
-However, if you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, introduced a bridge to that library:
+If you do prefer AssertJ, Spring Framework 7, included in Spring Boot 4, introduced a bridge to that library:
 
 [#ch4-listing-webclient-test-assert, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Bridging WebTestClient and AssertJ
@@ -390,8 +391,7 @@ Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns 
 The `WebTestClient` is very similar to the `WebClient` that you use in your production applications.
 The both wrap an `ExchangeFunction`, which is the Spring WebFlux abstraction for asynchronously turning an HTTP request into an HTTP response.
 They each have dedicated features and characteristics, though.
-`WebTestClient` has utilities for capturing outgoing requests and incoming responses, and for making assertions.
-On the other hand, `WebClient` is more extensible and has production-related features, such as observability integration.
+`WebTestClient` has utilities for capturing outgoing requests and incoming responses, and for making assertions, while `WebClient` is more extensible and has production-related features, such as observability integration.
 
 We've discussed how the Mock MVC stack works in section <<ch4-section-1>>.
 WebFlux does not rely on the Servlet spec, and there is no Servlet container, that is, no Tomcat server.
@@ -482,7 +482,8 @@ When you import it, be careful that you select the correct package in your IDE: 
 When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
 In the methods of the `WebClient`, you'll find methods when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
 
-In our application, when the user selects a city, it creates "weather card", as pictured in <<ch4-figure-02>>. On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
+In our application, when the user selects a city, it creates "weather card", as pictured in <<ch4-figure-02>>.
+On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
 
 [#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .A weather card for the city of Paris
@@ -551,7 +552,7 @@ But for all its features, HtmlUnit only has limited support for JavaScript.
 If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, a version of the JavaScript language that came out in 2015. But JS is a very active language, with a new release every year.
 Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
 These scripts are functionally equivalent.
-However, if you try to load the page with HtmlUnit, for example by doing `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
+Unfortunately, if you try to load the page with HtmlUnit by calling `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
 
 ----
 missing ; before statement (http://localhost/js/modern.js#11)
@@ -664,9 +665,10 @@ It is a separate view into the test app, external to your test, and there might 
 [TIP]
 ====
 In Eclipse and VS Code, simply placing a breakpoint and debugging the test is enough to access the running application.
-However, if you are using IntelliJ IDEA, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-03>>.
+On IntelliJ IDEA, this doesn't work out of the box.
+By default, the breakpoint pauses everything running in your program, including your test app, which will not be able to serve HTTP traffic.
+To work around this, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-03>>.
 Right-click on the breakpoint, and select Suspend > Thread.
-Otherwise, everything will be suspended, including your test app, which will not be able to serve HTTP traffic.
 
 [#ch4-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Configuring breakpoints in IntelliJ IDEA
@@ -764,7 +766,7 @@ Lastly, it's important to clean up after the tests are finished, so we don't hav
 Here we use a single browser instance for the whole test class, but it will not be reused between classes.
 If you want to use a single browser for the whole test session, you can provide a custom `@TestConfiguration` you'd reuse across tests, as demonstrated in chapter 3.
 
-However, beware: Spring Boot Tests assign all beans of type `WebDriver` to a specific Spring scope, and this will end up creating many browser instances.
+But beware: Spring Boot Tests assigns all beans of type `WebDriver` to a specific Spring scope, and this will end up creating many browser instances.
 That's the exact opposite of what you're trying to achieve!
 If you want to override this behavior, use the `@Scope("singleton")` scope on your `@Bean WebDriver`.
 
