@@ -249,15 +249,13 @@ Spring has a special implementation, the `DispatcherServlet`, which processes th
 
 In the case of MockMvc, there is no Servlet container: the embedded Tomcat server is never started.
 When you perform a request in tests with a client, such as `MockMvcTester`, that client will create a mock request object, a mock response object, and invoke a test-specific version of the `DispatcherServlet`.
-In practice, when you execute an HTTP request `MockMvcTester`, it calls the `service(...)` method directly instead of issuing a network call.
-
-// TODO: diagram
+In practice, when you execute an HTTP request `MockMvcTester`, it invokes the `service(...)` method directly instead of issuing a network call.
 
 This has important implications.
 First, none of the logic implemented by the container itself is called: no Tomcat code is involved.
 So if you integrate with Tomcat directly, for example by writing `Valve`, that code will not be included.
 Session management, or error page management, both a responsibility of the container, are not invoked either.
-Second, since your test code calls `MockMvcTester`, which in turns calls the `DispatcherServlet` and your controller methods, that means that your controller code is executed in the same thread as the calling test.
+Second, since your test code calls `MockMvcTester`, which in turns calls `DispatcherServlet.service(...)` and your controller methods, that means that your controller code is executed in the same thread as the calling test, usually the main thread.
 That may be useful for everything that works with thread-locals.
 Lastly, relying on the dispatcher servlet means that WebMvc is required.
 If your app and tests are WebFlux only, you can't use the Mock MVC stack.
