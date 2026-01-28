@@ -19,8 +19,7 @@ Every time you hear about Spring, there will be a mention of _beans_.
 Most users will be familiar with the concept, and even newcomers have an understanding that these are "special objects managed by Spring".
 Some Spring Boot testing techniques include manipulating those beans, and it is worth exploring what they are exactly.
 
-// TODO: rework with a code listing
-One the core technologies of Spring is it's _Inversion of Control container_, or IoC container for short.
+One of the core technologies of Spring is its _Inversion of Control container_, or IoC container for short.
 It is designed for a specific form of IoC, called _Dependency Injection_ (DI).
 The main idea of dependency injection is that if an instance of class FooService needs an instance of class BarRepository, that dependency is not created by FooService itself, but rather passed from the outside.
 In practice, it would look something like:
@@ -36,7 +35,7 @@ class FooService {
 
     private final BarRepository barRepository;
 
-    public FooService(BarRespository barRespository) {
+    public FooService(BarRepository barRepository) {
         this.barRepository = new SqlBarRepository(); // <2>
     }
 
@@ -47,8 +46,8 @@ class FooService {
 
     private final BarRepository barRepository;
 
-    public FooService(BarRespository barRespository) {
-        this.barRepository = barRespository; // <3>
+    public FooService(BarRepository barRepository) {
+        this.barRepository = barRepository; // <3>
     }
 
 }
@@ -58,7 +57,7 @@ class FooService {
 <3> With DI, it is passed from the outside
 
 There are drawbacks to not using DI.
-For example `FooService` needs to be aware of the lifecycle of `BarRepositoryImplementation`.
+For example `FooService` needs to be aware of the lifecycle of `SqlBarRepository`.
 It is also difficult to use a different implementation of `BarRepository`.
 With DI, `FooService` can accept alternative implementations of the repository, such as `InMemoryBarRepository` or `NoSqlBarRepository`.
 And it does not need to even know which data storage is used in the repository, and does not need to decide.
@@ -84,12 +83,12 @@ This is cumbersome and leads to a lot of setup code.
 Spring, like other DI frameworks, allows you to skip this "instantiation" step.
 Instead, you express your object's dependencies, similar to what we did in listing <<appb-basics>>.
 You simply declare that you want an instance of `FooService`, which depends on `BarRepository`, and Spring figures out the dependency graph (FooService depends on BarRepository, which might depend on C and D, etc).
-Using this graph, it creates instances for you, and you do not need call `new` explicitly.
+Using this graph, it creates instances for you, and you do not need to call `new` explicitly.
 All these objects, managed by Spring, are called _beans_.
 To "declare" what you want, you provide Spring with _configuration metadata_.
 In the early days of Spring, this was done through XML files.
 These days, when you create new Spring apps, you are likely writing Java code, decorated with Spring annotations.
-There is a myriad of ways to create beans Java-based configuration, but the most common ones are using an annotation on a class declaration and using a factory method.
+There are a myriad of ways to create beans with Java-based configuration, but the most common ones are using an annotation on a class declaration and using a factory method.
 
 To make a class a Spring bean, you annotate with one of the Spring stereotype annotations, such as `@Component`, `@Service`, `@Controller`, `@Repository`, etc.
 For example:
@@ -103,8 +102,8 @@ class FooService {
 
     private final BarRepository barRepository;
 
-    public FooService(BarRespository barRespository) { // <2>
-        this.barRepository = barRespository;
+    public FooService(BarRepository barRepository) { // <2>
+        this.barRepository = barRepository;
     }
 
 }
@@ -125,10 +124,10 @@ class FooConfiguration {
 
     @Bean // <2>
     FooService fooService(
-            BarRespository barRespository  // <3>
+            BarRepository barRepository  // <3>
     ) {
         // ... pre-processing ... <4>
-        return new FooService(barRespository);
+        return new FooService(barRepository);
     }
 
 }
@@ -189,7 +188,7 @@ For such a trivial example, the order in which you would instantiate those beans
 For a more complex example, you would apply an algorithm.
 For example, start with the leaf nodes, that have no dependencies - in this case, B. Then, for the remaining beans in the graph, create nodes that only need dependencies that were already instantiated - in this case, C.
 Rinse and repeat until all instances have been created.
-Spring follows a different approach, starting from and entry point and recursively creating nodes as needed.
+Spring follows a different approach, starting from an entry point and recursively creating nodes as needed.
 You can see the general algorithm in practice in figure <<appb-figure-2>>.
 
 [#appb-figure-2, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
@@ -202,7 +201,7 @@ Since they are not present, they will be created applying the same algorithm.
 B, having no dependencies, will be created and then added to the context.
 C depends on B, but by the time Spring creates C, B is already in the context and can be used: no need to create another instance, get the existing singleton from the context and inject it.
 A Spring Boot application will usually have tens or hundreds of beans in the context.
-A lot of those are beans do not come from your Java configuration.
+A lot of those beans do not come from your Java configuration.
 Instead, they are created by Spring Boot - for example, depending on your application, you'll find `HttpMessageConverter`, `RestClient.Builder` or `JdbcTemplate`, which you can inject in your own code.
 If you don't like the defaults that Spring Boot provides, you can register your own beans of a certain type: they will be added to the context, and Boot will back off and use your code instead of creating default beans.
 
@@ -211,7 +210,7 @@ You can provide some test-specific configuration that represents a subset of the
 By doing this, you can prune branches from your dependency graph, when you do not need to test it in detail.
 You'll end up a with a "test application" fine-tuned for your needs.
 
-NOTE: This appendix is very gentle introduction of how the Spring IoC container works.
+NOTE: This appendix is a gentle introduction to how the Spring IoC container works.
 It is a massive oversimplification, and we brushed aside anything beyond the most basic use case.
 How do you handle multiple beans of the same type?
 How does Spring determine bean dependencies?
