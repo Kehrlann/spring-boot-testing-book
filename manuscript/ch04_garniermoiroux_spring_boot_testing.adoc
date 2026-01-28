@@ -31,7 +31,7 @@ With those, you can write simple unit tests that run locally on your development
 There are two broad categories of scenarios you'd want to test in web applications.
 First, you can test APIs, usually JSON-based, by issuing direct HTTP calls.
 Second, you can interact with website apps through a browser, at the HTML level, by clicking buttons and typing into fields instead of focusing on the HTTP layer.
-Using a "weather app" similar to the one we tested in chapter 2, let's see those scenarios in practice
+Using a "weather app" similar to the one we tested in chapter 2, let's see those scenarios in practice.
 
 [#ch4-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing WebMvc applications with `MockMvcTester`
@@ -47,7 +47,7 @@ But before you can see it in action, we need an app to test.
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
 You can find the complete code under `ch4/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch4/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-The general behavior will be very similar to the app from chapter 2, but instead of doing server-only rendering, we have sprinkled the sample a bit of JavaScript to turn it into something of a "Single Page Application".
+The general behavior will be very similar to the app from chapter 2, but instead of doing server-only rendering, we have sprinkled the sample with a bit of JavaScript to turn it into something of a "Single Page Application".
 
 NOTE: This example is not meant to showcase JavaScript best practices.
 It is merely an app that we write tests for.
@@ -69,7 +69,7 @@ If you need a refresher, we have covered both mocks and helper functions in chap
 
 Now that we know what exactly we are going to test, let's turn back to `MockMvcTester`.
 Remember how, in chapter 2, we used it in a test to make an HTTP request that returned the main page of the app?
-As a refresher, here is what a basic would look like with our weather application:
+As a refresher, here is what a basic test would look like with our weather application:
 
 [#ch4-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Basic MockMvcTester-based test
@@ -84,7 +84,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <5> Check HTTP Status
 <6> Check the body
 
-This very simple tests checks that, when the user has the city of Paris in their favorites, it shows up somewhere on the page.
+This very simple test checks that when the user has the city of Paris in their favorites, it shows up somewhere on the page.
 For now, we don't care much about the structure of the page, just that the text shows up.
 In this example, we showcase testing a simple HTTP GET request, which surfaces a few testing APIs.
 By chaining those APIs fluently, you can perform requests and obtain a response.
@@ -102,7 +102,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 These three styles are functionally equivalent, and the fluency is mostly syntactic sugar.
 Picking a style boils down to personal or team preferences.
-My favorite is creating using fluent assertions, with an intermediate `response` variable, as it allows me to split the "act" part of the test from the assertions, but really, to each their own.
+My favorite is using fluent assertions, with an intermediate `response` variable, as it allows me to split the "act" part of the test from the assertions, but really, to each their own.
 
 This first test is simple, and it looks up data in the HTML from the index page for a specific string, here "Paris (France)".
 But HTML is not `MockMvcTester` 's strong suit, and it shows when the test above fails.
@@ -201,7 +201,7 @@ We can use this with a `MockMvcTester` response object, using the `.convertTo(<T
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=json-convertto]
 ----
 
-The `.convertTo(...)` method turns the response into Java object, which we can then test with regular AssertJ assertions.
+The `.convertTo(...)` method turns the response into a Java object, which we can then test with regular AssertJ assertions.
 Since the API returns a list of objects, we have wrap the `WeatherResponse` into a `list(...)` to get an assertion on `List<WeatherResponse>`.
 Here we're testing the name of the city, and, just to showcase some less common AssertJ assertions, we check that the temperature is within given bounds.
 To transform JSON responses into objects, Spring Boot Tests is using the app's registered `HttpMessageConverter` s, which is the core Spring mechanism for converting to and from HTTP responses.
@@ -209,7 +209,7 @@ You'll find these converters are also used by the `RestTemplate` and its success
 Unlike these clients, though, `MockMvcTester` can only deserialize JSON responses, which is apparent when you call the `.bodyJson()` method.
 If you are producing XML or some other data format, you need to deserialize the body explicitly, for example using Jackson, or use one of the alternatives to `MockMvcTester`, that we'll discuss in the next section.
 
-To test requests that send data, for example in the body of a POST request, you can either use `.formField(fieldName, fieldValue)` to submitting an HTML form, or, in a more general case, send a string or byte array with `.content(...)`.
+To test requests that send data, for example in the body of a POST request, you can either use `.formField(fieldName, fieldValue)` to submit an HTML form, or, in a more general case, send a string or byte array with `.content(...)`.
 If you go for the second option, `MockMvcTester` will send the payload directly without performing any conversion or serialization.
 You will also need to explicitly set the content type of the request, so that the server knows how to deserialize it:
 
@@ -321,7 +321,7 @@ The test is also, in my opinion, harder to read.
 This approach works and is supported, so it is not crucial to migrate your existing test suites to these classes.
 For new tests, though, I'd recommend using the more recent `MockMvcTester`.
 
-NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instances, and uses that for all request processing.
+NOTE: Under the hood, `MockMvcTester` wraps a `MockMvc` instance, and uses that for all request processing.
 You could see it as syntactic sugar, which makes `MockMvc` nicer to use.
 
 [#ch4-section-2-2, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
@@ -377,7 +377,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 It is almost a carbon copy of our `MockMvcTester` tests, with a single additional line.
 And this extra line of code is not even required!
-As we'll cover chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries", it is even possible to encapsulate this step with AssertJ.
+As we'll cover in chapter 10, "Writing elegant tests with Spring Boot’s bundled testing libraries", it is even possible to encapsulate this step with AssertJ.
 Using built-in assertions versus AssertJ boils down to stylistic preferences.
 If you have a portfolio of Spring projects, some in WebFlux and some in WebMvc, and you'd like to align on a single style, AssertJ is a common denominator.
 
@@ -388,8 +388,6 @@ And that's fine!
 Reactor was created to handle non-blocking, IO-bound workloads.
 Your tests will not encounter any of the web-scale bottlenecks that Reactor helped solve in the first place, even if you run them all in parallel.
 Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns the result.
-
-// TODO: serialize body, which MockMvcTester cannot do
 
 [NOTE]
 .WebTestClient, under the hood
@@ -402,10 +400,10 @@ They each have dedicated features and characteristics, though.
 We've discussed how the Mock MVC stack works in section <<ch4-section-1>>.
 WebFlux does not rely on the Servlet spec, and there is no Servlet container, that is, no Tomcat server.
 Instead, traffic is served by Netty, and the core Spring abstraction is the `HttpHandler`.
-When you use  `@AutoConfigureWebTestClient` does not start a web server to handle requests, but instead adapts the client's `ExchangeFunction` to call the test app's `HttpHandler` directly, without going through the full Netty stack.
+When you use `@AutoConfigureWebTestClient`, it does not start a web server to handle requests, but instead adapts the client's `ExchangeFunction` to call the test app's `HttpHandler` directly, without going through the full Netty stack.
 
 It is worth mentioning that `WebTestClient` doesn't have to call the handler directly.
-It can wrap any `ExchangFunction`, which means that it can also be used as a regular HTTP client.
+It can wrap any `ExchangeFunction`, which means that it can also be used as a regular HTTP client.
 ====
 
 There is another, fundamental difference with the Mock MVC stack, which might not be apparent at first.
@@ -509,7 +507,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 <4> There's a single weather card
 <5> Extract the text from the card
 
-Thanks to `@AutoConfigureMockMvc`, there's a `WebCient` bean available in our test context, which we can inject.
+Thanks to `@AutoConfigureMockMvc`, there's a `WebClient` bean available in our test context, which we can inject.
 It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead you can just use the path of the request.
 The `WebClient` parses the response's HTML body and exposes an `HtmlPage`, which you can interact with using familiar web DOM APIs, such as `.getElementById(...)`.
 Here we're using `.querySelectorAll(...)` to find all HTML elements that match a given CSS selector query.
@@ -555,7 +553,8 @@ This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms
 So you can do quite a lot with HtmlUnit, including executing JavaScript ... in Java!
 Quite a feat, isn't it?
 But for all its features, HtmlUnit only has limited support for JavaScript.
-If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, a version of the JavaScript language that came out in 2015. But JS is a very active language, with a new release every year.
+If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, the JavaScript standard from 2015.
+But JS is a very active language, with a new release every year.
 Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
 These scripts are functionally equivalent.
 Unfortunately, if you try to load the page with HtmlUnit by calling `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
@@ -812,7 +811,7 @@ This launch triggers the same event as someone typing on a keyboard, `keydown`, 
 When our app detects those key presses, it performs an autocomplete search, by issuing HTTP requests to our backend, and displays results.
 We can look for those results by finding the div with `id=cityResult` on the page, again with `.findElement()`.
 Unlike in the HtmlUnit tests, we do not need to add code to wait for those elements to appear, thanks to the implicit wait we added in <<ch4-listing-selenium-setup>>.
-Instead, Selenium will run the "find" query until an element shows up, or until the implicit wait timeout (1s) is reached.
+Instead, Selenium will run the "find" query until an element shows up, or until the implicit wait timeout (1 second) is reached.
 In this `#cityResult` div, there are multiple child elements, that represent individual results.
 We look these up using `.findElements()`, plural, which returns a list.
 Here, we use a different query, `By.css(...)`, the Selenium counterpart to the browser's `window.querySelectorAll()`, and then extract and clean up the text from these results.
