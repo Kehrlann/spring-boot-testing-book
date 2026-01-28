@@ -33,7 +33,7 @@ Of course, there are important tradeoffs associated with customizing the applica
 Let's dive in!
 
 NOTE: All samples in this chapter are in the `ch3/configuration` directory of the samples repository, accessible directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch3/configuration.
-There many more examples than those listed in this chapter, variations that won't go over but that may be useful.
+There are many more examples than those listed in this chapter, variations that won't go over but that may be useful.
 I encourage you to download the project and skim over the test files as you go through the chapter.
 
 [#ch3-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -118,10 +118,10 @@ public class ThingConfiguration {
 
     record Thing(String name) { }
 
-    @Bean Thing redThing() { new Thing("red"); }
-    @Bean Thing pinkThing() { new Thing("pink"); }
-    @Bean Thing greenThing() { new Thing("green"); }
-    @Bean Thing redThing() { new Thing("red"); }
+    @Bean Thing redThing() { return new Thing("red"); }
+    @Bean Thing pinkThing() { return new Thing("pink"); }
+    @Bean Thing greenThing() { return new Thing("green"); }
+    @Bean Thing orangeThing() { return new Thing("orange"); }
 
 }
 ----
@@ -280,7 +280,7 @@ src
 In this setup, the app's main class, `DemoApplication`, is in the package `com.example`.
 Since it is a `@SpringBootApplication`, component scanning is active: Spring Boot will look at the JVM's classpath and find every `@Configuration`, `@Component`, `@Repository`, etc., included in `com.example` and its sub-packages.
 When the tests are compiled, the classpath will contain `com.example.ProductionConfiguration` from the production code, but also classes from the test directory, including `com.example.TopLevelConfiguration`, `com.example.nested.NestedConfiguration`, `com.notincluded.ExcludedConfiguration`, as well as classes containing your tests.
-In that case, both `MaintTestConfiguration` and `NestedConfiguration` are under `com.example.*`, and will be considered part of the test app's configuration.
+In that case, both `TopLevelConfiguration` and `NestedConfiguration` are under `com.example.*`, and will be considered part of the test app's configuration.
 
 But there's one big caveat with this approach: every single `@SpringBootTest` will pick up these two additional configuration classes, "Main" and "Nested".
 It is useful when adding beans that you want to have in all your tests, but there are cases where you only want to modify the config for a subset of tests.
@@ -340,7 +340,8 @@ The classes can be either `@Configuration` classes containing beans, or singleto
 Since Spring Boot autoconfigurations are loaded from your main application class annotated with `@SpringBootApplication`, they are not included here, and will not be loaded either.
 Please note that if your `ThingConfiguration` has annotations which triggers other classes being present, such as `@Import`, `@ComponentScan`, `@EnableConfigurationProperties`, etc, those annotations will be used.
 In that case, your test app may contain many more beans than you expected.
-To avoid those issues, you must structure your code in a way that is composable, and avoid using a single giant configuration class that pulls the entire universe in your application.
+To avoid those issues, you must structure your code in a way that is composable, with separate configuration classes, each focused on a single area of concern, that you can selectively include in tests.
+Above all, avoid creating a single giant configuration class that pulls the entire universe in your application.
 Instead, you write separate config classes with focused areas of concerns, for example one for data-related infrastructure bean, one for security, etc.
 
 Of course, if you want this test application to start, all the beans in `ThingConfiguration` must have access to their full dependency graph.
@@ -449,7 +450,7 @@ To replace beans where there is only one instance of the given type, such as the
 When there are multiple beans in your app, to tell Spring Boot Test which exact bean to replace, you can specify the name of the target in the annotation, as we've done with our `@MockitoBean(name = "blueWidget")` above.
 
 Mockito-based beans also support a "spy" mode, by using the `@MockitoSpyBean` annotation.
-It does exactly what it says on the tin: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
+It does exactly what its name suggests: it creates a Mockito "spy", essentially a wrapper around the real bean, which allows you to check how it was called and used.
 Why aren't we demonstrating this feature here?
 It's generally accepted that spies should rarely be used, as Mockito warns... _in their very own reference documentation_!
 
@@ -571,7 +572,7 @@ But most other changes you might do to a test file will change the configuration
 Here is a non-comprehensive list of annotations and parameters that you should avoid changing, when possible:
 
 - Changing properties, through `@SpringBootApplication(properties = ...)` and `@TestPropertySource(...)`
-- Applying inconsistent styling to your custom properties, such using `key=value` in one place and `key = value` in another.
+- Applying inconsistent styling to your custom properties, such as using `key=value` in one place and `key = value` in another.
 - Adding a profile with `@ActiveProfile(...)`
 - Selecting configuration classes manually, through `@SpringBootApplication(classes = ...)`
 - Adding configuration classes with `@TestConfiguration`
