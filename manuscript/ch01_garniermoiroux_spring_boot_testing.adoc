@@ -31,7 +31,7 @@ Spring Framework brings the familiar declarative programming model to your test 
 As for Spring Boot, it extends its core values of "convention over configuration" to tests, and enables you to set up tests without having to write complex, dedicated configuration.
 Spring Boot also curates a list of test-focused dependencies, offering most of the tools you need to write tests, and ensures all the versions of these libraries work well together and integrate well with Spring code.
 
-Like everything in the Spring ecosystem, those tools are very powerful and versatile, but come with tradeoffs.
+Like everything in the Spring ecosystem, these tools are very powerful and versatile, but come with tradeoffs.
 Knowing when to use them, and, as importantly, when _not_ to use them, can have important implications, for example, on the speed of your test suite.
 
 In this chapter, we will discuss the tools that Spring and Spring Boot offer to simplify testing.
@@ -51,7 +51,7 @@ The Spring Boot Starter Test project is the testing version of the Spring Boot "
 The majority of Boot applications use MVC, also known as "Spring Web", rather than WebFlux, and their build file will have the MVC starter:
 
 [#ch1-listing-pom-xml, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.The spring-boot-starter-webmvc-test dependency in the pom.xml a typical Boot project
+.The spring-boot-starter-webmvc-test dependency in the pom.xml of a typical Boot project
 [source,xml]
 ----
 <dependencies>
@@ -171,7 +171,7 @@ Spring Boot tests shine somewhere in the middle, for what I'd call _Integration 
 The term is not universally accepted, so it is worth defining it in the context of this book.
 Integration tests ensure that multiple units of code, usually developed independently, work well together.
 In this book, we will consider that integration tests, in addition to testing the code that you developed, also verify that it integrates with Spring correctly.
-Such a test typically involve many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
+Such a test typically involves many of the classes you have developed, and must include some capabilities of Spring, such as the web layer or the data layer.
 It may cover your entire application, and include some external dependencies such as a database.
 However, it typically does not cover the entire system with all its external dependencies.
 Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
@@ -193,7 +193,7 @@ It's an essential test, which gives you the most confidence that the car can do 
 But it's an expensive test: you need to assemble a full car to verify this!
 You don't want to realize that the fuel pump does not even start at this stage: that's the reason why we run unit and integration tests in earlier phases.
 
-In the world of computers programs and Spring applications, Spring Boot tests straddle the line between unit tests and end-to-end tests, getting the best of both worlds:
+In the world of computer programs and Spring applications, Spring Boot tests straddle the line between unit tests and end-to-end tests, getting the best of both worlds:
 
 - They are reasonably fast to run, in the order of magnitude of a few seconds.
 This is much slower than unit tests, but does not disrupt your development flow: you can get fast feedback whenever you make a change, without switching context.
@@ -327,7 +327,7 @@ We've seen that writing such tests is cumbersome, and requires advanced knowledg
 We have not explored all the ways things can go wrong when manually creating test applications.
 But trust me, if you go down this path, you will run into many, many side effects that are specific to certain testing scenarios, and that you will need to handle one by one.
 
-To recap, in the absence of dedicated Spring tooling for tests, here is a list of everything you'd need think about:
+To recap, in the absence of dedicated Spring tooling for tests, here is a list of everything you'd need to think about:
 
 - Configuring a version of your application suitable for testing, with appropriate properties, profiles or even configuration classes.
 - Replacing beans selectively, for example to avoid connecting to external systems.
