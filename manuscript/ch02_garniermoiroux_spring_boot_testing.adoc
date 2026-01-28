@@ -25,7 +25,7 @@ This chapter covers
 When you create a project on Spring Initializr, also known as https://start.spring.io, you get testing libraries bundled in, as we mentioned in the previous chapter.
 There is also a test class in the zip file containing your project, ready to execute.
 It contains a single test method, which is empty, and the only thing it verifies is that the application can start.
-This has value in and on itself, as it validates your Spring dependency graph, and your Spring Boot properties.
+This has value in and of itself, as it validates your Spring dependency graph, and your Spring Boot properties.
 Having this test class also makes it easy to add your own tests, without having too much to decide: the next, obvious step is to add another method to this test file.
 
 It's a good start, but where do you go from here?
@@ -124,7 +124,7 @@ In this example, the test is in `WeatherApplicationTests.java`.
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
 ----
-<1> The annotation turns the class is a Spring Boot integration test.
+<1> The annotation turns the class into a Spring Boot integration test.
 <2> Annotated methods contain your test code
 
 When you execute this test, it should pass.
@@ -223,7 +223,8 @@ Let's expand our scope and start testing actual features that are implemented in
 The previous test was extremely simple, and did not demonstrate any weather-related features in our application, one that we would describe in detail in a "feature request", "ticket" or "user story".
 It was a read-only test, one that does not add any data to the database.
 Let's create a test that exercises a database write, by selecting a city with another HTTP request.
-To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle: for example, that city name is somewhere else on the page and the test would pass even if no city was selected.
+To write the assertions for such a test, we could check that the resulting page contains the name of the city we have added, but it could be a bit brittle.
+For example, the city name could appear somewhere else on the page and the test would pass even if no city was selected.
 In a more advanced use-case, we would parse the page to ensure that the correct HTML representing the city and its weather data are present.
 But let's start simple, and instead of worrying about HTML structure, DOM element IDs or ARIA roles, let's check that the database does indeed contain the city we have added, in a test called `addSelectedCity`:
 
@@ -248,7 +249,7 @@ In a real project, you should avoid coupling your tests, which verify behavior, 
 Instead, prefer interacting with your services or controllers instead.
 
 Since one of the foundational features of our application is selecting which cities to display to get weather information, your tests are going to select a city very often.
-I suggest wrapping the `POST` request and exposing it nicely in a `selectCity` utility function:
+I suggest wrapping the `POST` request in a convenient `selectCity` helper function:
 
 [#ch2-listing-select-city, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A helper function for city selection.
@@ -266,7 +267,7 @@ When it comes to test code specifically, JUnit, the framework we use, has its ow
 ====
 We've mentioned multiple times that we're accessing beans from your application, here using an `@Autowired` annotation.
 You do not need to write specific code for this service to be created, or set it manually as a field in your test class: the framework does the heavy lifting for you.
-This is accomplished through _dependency injection_: when you want to access a bean `FooService service`, you annotate it with `@Autowired`, and Spring Boot Test will _inject_ tne value in the field for you, selected from the set of available beans.
+This is accomplished through _dependency injection_: when you want to access a bean `FooService service`, you annotate it with `@Autowired`, and Spring Boot Test will _inject_ the value in the field for you, selected from the set of available beans.
 
 To discover the basics of dependency injection in Spring, please refer to Appendix B, "Beans and the ApplicationContext: dependency injection in Spring".
 ====
@@ -279,7 +280,7 @@ The structure of the test is fairly simple: add the same city twice, and ensure 
 Using our `selectCity(...)` helper method from the previous section, we can write the following test:
 
 [#ch2-listing-no-duplicates, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Verify that there are not duplicates in the list of selected cities.
+.Verify that there are no duplicates in the list of selected cities.
 [source,java,indent=0]
 ----
 include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=no-duplicates]
@@ -296,7 +297,7 @@ You could also count the number of cities at the beginning of each test and ensu
 Or you could ensure that the database is empty before running each test, for example by calling `selectionRepository.deleteAll()` at the beginning of every test.
 This works fine, but you need to remember to add the cleanup every time, and as your suite grows, so does the duplication: you will end up big chunks of cleanup code, repeated multiple times.
 
-Fortunately, you can fold common setup code with JUnit, resulting in listing <<ch2-listing-before-each>>'s method, which will be executed before every test.
+Fortunately, you can factor common setup code with JUnit, resulting in listing <<ch2-listing-before-each>>'s method, which will be executed before every test.
 
 [#ch2-listing-before-each, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Cleanup the repository before every test.
@@ -344,7 +345,7 @@ And your tests would eat up in your daily API calls quotas.
 And you'd add tens or hundreds of milliseconds of latency to every test.
 Generally, it's considered bad practice to call out to external services during tests, unless you're doing end-to-end, full-system testing.
 Instead, you should be providing an alternative implementation, that you can program, and that returns predictable results, often called a "stub" or a "mock".
-Spring Boot Starter Test brings the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly in Spring Boot tests.
+Spring Boot Starter Test includes the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly in Spring Boot tests.
 We can replace beans the application context with a mock, and configure it to return predictable results, as shown in listing <<ch2-listing-mocks>>.
 
 [#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -374,10 +375,10 @@ You will need to introduce unit tests, focused on smaller pieces of logic.
 As we've discussed in chapter 1, at that level, you should not be running a Boot application to verify behavior.
 
 Imagine that our weather app is much more complex, and has a full "travel recommendation" engine, taking many parameters into account to suggest some holiday plans, such as travel type and cost, lodging costs, weather history averages, user preferences, etc.
-The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up N separate data sources for each case, with subtle variations for each.
+The general scoring is complex, and testing all possible variations from the final API endpoint would require setting up N separate data sources for each test, with subtle differences between tests case.
 It is simpler to break the problem into smaller chunks that you can reason about independently.
-For example, we could introduce one `@Service WeatherScoringSerivce` class that generates an aggregate score based on weather history, and user preferred temperature ranges.
-For testing all the possible variations, you would write unit tests.
+For example, we could introduce one `@Service WeatherScoringService` class that generates an aggregate score based on weather history, and user preferred temperature ranges.
+For testing all the possible scenarios, you would write unit tests.
 To give you a rough idea, these tests could look something like this:
 
 [#ch2-unit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
