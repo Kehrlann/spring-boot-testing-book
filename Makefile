@@ -7,6 +7,33 @@ MAKEFLAGS += --silent
 remove-blank-lines: manuscript/*.adoc
 	./resources/remove_blank_line.awk $^
 
+.PHONY: cleanup-code
+cleanup-code:
+	set -e
+	cd code/
+
+	# use jdk 25
+	source "$$HOME/.sdkman/bin/sdkman-init.sh"
+	sdk use java 25-tem
+
+	# Ensure main is clean
+	git switch main
+	if [[ -n "$$(git status --untracked-files=yes --porcelain)" ]]; then
+		echo "Uncommitted changes in main"
+		exit 1
+	fi
+
+	# Check test and formatting
+	#./scripts/run-all-tests.sh
+
+	# Update all code samples
+	git switch asciidoc
+	git rebase main
+	find . -name "*.java" -type f -exec sed -i '' '/\/\/@formatter:/d' {} \;
+	#find . -name "*.java" -type f -exec sed -i '' '/\/\/ tag::/d' {} \;
+	#find . -name "*.java" -type f -exec sed -i '' '/\/\/ end::/d' {} \;
+	find . -name "*.java" -type f -exec sed -i '' 's/\/\/ \(<[0-9]*>\)/\1/g' {} \;
+
 html: manuscript/*.adoc
 	asciidoctor \
 	    --destination-dir html/ \
