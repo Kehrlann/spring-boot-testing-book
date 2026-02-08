@@ -1,0 +1,22 @@
+Thank you for purchasing the MEAP for Testing Spring Boot Applications.
+
+Spring is the most common Java framework for developing production-grade web applications.
+Running some form of automated tests before deploying is table stakes.
+This book is specifically focused on tools and techniques for testing Boot apps.
+To get the most out of this book, you need to be able to write Spring apps yourself.
+Some familiarity with writing unit tests in Java or Spring is a plus, but not required.
+
+Spring Boot brings its famously great out-of-the-box experience to your test code: a single annotation gets you started.
+But of course, Boot's testing capabilities go way beyond the humble @SpringBootTest!
+It offers reusable building blocks to customize test lifecycle and execution, integrates with major libraries in the testing ecosystem, and provides a host of useful tools to make your tests more concise, easier to write, and faster to execute.
+In this book, you'll discover all the Spring-specific test tooling every Spring engineer should know, and when and how to apply them.
+I'll also introduce you to the nice third-party libraries that Spring Boot brings into testing, and how you can use them to improve your tests, step by step.
+This book strives to go beyond _what_ tools are available, and peels back the cover to reveal _how_ they work internally.
+While this is not a full deep-dive on Spring internals, in every chapter I take time to shine a light on the powerful infrastructure underlying your tests, and how you can take advantage of it to craft well-architected test suites.
+
+By the end of this book, you should have a firm grasp on the array of tools you can apply in your testing scenarios, common patterns, but also the tradeoffs that come with them.
+
+I often give talks at tech conferences and the first version is never quite right, they get much, much better over time, as I get feedback from attendees, understand what their mental model of the topic is, and learn about their experiences.
+You have a unique opportunity to help me make this book the best possible, by taking the time to interact and share your thoughts on the liveBook Discussion forum.
+
+- Daniel Garnier-Moiroux

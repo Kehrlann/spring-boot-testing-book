@@ -1,0 +1,30 @@
+= Table of contents
+
+== Part I: Getting started
+
+[horizontal]
+{counter:list-counter}.:: Spring Boot-specific test tooling
+{counter:list-counter}.:: Testing a Spring Boot "Hello World" application
+
+== Part II: Writing tests for Spring Boot applications
+
+[horizontal]
+{counter:list-counter}.:: Configuring and running an application for testing
+{counter:list-counter}.:: Testing web applications
+{counter:list-counter}.:: Testing Subsets of an Application
+{counter:list-counter}.:: Testing Configuration and Properties
+{counter:list-counter}.:: Testing Security configurations
+
+== Part III: Improving your tests with tooling
+
+[horizontal]
+{counter:list-counter}.:: Creating reusable test abstractions with JUnit
+{counter:list-counter}.:: Testing against real service dependencies with Testcontainers
+{counter:list-counter}.:: Writing elegant tests with Spring Boot’s bundled testing libraries
+{counter:list-counter}.:: Efficiently running tests in different contexts
+
+== Appendixes
+
+[horizontal]
+A:: Executing tests
+B:: Beans and the ApplicationContext: dependency injection in Spring
