@@ -41,7 +41,7 @@ The second class of apps, that we'll discuss later, use WebFlux.
 When you make a Spring Boot project using WebMvc, Boot embeds a Tomcat web server, which is the component responsible for handling HTTP traffic and passing it down to your Spring code.
 It's a non-trivial component that takes a bit of time to start up.
 It also brings in a lot of infrastructure that, most of the time, is not relevant to your tests.
-The Spring team worked around requiring this component in tests, created test-specific APIs, and bundled it all in the `MockMvcTester` class.
+The Spring team worked around requiring this component in tests, created test-specific APIs, and bundled them all in the `MockMvcTester` class.
 But before you can see it in action, we need an app to test.
 
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
@@ -61,7 +61,7 @@ image::ch04_f001_garniermoiroux.png[]
 
 The search bar, which lets the user search by city, now has an auto-complete dropdown.
 When the user accesses the index page of the app, they receive a fully rendered HTML page.
-Any subsequent interaction with the page triggers JavaScript code, which calls the HTTP APIs, reads JSON responses and update the page accordingly.
+Any subsequent interaction with the page triggers JavaScript code, which calls the HTTP APIs, reads JSON responses and updates the page accordingly.
 
 NOTE: For all tests we write in this chapter, we have set up a mock bean to return canned responses from the weather service: every city will have "Clear sky" with 20.0°C and no wind.
 We also have a utility function called `selectCity` which adds cities to the user's preferences.
@@ -166,7 +166,8 @@ Our endpoint returns JSON, and, to test the content, we can rely on the `MockMvc
 They come in two flavors, one which asserts on the whole object, and one which allows you to traverse the JSON tree to make assertions on a specific parameter.
 Both are present in the listing above.
 
-To check the whole object, we use `.isLenientlyEqualTo(...)`, which compares the request result to a JSON fragment _leniently_: it does not care about the order of properties, and it ignores any property from the result that are not in the expected JSON string you pass it.
+To check the whole object, instead of using the default `.isEqualTo(...)` method, which requires two JSON documents to be _strictly_ identical, we check the result _leniently_ by calling `.isLenientlyEqualTo(...)`.
+This comparison method does not care about the order of properties, and it ignores any property from the result that are not in the expected JSON string you pass it.
 This allows you to assert only on the stable properties from the result: the city name and country, which are constants, and weather data which we have hardcoded in our stub implementation of the weather service.
 It also allows you to ignore data you do not want to focus on.
 In this example, we omit the `cityId` in the expected JSON chunk, because hardcoding "37" in the JSON response would be awkward to read.
@@ -202,7 +203,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 ----
 
 The `.convertTo(...)` method turns the response into a Java object, which we can then test with regular AssertJ assertions.
-Since the API returns a list of objects, we have wrap the `WeatherResponse` into a `list(...)` to get an assertion on `List<WeatherResponse>`.
+Since the API returns a list of objects, we have wrapped the `WeatherResponse` into a `list(...)` to get an assertion on `List<WeatherResponse>`.
 Here we're testing the name of the city, and, just to showcase some less common AssertJ assertions, we check that the temperature is within given bounds.
 To transform JSON responses into objects, Spring Boot Tests is using the app's registered `HttpMessageConverter` s, which is the core Spring mechanism for converting to and from HTTP responses.
 You'll find these converters are also used by the `RestTemplate` and its successor, the `RestClient`, to deserialize HTTP responses Java objects.
@@ -221,7 +222,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 ----
 
 We're sending a JSON POST request, and spelling out that we want the `Content-Type` header to be `application/json`.
-We're creating the JSON body by assembling strings manually, but you could use the serialization library of your choice, such as Jackson's `ObjectMapper` or the more recent `JsonMapper`.
+We're creating the JSON body by assembling strings manually, but you could use the serialization library of your choice, such as Jackson 2's `ObjectMapper`, or the more recent `JsonMapper` from version 3.
 As we mentioned earlier, Spring has alternatives to `MockMvcTester`, and those offer better serialization capabilities that may be useful for requests with complex JSON bodies.
 
 Notice that in all the listings until now, we never use an absolute URL, with a scheme, host and port, like `http://localhost:1234`.
@@ -291,7 +292,7 @@ We will see concrete examples implemented in Spring in chapter 7, "Testing secur
 
 `MockMvcTester` is not the only tool that Spring Boot Tests offer for testing web applications.
 You may encounter some of these tools in older codebases, created when the newer alternatives did not exist yet.
-Others you may find in newer projects, but with different stylistic preferences.
+You may also find them in newer projects that feature different stylistic preferences.
 If you develop a WebFlux-based application, you need an alternative to `MockMvcTester` that works with WebFlux.
 
 [#ch4-section-2-1, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
@@ -393,7 +394,7 @@ Internally, `WebTestClient` simply calls `.block()` with a timeout, and returns 
 .WebTestClient, under the hood
 ====
 The `WebTestClient` is very similar to the `WebClient` that you use in your production applications.
-The both wrap an `ExchangeFunction`, which is the Spring WebFlux abstraction for asynchronously turning an HTTP request into an HTTP response.
+Both of them wrap an `ExchangeFunction`, which is the Spring WebFlux abstraction for asynchronously turning an HTTP request into an HTTP response.
 They each have dedicated features and characteristics, though.
 `WebTestClient` has utilities for capturing outgoing requests and incoming responses, and for making assertions, while `WebClient` is more extensible and has production-related features, such as observability integration.
 
@@ -433,7 +434,7 @@ This may fit certain niche use-cases, such as a project where you are transition
 [#ch4-section-2-3, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
 === Other alternatives
 
-Spring Boot tests offers two other testing HTTP clients, that you may encounter from time to time.
+Spring Boot Tests offers two other testing HTTP clients, that you may encounter from time to time.
 The first is the `RestTestClient`, just introduced in Spring Framework 7 and Boot 4. It's a test-specific version of `RestClient`, and works just like `WebTestClient`, except it's tailored to the MVC stack rather than WebFlux.
 The API is almost exactly the same as `WebTestClient`.
 And like that reactive client, it can both connect to mock servers like `MockMvcTester` does, and make real HTTP requests over the network.
@@ -470,8 +471,8 @@ But before we think about going all-in on using a real web browser, we can use t
 As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-less browser for Java programs".
 GUI-less means that it does not display anything on the screen, and "for Java programs" means that, to make it do things, you have to write some Java code.
 Think of it as a lightweight alternative to a browser, specifically created for Java.
-It's a great fit for tests, and Spring Boot Test has support for the library.
-To use it, add it the dependency to your project:
+It's a great fit for tests, and Spring Boot Tests has support for the library.
+To use it, add the dependency to your project:
 
 [#ch4-listing-htmlunit-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .HtmlUnit dependency
@@ -486,7 +487,7 @@ When you import it, be careful that you select the correct package in your IDE: 
 When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
 In the methods of the `WebClient`, you'll find methods when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
 
-In our application, when the user selects a city, it creates "weather card", as pictured in <<ch4-figure-02>>.
+In our application, when the user selects a city, it creates a "weather card", as pictured in <<ch4-figure-02>>.
 On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
 
 [#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
@@ -499,6 +500,8 @@ Let's use `HtmlUnit` to find the card in our HTML document, and check its conten
 .HtmlUnit basic test
 [source,java,indent=0]
 ----
+import org.htmlunit.WebClient;
+
 include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
 ----
 <1> The WebClient from org.htmlunit
@@ -612,7 +615,7 @@ This makes most sense for non-web scenarios, for example CLIs or batch apps.
 - *RANDOM_PORT*: The embedded web server is started for the tests, on a random, available port.
 This is the recommended way to run your tests with the web server.
 - *DEFINED_PORT*: The embedded web server is started for the tests, on whatever port is defined in the `server.port` property, or on port 8080 by default.
-This may be useful if you need to know the port on which the application is listening in advance, for example for configuration purposes.
+This may be useful if you need to know the port on which the application is listening to in advance, for example for configuration purposes.
 
 Running on a defined port risks conflicting with whatever other process is executing on the machine.
 And if you're running multiple tests contexts, you will need to assign a separate port to each so they don't conflict.
@@ -817,7 +820,7 @@ We look these up using `.findElements()`, plural, which returns a list.
 Here, we use a different query, `By.css(...)`, the Selenium counterpart to the browser's `window.querySelectorAll()`, and then extract and clean up the text from these results.
 Finally, we can assert that exactly three cities should be displayed, in the following order: Djakotomé, Jakarta and Kamirenjaku.
 
-Selenium is very powerful tool, but it's also very broad, and we can't possibly cover all the use-cases in this book, we'd have to dedicate multiple chapters to it.
+Selenium is a very powerful tool, but it's also very broad, and we can't possibly cover all the use-cases in this book, we'd have to dedicate multiple chapters to it.
 In fact, there are whole books about it!
 See for example _Hands-On Selenium WebDriver with Java_ by Boni Garcia (O'Reilly, 2022).
 
