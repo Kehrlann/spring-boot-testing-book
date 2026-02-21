@@ -456,134 +456,6 @@ Both will be deprecated as of Spring Framework 7.1 and Boot 4.2, and will be rem
 While it is acceptable to keep these in existing tests for now, do not rely on them in your new test suite, and instead use one of the solutions we've discussed earlier in this chapter.
 
 [#ch4-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Simulating human interaction with HtmlUnit
-
-In the first sections of this chapter, we've tested our application by making HTTP requests to various API endpoints, as if we were using cURL or Postman.
-But not all applications are pure backend, REST-based apps.
-Our weather app has an HTML front-end, with a bit of JavaScript, and users interact with it using a browser, not by making HTTP calls with cURL!
-To gain more confidence that the app functions as intended, we can get closer to the "end-to-end" side of the testing spectrum, and simulate browser interactions.
-Using `MockMvcTester` or the other test clients, it is possible to get the HTML content of the page, parse it, and perform some interactions.
-But it was not designed for this kind of usage, and it would get cumbersome quite quickly.
-There's an obviously much better solution: browsers.
-They were designed specifically to display and interact with HTML, and are a natural fit.
-As we'll discuss in detail in section <<ch4-section-5>>, you _can_ run a full-fledged web browser from your tests, but it comes with a few constraints.
-But before we think about going all-in on using a real web browser, we can use the _HtmlUnit_ project as a stepping stone.
-As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-less browser for Java programs".
-GUI-less means that it does not display anything on the screen, and "for Java programs" means that, to make it do things, you have to write some Java code.
-Think of it as a lightweight alternative to a browser, specifically created for Java.
-It's a great fit for tests, and Spring Boot Tests has support for the library.
-To use it, add the dependency to your project:
-
-[#ch4-listing-htmlunit-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.HtmlUnit dependency
-[source,xml,indent=0]
-----
-include::../code/ch4/weather/pom.xml[tags=htmlunit]
-----
-
-The core class of HtmlUnit is the `WebClient`, which simulates the browser.
-It has the same name as Spring's reactive `WebClient`, but completely different capabilities.
-When you import it, be careful that you select the correct package in your IDE: you want to use `org.htmlunit.WebClient`.
-When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
-In the methods of the `WebClient`, you'll find methods when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
-
-In our application, when the user selects a city, it creates a "weather card", as pictured in <<ch4-figure-02>>.
-On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
-
-[#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.A weather card for the city of Paris
-image::ch04_f002_garniermoiroux.png[194,380]
-
-Let's use `HtmlUnit` to find the card in our HTML document, and check its contents:
-
-[#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.HtmlUnit basic test
-[source,java,indent=0]
-----
-import org.htmlunit.WebClient;
-
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
-----
-<1> The WebClient from org.htmlunit
-<2> Making a GET request returns an HtmlPage
-<3> CSS query to find elements on the page
-<4> There's a single weather card
-<5> Extract the text from the card
-
-Thanks to `@AutoConfigureMockMvc`, there's a `WebClient` bean available in our test context, which we can inject.
-It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead you can just use the path of the request.
-The `WebClient` parses the response's HTML body and exposes an `HtmlPage`, which you can interact with using familiar web DOM APIs, such as `.getElementById(...)`.
-Here we're using `.querySelectorAll(...)` to find all HTML elements that match a given CSS selector query.
-Those are the "cards" that display weather information about the cities the users has selected.
-In this test, we only selected Paris, so there's a single card displayed, and the weather data matches the mock responses we pre-configured.
-By default, `.querySelectorAll(...)` returns a list of `DomNode`, which is the most abstract type possible: it's any "element in the DOM tree".
-As such, they are mostly used to navigate the tree, with methods for getting parent, child or sibling nodes.
-They also allow you to access any attribute, such as ID or classes, and their text content.
-Here, the text is enough to make basic assertions about the information that's visible on the page.
-
-But `HtmlUnit` is much richer!
-It offers more specialized types than the humble `DomNode`, and allows you to check the visibility of an element, type text into input fields, click items, and even run some JavaScript code.
-There's a bit of JavaScript in our web page: when a user wants to select a city, they type the name of the city in a field, and an auto-complete popup shows up.
-They can then select on the city of their choice from the dropdown, and the card will be added to the current document without reloading the full page.
-We can write a test for this behavior:
-
-[#ch4-listing-htmlunit-test-javascript, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.HtmlUnit executing JavaScript
-[source,java,indent=0]
-----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
-----
-<1> Type into an input field
-<2> Click on an element
-<3> Wait for JS http requests to finish
-
-In this test, we simulate some interactions: the user selects the search input field and types "bogot".
-The autocomplete will show a single result, Bogotá.
-The user then clicks on the result, and a weather card for Bogotá is added to the page.
-To simulate user interactions, we use the `.type(...)` method on the input, and the `.click(...)` method on the first auto-complete result.
-Here we ask the `.querySelector("input#citySearch")` to return a specific type `HtmlInput`.
-It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing characters into the text box.
-For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`.
-This type is slightly more specialized than `DomNode`, and exposes a `.click()` method.
-Both the "type" and "click" actions trigger some JavaScript on the page.
-When the user inputs data in the city search text box, the page makes HTTP requests to the backend to get matching cities and display auto-complete results.
-And when they click on an entry, the page calls the API endpoint that selects the city, and refreshes weather data on the page.
-This JavaScript code runs asynchronously in the background, taking a few milliseconds to get the answer back from our server.
-We want our tests to ensure that these operations are completed before moving on to the next steps.
-Since the `WebClient` is simulating the browser, it is responsible for running JavaScript on the page, so we can tell it to wait until JS code has finished executing.
-This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms timeout, after which the `WebClient` will stop waiting and test execution will resume.
-
-So you can do quite a lot with HtmlUnit, including executing JavaScript ... in Java!
-Quite a feat, isn't it?
-But for all its features, HtmlUnit only has limited support for JavaScript.
-If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, the JavaScript standard from 2015.
-But JS is a very active language, with a new release every year.
-Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
-These scripts are functionally equivalent.
-Unfortunately, if you try to load the page with HtmlUnit by calling `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
-
-----
-missing ; before statement (http://localhost/js/modern.js#11)
-----
-
-The error looks like a parsing error, but the only hint about the actual issue is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
-And this brings us back to the beginning of this section: HtmlUnit is not a "full-fledged browser".
-It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a complete replacement for a full web browser.
-
-[NOTE]
-.JavaScript support in HtmlUnit
-====
-HtmlUnit is a Java implementation of a web browser.
-Using only Java, it builds an internal representation of the DOM and allows you to interact with it.
-A regular browser has a dedicated JavaScript engine, a subsystem that parses and runs all JS code.
-In Chrome, for example, it is called V8.
-In HtmlUnit, this engine is implemented in Java, so all JS codes runs inside the JVM.
-It is based on a slightly modified version of a project called Rhino, by Mozilla (https://github.com/mozilla/rhino).
-It does not support all modern JS features, as we've seen above with the `async` keyword.
-If you're curious about what features are included and what's missing, take a peek at Rhino's compatibility matrix at https://mozilla.github.io/rhino/compat/engines.html.
-====
-
-[#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Running the full web server in tests
 
 Up to this point, we've run all our tests using the Mock MVC stack, or its WebFlux equivalent, without ever starting a live web server.
@@ -678,23 +550,154 @@ By default, the breakpoint pauses everything running in your program, including 
 To work around this, you need to configure your breakpoint to only suspend the thread that is running the test, not the other threads, as shown in figure <<ch4-figure-03>>.
 Right-click on the breakpoint, and select Suspend > Thread.
 
-[#ch4-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+[#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Configuring breakpoints in IntelliJ IDEA
-image::ch04_f003_garniermoiroux.png[]
+image::ch04_f002_garniermoiroux.png[]
 ====
+
+[#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Simulating human interaction with HtmlUnit
+
+In the first sections of this chapter, we've tested our application by making HTTP requests to various API endpoints, as if we were using cURL or Postman.
+But not all applications are pure backend, REST-based apps.
+Our weather app has an HTML front-end, with a bit of JavaScript, and users interact with it using a browser, not by making HTTP calls with cURL!
+To gain more confidence that the app functions as intended, we can get closer to the "end-to-end" side of the testing spectrum, and simulate browser interactions.
+Using `MockMvcTester` or the other test clients, it is possible to get the HTML content of the page, parse it, and perform some interactions.
+But `MockMvcTester` was not designed for this kind of usage, and it would get cumbersome quite quickly.
+There's an obviously much better solution: browsers.
+They were designed specifically to display and interact with HTML, and are a natural fit.
+As we'll discuss in detail in section <<ch4-section-5>>, you _can_ run a full-fledged web browser from your tests, but it comes with a few constraints.
+Before we think about going all-in on using a real web browser, we can use the _HtmlUnit_ project as a stepping stone.
+As described on their website (https://htmlunit.sourceforge.io/), HtmlUnit is a "GUI-less browser for Java programs".
+GUI-less means that it does not display anything on the screen, and "for Java programs" means that, to make it do things, you have to write some Java code.
+Think of it as a lightweight alternative to a browser, specifically created for Java.
+It's a great fit for tests, and Spring Boot Tests has support for the library.
+To use it, add the dependency to your project:
+
+[#ch4-listing-htmlunit-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.HtmlUnit dependency
+[source,xml,indent=0]
+----
+include::../code/ch4/weather/pom.xml[tags=htmlunit]
+----
+
+The core class of HtmlUnit is the `WebClient`, which simulates the browser.
+It has the same name as Spring's reactive `WebClient`, but completely different capabilities.
+When you import it, be careful that you select the correct package in your IDE: you want to use `org.htmlunit.WebClient`.
+When you use the Mock MVC stack, Spring Boot Tests autoconfigures one for you, which you can inject in your tests.
+In the methods of the `WebClient`, you'll recognize names you encounter when you work with the DOM and JavaScript, such as `.getElementById` or `.querySelector`, which you can use to write test logic for your page.
+
+In our application, when the user selects a city, it creates a "weather card", as pictured in <<ch4-figure-02>>.
+On each card, the first line contains the name of the city and the country, followed by temperature, wind speed and weather conditions, each on their own line.
+
+[#ch4-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.A weather card for the city of Paris
+image::ch04_f002_garniermoiroux.png[194,380]
+
+Let's use `HtmlUnit` to find the card in our HTML document, and check its contents:
+
+[#ch4-listing-htmlunit-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.HtmlUnit basic test
+[source,java,indent=0]
+----
+import org.htmlunit.WebClient;
+
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
+----
+<1> The WebClient from org.htmlunit
+<2> Making a GET request returns an HtmlPage
+<3> CSS query to find elements on the page
+<4> There's a single weather card
+<5> Extract the text from the card
+
+Thanks to `@AutoConfigureMockMvc`, there's a `WebClient` bean available in our test context, which we can inject.
+It is connected to the Mock MVC stack that runs our server code, so there's no need to specify a full URL when making HTTP requests, and instead you can just use the path of the request.
+The `WebClient` parses the response's HTML body and exposes an `HtmlPage`, which you can interact with using familiar web DOM APIs, such as `.getElementById(...)`.
+Here we're using `.querySelectorAll(...)` to find all HTML elements that match a given CSS selector query.
+Those are the "cards" that display weather information about the cities the users has selected.
+In this test, we only selected Paris, so there's a single card displayed, and the weather data matches the mock responses we pre-configured.
+By default, `.querySelectorAll(...)` returns a list of `DomNode`, which is the most abstract type possible: it's any "element in the DOM tree".
+As such, they are mostly used to navigate the tree, with methods for getting parent, child or sibling nodes.
+They also allow you to access any attribute, such as ID or classes, and their text content.
+Here, the text is enough to make basic assertions about the information that's visible on the page.
+
+But `HtmlUnit` is much richer!
+It offers more specialized types than the humble `DomNode`, and allows you to check the visibility of an element, type text into input fields, click items, and even run some JavaScript code.
+There's a bit of JavaScript in our web page: when a user wants to select a city, they type the name of the city in a field, and an auto-complete dropdown appears.
+They can then select on the city of their choice from the dropdown, and the card will be added to the current document without reloading the full page.
+We can write a test for this behavior:
+
+[#ch4-listing-htmlunit-test-javascript, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.HtmlUnit executing JavaScript
+[source,java,indent=0]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
+----
+<1> Type into an input field
+<2> Click on an element
+<3> Wait for JS http requests to finish
+
+In this test, we simulate some interactions: the user selects the search input field and types "bogot".
+The autocomplete will show a single result, Bogotá.
+The user then clicks on the result, and a weather card for Bogotá is added to the page.
+To simulate these actions, we use the `.type(...)` method on the input, and the `.click(...)` method on the first auto-complete result.
+Here we ask the `.querySelector("input#citySearch")` to return a specific type `HtmlInput`.
+It represents an HTML `<input />`, and has a `.type(...)` method which is used to simulate the user typing characters into the text box.
+For the first element of the auto-complete result, we know it's an HTML element in the DOM, so we use `HtmlElement` as the return type from `.querySelector(...)`.
+This type is slightly more specialized than `DomNode`, and exposes a `.click()` method.
+Both the "type" and "click" actions trigger some JavaScript on the page.
+When the user inputs data in the city search text box, the page makes HTTP requests to the backend to get matching cities and display auto-complete results.
+And when they click on an entry, the page calls the API endpoint that selects the city, and refreshes weather data on the page.
+This JavaScript code runs asynchronously in the background, taking a few milliseconds to get the answer back from our server.
+We want our tests to ensure that these operations are completed before moving on to the next steps.
+Since the `WebClient` is simulating the browser, it is responsible for running JavaScript on the page, so we can tell it to wait until JS code has finished executing.
+This is achieved by calling  `.waitForBackgroundJavaScript(1000)`, with a 1000ms timeout, after which the `WebClient` will stop waiting and test execution will resume.
+
+So you can do quite a lot with HtmlUnit, including executing JavaScript ... in Java!
+Quite a feat, isn't it?
+But for all its features, HtmlUnit only has limited support for JavaScript.
+If you look at the JS file that our page loads, it is called `legacy.js`, and was written in ES6, the JavaScript standard from 2015.
+But JS is a very active language, with a new release every year.
+Our project has another version of the same script, called `modern.js`, which you can load into the page instead of the default by visiting http://localhost:8080/?mode=modern.
+These scripts are functionally equivalent, but the modern version uses a more JS version, with new concepts, such as classes or async/await.
+Unfortunately, if you try to load the page with HtmlUnit by calling `webClient.getPage("/?mode=modern")`, you'll get a very cryptic error:
+
+----
+missing ; before statement (http://localhost/js/modern.js#11)
+----
+
+The error looks like a parsing error, but the only hint about the actual issue is that it happens on line 11. That's because the first word on that line is the `async` keyword, which HtmlUnit does not support.
+And this brings us back to the beginning of this section: HtmlUnit is not a "full-fledged browser".
+It is very solid for testing server-rendered applications, possibly sprinkled with a bit of JS, but not a complete replacement for a full web browser.
+
+[NOTE]
+.JavaScript support in HtmlUnit
+====
+HtmlUnit is a Java implementation of a web browser.
+Using only Java, it builds an internal representation of the DOM and allows you to interact with it.
+A regular browser has a dedicated JavaScript engine, a subsystem that parses and runs all JS code.
+In Chrome, for example, it is called V8.
+In HtmlUnit, this engine is implemented in Java, so all JS codes runs inside the JVM.
+It is based on a slightly modified version of a project called Rhino, by Mozilla (https://github.com/mozilla/rhino).
+It does not support all modern JS features, as we've seen above with the `async` keyword.
+If you're curious about what features are included and what's missing, take a peek at Rhino's compatibility matrix at https://mozilla.github.io/rhino/compat/engines.html.
+====
+
+If your application uses unsupported JavaScript features, or more recent APIs such as `PublicKeyCredential` used for Passkeys login, HtmlUnit is not enough, and you'll need to run a full browser in your tests, such as Chrome or Firefox.
+Spring Boot Tests has support for Selenium, the reference library for managing web browsers in Java tests.
 
 [#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing through a real web browser with Selenium
 
-In section <<ch4-section-3>> about browser-based testing with HtmlUnit, we discussed the limitations of that library.
-Now that we know how to run our test app with the web server enabled, we can use a regular web browser to access it in our tests.
+Selenium has been around for over 20 years, originally as a JavaScript in-browser testing library, and evolved to become the dominant testing tool with integrations most of the major programming languages, starting with Java.
+It does not have the limitations of HtmlUnit, but, since the tests use a real browser, your test app needs to be accessible over the network, and you need to run a web server, as described in <<ch4-section-3>>.
 Of course, your test code has no way to interact with the Chrome or Firefox that's installed on your desktop.
 You need two pieces of dedicated tooling to make this work.
 The first is a _Web Driver_, a piece of software that allows you to programmatically interact with a browser, send it commands and read state from it.
 It exposes an HTTP interface for easy interoperability, and, while you could write the HTTP requests yourself, it would be repetitive, and you'd likely end up writing a lot of helper functions for this.
 Instead, you'll use the second tool, Selenium, which provides efficient abstractions for managing the driver lifecycle and interacting with it.
 
-NOTE: While the concept of a WebDriver started with the Selenium project, it is now a World Wide Web Consortium (W3C) specification, describing how programs can interact with web browsers.
+NOTE: The concept of a WebDriver started as an independent project, later merged with the Selenium project, and it is now a World Wide Web Consortium (W3C) specification, describing how programs can interact with web browsers.
 Each major browser has its own driver implementing this specification.
 If you want to learn more, take a moment to read the first chapter of the specification: https://www.w3.org/TR/webdriver2/.
 
@@ -803,7 +806,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 To test the page, we need to point our browser to our backend application, which we do by performing a `driver.get()` request.
 The url is a full, absolute URL, using the random port number that Spring Boot Tests assigned to our test application, which we obtained via `@LocalServerPort` in the setup from listing <<ch4-listing-selenium-setup>>.
 As a side note, we use the `?mode=modern` parameter to load the _modern_ JavaScript version of our application.
-If you remember, HtmlUnit was not able to handle our `modern.js` JavaScript file in section <<ch4-section-3>>, but it works perfectly in Selenium.
+HtmlUnit was not able to handle our `modern.js` JavaScript file in section <<ch4-section-4>>, but it works perfectly in Selenium.
 When we perform HTTP requests with the driver, the page is loaded in the live browser, and you can start interacting with it.
 That's what we do when we type into the search field.
 First, we locate the field with Selenium's `driver.findElement()`, to which we pass a query, `By.id("citySearch")`.
