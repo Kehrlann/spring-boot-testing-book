@@ -458,10 +458,14 @@ This book will introduce the concepts, how to use them, show some lesser-known a
 == Summary
 
 - Spring Boot Starter Tests comes with "batteries included" and bundles all the core libraries used in a test suite: test runner, assertions and mocking, plus a few useful extras.
+It provides integrations with testing libraries using the familiar Spring annotation-driven programming model.
 - There exists a spectrum of types of tests, ranging from focused unit tests to external, black-box end-to-end tests, each with their dedicated ecosystem.
-- While the Spring Framework is versatile enough to allow you to write tests in the middle of that spectrum, it would require some non-trivial amount of boilerplate.
-- Spring Boot Tests offers a packaged solution to avoid that boilerplate, and write what we will call "Integration Tests".
-- Spring also provides you with familiar programming paradigms to write your tests, such as configuring your application through annotations.
-- These annotations extend the default behavior of JUnit, and manage the lifecycle of the app understand for you, without having to write any code.
-- They also enable you to access components of your application to manipulate them directly, make assertions, or even replace them entirely.
-- There are tradeoffs to using Spring Boot Tests, and you should avoid using it as a silver bullet: it's well-suited for testing user scenarios that exercise the full application, but unwieldy for fine-grained, conditional logic, or state-heavy tests.
+While the Spring Framework is versatile enough to allow you to write tests in the middle of that spectrum, it would require some non-trivial amount of boilerplate.
+Spring Boot Tests offers a packaged solution to avoid that boilerplate, and write what we will call "Integration Tests".
+- Spring Boot Tests manages the lifecycle of the application under test for you, and synchronizes it with your test classes.
+It starts the app before executing any test, shuts down the application once the tests are done and performs any necessary clean up.
+- Spring Boot Tests links your application to your test classes.
+You can access beans in tests with `@Autowired` and perform actions or checks, such as verifying the state of your repositories.
+You can also update the configuration and replace existing beans.
+- There are tradeoffs to using Spring Boot Tests, and you should avoid using it as a silver bullet.
+It's well-suited for testing user scenarios that exercise the full application, but becomes unwieldy for validating fine-grained conditional logic, or for tests that rely on a lot of state.
