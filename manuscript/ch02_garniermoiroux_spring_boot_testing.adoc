@@ -76,7 +76,7 @@ The general aspect of the application is rendered in figure <<ch2-figure-01>>.
 
 [#ch2-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .A screenshot of the application under test.
-image::ch02_f001_garniermoiroux.png[]
+image::ch02_f01_garniermoiroux.png[]
 
 The user can type the name of a city of their choice in the input box below "add a new city".
 The input box auto-completes using an HTML `<datalist>` element on the page, with all 5000 available cities loaded when the page is loaded.
@@ -98,7 +98,7 @@ On the architecture side, the class diagram is straightforward and resembles tha
 
 [#ch2-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The architecture of the application under test. On the left side, the `@Controller` is the entrypoint to the application. On the right side are external systems that the application connects to. In between are the classes that hold your application logic. Solid arrows represent code dependencies and dashed arrows external connections.
-image::ch02_f002_garniermoiroux.png[]
+image::ch02_f02_garniermoiroux.png[]
 
 There is a single `@Controller`, parsing HTTP requests, validating data, and then calling into a single `@Service`.
 That class aggregates results from three components, that represent external services, either a database or a REST API.

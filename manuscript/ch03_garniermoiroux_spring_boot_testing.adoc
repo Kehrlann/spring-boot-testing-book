@@ -350,7 +350,7 @@ You can visualize the issue in figure <<ch3-figure-01>>.
 
 [#ch3-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Our test only imports the `ThingConfiguration`. The scope of the test is included in the box. The dashed arrows point from beans to the configuration classes in which they are defined, and the solid arrows represent dependencies. Through the GreenThing bean, our test has dependencies on components outside its scope.
-image::ch03_f001_garniermoiroux.png[]
+image::ch03_f01_garniermoiroux.png[]
 
 In this example, both the `RedThing` and `PinkThing` beans have all the dependencies they need to be wired up.
 But the `GreenThing` does not respect the boundaries of our test, and needs components defined outside our scope.

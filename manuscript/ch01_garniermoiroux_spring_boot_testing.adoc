@@ -139,7 +139,7 @@ See how these components interact in figure <<ch1-figure-01>>:
 
 [#ch1-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The Spring Boot Starter Test contents, and how they interact with your production code and test code. The plain arrows represent imperative calls, such as executing a method: the utilities are used directly. The dotted arrows represent annotation-based programming, where configuration is expressed declaratively, and the Spring testing machinery itself discovers the configuration and executes its own internal methods to start and stop the application. For example, this is the case when you use `@SpringBootTest`: you do not call a method to start the application.
-image::ch01_f001_garniermoiroux.png[]
+image::ch01_f01_garniermoiroux.png[]
 
 Each component has a well-defined scope, a specific way to use it, dedicated APIs to customize the default configuration.
 In the following chapters, you will learn how each one works individually, and how to make good use of them.
@@ -199,7 +199,7 @@ Figure <<ch1-figure-02>> shows where Spring Boot tests are most useful.
 
 [#ch1-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The testing spectrum. On one end, unit tests that involve one or a few classes, and no Spring-specific code. On the other end, there are full-blown end-to-end tests, that may involve many complex components, that need tooling beyond the context of Spring. In between those two ends, there is a whole category of "integration tests".
-image::ch01_f002_garniermoiroux.png[]
+image::ch01_f02_garniermoiroux.png[]
 
 Think of it in terms of testing a car.
 Unit tests ensure that the cylinders run smoothly in the engine block, or that the fuel pump delivers the appropriate flow of liquid.
@@ -293,7 +293,7 @@ A simple class diagram in figure <<ch1-figure-03>> shows the dependency graph of
 
 [#ch1-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The architecture of the application we would like to test. Arrows represent the data flowing through the system. The WidgetValidator cannot be used in tests, and needs to be replaced by a stub.
-image::ch01_f003_garniermoiroux.png[]
+image::ch01_f03_garniermoiroux.png[]
 
 The first challenge is to configure the "test application".
 Spring Boot gives you automatic configuration through the `@SpringBootApplication` annotation on your main class.

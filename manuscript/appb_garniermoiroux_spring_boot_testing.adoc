@@ -182,7 +182,7 @@ This is illustrated in figure <<appb-figure-1>>.
 
 [#appb-figure-1, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The dependency graph of our simple bean application
-image::appb_f001_garniermoiroux.png[230,580]
+image::appb_f01_garniermoiroux.png[230,580]
 
 For such a trivial example, the order in which you would instantiate those beans is obvious: first B, because it has no dependencies, then C, because it only depends on B, and finally A which depends on the other two beans.
 For a more complex example, you would apply an algorithm.
@@ -193,7 +193,7 @@ You can see the general algorithm in practice in figure <<appb-figure-2>>.
 
 [#appb-figure-2, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The algorithm for creating beans used by Spring. On the left are the instructions that will be executed, in sequence. On the right is the state of the `ApplicationContext` at various points in the process, with the beans it contains.
-image::appb_f002_garniermoiroux.png[]
+image::appb_f02_garniermoiroux.png[]
 
 This diagram shows how bean A is created.
 Spring sees that it needs two dependencies, B and C, and tries to load them from the `ApplicationContext`.
