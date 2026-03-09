@@ -1,0 +1,70 @@
+= Spring Boot Testing In Action
+:chapter: 5
+:sectnums:
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 4
+:leveloffset: 1
+:imagesdir: ../images/ch04/
+:table-number:
+:figure-number:
+:listing-number:
+:tabsize: 2
+
+[#ch4-title, reftext={chapter}, caption='{chapter}']
+= Testing subsets of an application
+
+This chapter covers
+
+* Testing a single layer of the application with test slices
+* Testing the web layer with `@WebMvcTest`
+* Testing the data layer with `@DataJpaTest`
+* Creating a custom test slice
+
+// TODO: 100 controllers, 12 seconds for controller-scoped WebMvcTest vs 4 seconds for raw mvc test
+
+When testing applications with the `@SpringBootTest` annotation, as we've done extensively in the previous chapters, Spring Boot Tests loads the full application context.
+For big applications, with hundreds or thousands of beans, or with dependencies that have a long startup time like Hibernate, the impact on test suite execution time can be significant.
+If your Spring application context takes a full minute to start up on your development machine, then launching a single test will test as long.
+With context caching, subsequent tests should be much faster, but one minute is too long when you run tests very frequently.
+
+I have practiced Test Driven Development (TDD for short), which advocates for very short feedback loops.
+You write a test, execute it, watch it fail, fix it, then execute it again, watch it pass, etc.
+Simple, non-Spring unit tests start in milliseconds and do not hinder your workflow.
+But the moment you get into Spring Boot Tests, having to wait for as little as 10 seconds is already a productivity killer.
+
+The solution to this particular problem is to reduce the number of components loaded in a particular test application.
+You can do this manually, as we've seen in Chapter 3, "Configuring and running an application for testing".
+For complex apps, creating smaller application contexts requires some non-trivial amount of boilerplate.
+Spring Boot Tests addresses the issue with _slice tests_, which test only a specific subset of components that share common characteristics, such as "all web `@Controller` beans".
+Spring does not know anything about your business logic, so these slices are technical in nature: there's a slice for web test, a slice for testing the data layer, and so on.
+
+Let's start by discussing some common slices, and then discover how they work in detail.
+
+[#ch5-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Todo
+
+[#ch5-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Caption.
+image::ch04_f01_garniermoiroux.png[]
+
+[#ch5-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Caption
+[source,java]
+----
+include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
+----
+
+<1> Inject MockMvcTester in the test
+<2> The HTTP verb
+<3> The URI
+<4> Perform the request
+<5> Check HTTP Status
+<6> Check the body
+
+
+// TODO: WebMvcTest
+// TODO: DataJpaTest
+// TODO: ApplicationModuleTest
+// TODO: caveats
