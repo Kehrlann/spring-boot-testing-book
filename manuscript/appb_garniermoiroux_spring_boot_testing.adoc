@@ -28,7 +28,7 @@ In practice, it would look something like:
 .Dependency injection
 [source,java]
 ----
-interface BarRepository { } // <1>
+interface BarRepository { } <1>
 
 // Without dependency injection
 class FooService {
@@ -36,7 +36,7 @@ class FooService {
     private final BarRepository barRepository;
 
     public FooService(BarRepository barRepository) {
-        this.barRepository = new SqlBarRepository(); // <2>
+        this.barRepository = new SqlBarRepository(); <2>
     }
 
 }
@@ -47,7 +47,7 @@ class FooService {
     private final BarRepository barRepository;
 
     public FooService(BarRepository barRepository) {
-        this.barRepository = barRepository; // <3>
+        this.barRepository = barRepository; <3>
     }
 
 }
@@ -97,12 +97,12 @@ For example:
 .Creating a bean with an annotation
 [source,java]
 ----
-@Service // <1>
+@Service <1>
 class FooService {
 
     private final BarRepository barRepository;
 
-    public FooService(BarRepository barRepository) { // <2>
+    public FooService(BarRepository barRepository) { <2>
         this.barRepository = barRepository;
     }
 
@@ -119,12 +119,12 @@ To create a bean using a factory method, you use the `@Bean` annotation on a con
 .Creating a bean with an annotation
 [source,java]
 ----
-@Configuration // <1>
+@Configuration <1>
 class FooConfiguration {
 
-    @Bean // <2>
+    @Bean <2>
     FooService fooService(
-            BarRepository barRepository  // <3>
+            BarRepository barRepository  <3>
     ) {
         // ... pre-processing ... <4>
         return new FooService(barRepository);

@@ -396,12 +396,12 @@ void temperatureHistoryAboveAcceptableRange() {
       .acceptableRange(5, 30)
       .preferredRange(15, 25);
   // Omitted: configure mocks to return data above
-  var weatherService = new WeatherScoringService(  // <1>
-          mockWeatherService,  // <1>
-          mockUserPreferenceRepository  // <1>
-  );  // <1>
+  var weatherService = new WeatherScoringService( <1>
+          mockWeatherService, <1>
+          mockUserPreferenceRepository <1>
+  ); <1>
 
-  var score = weatherScoringService.score("Paris", 6); // <2>
+  var score = weatherScoringService.score("Paris", 6); <2>
 
   assertThat(score).isEqualTo(0);
 }

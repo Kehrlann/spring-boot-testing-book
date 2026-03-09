@@ -59,21 +59,21 @@ I've simplified it for you in listing <<ch3-listing-springboottest>>.
 .Simplified code for @SpringBootTest extension.
 [source,java]
 ----
-@ExtendWith(SpringExtension.class) // <1>
-@BootstrapWith(SpringBootTestContextBootstrapper.class) // <2>
+@ExtendWith(SpringExtension.class) <1>
+@BootstrapWith(SpringBootTestContextBootstrapper.class) <2>
 public @interface SpringBootTest {
 
   // Below are generic Spring configuration options, exposed by @SpringBootTest
-  String[] properties() default {}; // <3>
+  String[] properties() default {}; <3>
 
-  Class<?>[] classes() default {}; // <3>
+  Class<?>[] classes() default {}; <3>
 
   // Below are Spring Boot specific configuration options
-  WebEnvironment webEnvironment() default WebEnvironment.MOCK; // <3>
+  WebEnvironment webEnvironment() default WebEnvironment.MOCK; <3>
 
-  UseMainMethod useMainMethod() default UseMainMethod.NEVER; // <3>
+  UseMainMethod useMainMethod() default UseMainMethod.NEVER; <3>
 
-  String[] args() default {}; // <3>
+  String[] args() default {}; <3>
 
 }
 ----
