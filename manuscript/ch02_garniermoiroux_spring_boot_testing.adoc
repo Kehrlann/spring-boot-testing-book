@@ -348,6 +348,7 @@ Generally, it's considered bad practice to call external services during tests u
 Instead, you should provide an alternative implementation that you can program and that returns predictable results, often called a _stub_ or a _mock_.
 Spring Boot Starter Test includes the Mockito dependency, and the Spring framework has hooks to integrate it seamlessly into Spring Boot tests.
 We can replace beans in the application context with a mock and configure it to return predictable results, as shown in listing <<ch2-listing-mocks>>.
+
 [#ch2-listing-mocks, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Replace a bean in the application context by a mock.
 [source,java,indent=0]

@@ -289,7 +289,7 @@ But there's one big caveat with this approach: every single `@SpringBootTest` wi
 This is useful for adding beans you want present in all your tests, but sometimes you only want to modify the config for a subset of tests.
 While you could hack your way around this with different packages or custom exclude rules for component scanning, that would be a lot of boilerplate.
 So the Spring Boot team created the right tool for the job: the `@TestConfiguration` annotation.
-It works like a regular Spring configuration class, but you have to enable add it to your test app explicitly.
+It works like a regular Spring configuration class, but you have to add it to your test app explicitly.
 One option is to nest the configuration class inside your test class, like so:
 
 [#ch3-listing-nested-testconfiguration, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
