@@ -544,6 +544,7 @@ It's a separate view into the test app, external to your test, and there might b
 For example, variables recorded before the breakpoint might differ because they were captured a few steps before the breakpoint was triggered.
 
 [TIP]
+.TIP
 ====
 In Eclipse and VS Code, simply placing a breakpoint and debugging the test is enough to access the running application.
 On IntelliJ IDEA, this doesn't work out of the box.
@@ -554,6 +555,7 @@ Right-click on the breakpoint, and select Suspend > Thread.
 [#ch4-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Configuring breakpoints in IntelliJ IDEA
 image::ch04_f02_garniermoiroux.png[]
+
 ====
 
 [#ch4-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']

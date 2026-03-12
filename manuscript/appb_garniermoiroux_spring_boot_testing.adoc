@@ -1,10 +1,10 @@
 = Spring Boot Testing In Action
-:appendix: B
+:chapter: B
 :sectnums:
-:figure-caption: Figure {appendix}
-:listing-caption: Listing {appendix}
-:table-caption: Table {appendix}
-:sectnumoffset: 0
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 1
 :leveloffset: 1
 :imagesdir: ../images/appb/
 :table-number:
