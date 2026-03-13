@@ -757,7 +757,7 @@ For the driver, use  `ChromeDriverService.usingDriverExecutable(...)`, and for t
 If you want to see which versions your tests are using, you can turn on logging for Selenium with the usual Spring Boot property, `logging.level.org.openqa.selenium=DEBUG`.
 This will print out which browser executable the Selenium Driver Manager found, the version, the version of the driver, etc.
 
-If you want to learn more about the Selenium Driver Manager, take a look at the official documentation at: www.selenium.dev/documentation/selenium_manager/
+If you want to learn more about the Selenium Driver Manager, take a look at the official documentation at: https://www.selenium.dev/documentation/selenium_manager/
 ====
 
 The `ChromeDriver` instance represents a browser instance, that we launch in `--headless` mode, without any UI displayed.
