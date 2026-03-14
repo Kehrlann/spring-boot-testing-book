@@ -498,7 +498,7 @@ include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3
 ----
 <1> Takes 3 seconds to start up
 
-In this app, we deliberately introduce a "slow" bean, which prints ">>> Configuring slow bean..." and then sleeps for 3 seconds (you can configure it to be faster, if you're annoyed with the slow start).
+In this app, we deliberately introduce a "slow" bean, which prints "pass:q[>>>] Configuring slow bean..." and then sleeps for 3 seconds (you can configure it to be faster, if you're annoyed with the slow start).
 This represents the beans that would be slow in your application, whether it's custom business code or Spring infrastructure, like Hibernate scanning entities.
 If we write tests for such an application, even if the test does nothing, the test app will take 3 seconds to start up.
 But if we write a second test class with the exact same configuration, the test will run instantly.

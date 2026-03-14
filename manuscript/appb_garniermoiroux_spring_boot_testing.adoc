@@ -1,10 +1,10 @@
 = Spring Boot Testing In Action
-:appendix: B
+:chapter: B
 :sectnums:
-:figure-caption: Figure {appendix}
-:listing-caption: Listing {appendix}
-:table-caption: Table {appendix}
-:sectnumoffset: 0
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 1
 :leveloffset: 1
 :imagesdir: ../images/appb/
 :table-number:
@@ -12,7 +12,7 @@
 :listing-number:
 :tabsize: 2
 
-[#appb-title, reftext={appendix}, caption='{appendix}']
+[#appb-title, reftext={chapter}, caption='{appendix}']
 = Beans and the ApplicationContext: dependency injection in Spring
 
 Every time you hear about Spring, there will be a mention of _beans_.
@@ -24,7 +24,7 @@ It is designed for a specific form of IoC, called _Dependency Injection_ (DI).
 The main idea of dependency injection is that if an instance of class FooService needs an instance of class BarRepository, that dependency is not created by FooService itself, but rather passed from the outside.
 In practice, it would look something like:
 
-[#appb-basics, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-basics, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Dependency injection
 [source,java]
 ----
@@ -63,7 +63,7 @@ With DI, `FooService` can accept alternative implementations of the repository, 
 And it does not need to even know which data storage is used in the repository, and does not need to decide.
 The drawback is that you will need to instantiate both classes at the top level, for example:
 
-[#appb-manual-injection, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-manual-injection, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Injecting the dependency
 [source,java]
 ----
@@ -93,7 +93,7 @@ There are a myriad of ways to create beans with Java-based configuration, but th
 To make a class a Spring bean, you annotate with one of the Spring stereotype annotations, such as `@Component`, `@Service`, `@Controller`, `@Repository`, etc.
 For example:
 
-[#appb-component, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-component, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Creating a bean with an annotation
 [source,java]
 ----
@@ -115,7 +115,7 @@ With the signature of the constructor, you can express the dependencies of your 
 
 To create a bean using a factory method, you use the `@Bean` annotation on a configuration class, like so:
 
-[#appb-factory-method, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#appb-factory-method, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Creating a bean with an annotation
 [source,java]
 ----
@@ -151,7 +151,7 @@ In Spring Boot, the ApplicationContext is configured to scan your classpath: it 
 As it creates beans, it stores the instances in the container so they can be easily re-used.
 Consider the very simple application definition:
 
-[#ch2-simple-app, reftext={appendix}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch2-simple-app, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A simple application with 3 beans
 [source,java]
 ----
@@ -180,7 +180,7 @@ This can be visualized as a graph.
 The nodes are our bean instances, and the edges are the dependencies between beans.
 This is illustrated in figure <<appb-figure-1>>.
 
-[#appb-figure-1, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+[#appb-figure-1, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The dependency graph of our simple bean application
 image::appb_f01_garniermoiroux.png[230,580]
 
@@ -191,7 +191,7 @@ Rinse and repeat until all instances have been created.
 Spring follows a different approach, starting from an entry point and recursively creating nodes as needed.
 You can see the general algorithm in practice in figure <<appb-figure-2>>.
 
-[#appb-figure-2, reftext={appendix}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+[#appb-figure-2, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The algorithm for creating beans used by Spring. On the left are the instructions that will be executed, in sequence. On the right is the state of the `ApplicationContext` at various points in the process, with the beans it contains.
 image::appb_f02_garniermoiroux.png[]
 
