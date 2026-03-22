@@ -6,7 +6,7 @@
 :table-caption: Table {chapter}
 :sectnumoffset: 4
 :leveloffset: 1
-:imagesdir: ../images/ch04/
+:imagesdir: ../images/ch05/
 :table-number:
 :figure-number:
 :listing-number:
@@ -24,7 +24,7 @@ This chapter covers
 
 // TODO: 100 controllers, 12 seconds for controller-scoped WebMvcTest vs 4 seconds for raw mvc test
 
-When testing applications with the `@SpringBootTest` annotation, as we've done extensively in the previous chapters, Spring Boot Tests loads the full application context.
+When testing applications with the `@SpringBootTest` annotation, as we've done extensively in the previous chapters, Spring Boot Tests loads the full application context, everything from controllers to repositories.
 For big applications, with hundreds or thousands of beans, or with dependencies that have a long startup time like Hibernate, the impact on test suite execution time can be significant.
 If your Spring application context takes a full minute to start up on your development machine, then launching a single test will test as long.
 With context caching, subsequent tests should be much faster, but one minute is too long when you run tests very frequently.
@@ -40,14 +40,34 @@ For complex apps, creating smaller application contexts requires some non-trivia
 Spring Boot Tests addresses the issue with _slice tests_, which test only a specific subset of components that share common characteristics, such as "all web `@Controller` beans".
 Spring does not know anything about your business logic, so these slices are technical in nature: there's a slice for web test, a slice for testing the data layer, and so on.
 
-Let's start by discussing some common slices, and then discover how they work in detail.
+We'll start by discussing what slices are, and then we'll discover some example slices, explaining their scopes and how to use them.
 
 [#ch5-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Todo
+== Test slices: technical facets of your application
+
+The name "test slice" brings the layered architecture pattern to mind.
+This architecture pattern was very common in the 2000s, when Spring was first introduced.
+It presents an application as a multi-layered cake, each with its own scope, and is sometimes referred to as "three-tier architecture".
+The top layer is the _presentation_ layer, which, in your typical Spring Boot web application, would be the web part, with all the `@Controller`s and related beans.
+It relies on Spring internals for handling requests and responses, for serializing or deserializing Java objects to JSON and for translating errors to HTTP codes.
+Then comes the _business_ or _domain_ layer, the collection of `@Service`s that contain the business logic.
+This layer, unlike others, does not interface with specific components in the tech stack, and thus does not require any dedicated infrastructure.
+At the bottom sits the _data_ or _persistence_ layer, which contains your app's interfaces to the database.
+Just like the web layer, it needs the framework's code to work.
+
+For testing purposes, this cake can be _sliced_, separating layers and providing the required Spring artifacts to test it.
+Spring Boot gives you simple annotations for each technical scope it manages, which you can use instead of `@SpringBootTest`.
+Each carve out a slice of your application and add the appropriate beans for testing said slice.
+For example, `@WebMvcTest` will only load your web layer, such as `@Controller` and `@ControllerAdvice` beans, and also autoconfigures `MockMvcTester`.
+Another annotation, `@DataJpaTest`, helps with data tests and limits scanning to `@Entity` classes and associated repositories.
+It also loads data-related auto-configurations, replaces the default database by an in-memory instance and makes all tests transactional.
+In between these, the business layer doesn't need much in terms of framework support, so there is no dedicated annotation for it.
+
+Figure <<ch5-figure-01>> shows this layering in practice:
 
 [#ch5-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
-.Caption.
-image::ch04_f01_garniermoiroux.png[]
+.The three tier architecture. Each layer access into the one below it. Each have their own scope, with dedicated types, and both the presentation and data layers have dedicated testing infrastructure.
+image::ch05_f01_garniermoiroux.png[]
 
 [#ch5-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Caption
