@@ -43,7 +43,7 @@ Spring does not know anything about your business logic, so these slices are tec
 We'll start by discussing what slices are, and then we'll discover some example slices, explaining their scopes and how to use them.
 
 [#ch5-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Test slices: technical facets of your application
+== Test slices: isolating technical components
 
 The name "test slice" brings the layered architecture pattern to mind.
 This architecture pattern was very common in the 2000s, when Spring was first introduced.
@@ -68,6 +68,49 @@ Figure <<ch5-figure-01>> shows this layering in practice:
 [#ch5-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The three tier architecture. Each layer access into the one below it. Each have their own scope, with dedicated types, and both the presentation and data layers have dedicated testing infrastructure.
 image::ch05_f01_garniermoiroux.png[]
+
+Both the presentation and data layer in this diagram get a test slice annotation.
+What's most important in figure <<ch5-figure-01>> is not the specific architecture, but rather the fact that Spring Boot Tests provides utilities for specific _technologies_.
+In fact, there are many more ways to design your apps, such as "hexagonal architecture" which has gained popularity in the current decade.
+No matter what architectural pattern, test slices cover aspects of your application that need Spring code, and this extends beyond just the web and data interfaces.
+Here is a non-exhaustive list:
+
+* `RestClient` and `WebClient`
+* Most data-related projects such as JDBC, jOOQ, Redis, Mongo, LDAP, ElasticSearch and more
+* GraphQL
+* Spring Web Services (SOAP)
+* JSON serialization and deserialization with Jackson
+
+For a full list, referer to the reference documentation, under Testing > Testing Spring Boot Applications: https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html
+
+We have briefly touched on why you would want to test only a few classes in your application in chapter 3, when we discussed "Building a test application from manually selected classes", and "Stubbing out dependencies by using mocks".
+Test slices are another strategy to make thinner applications for testing, and they come with opinions and specific tooling to make testing certain use-cases easier.
+Of course, as the saying goes, "there's no such thing as a free lunch", and test slices have their own limitations and tradeoffs.
+
+== When to use test slices
+
+A slice, while loading a _smaller_ application, still builds a Spring app, and adds a few tens of milliseconds of overhead.
+Over enough tests, this can add up.
+In chapter 3, we discussed how Spring caches test apps between tests, dramatically speeding up integration tests.
+By default, the size of the cache is 32, and going over that limit will cause cache eviction, leading to a lot of thrashing in bigger test suites.
+I once met Spring developers at a conference who told me they used to have hundreds of slices tests.
+They were suffering from both the performance overhead and cache churn described above.
+Getting rid of them sped up their test suite by a factor of 4 or 5.
+
+NOTE: I reproduced this experiment, running a thousand very thin slices versus running a thousand tests against a single app context, and the single slice is an order of magnitude faster.
+You can find this very un-scientific benchmark in the examples repository, under `ch05/performance`.
+
+Test slices shine when these two conditions are met:
+
+* *The app you are trying to test is large*.
+This may mean it has many dependencies, or that it is simply slow to start.
+When it has dependencies, like messages queues, databases and so forth, and you start some resource intensive process to support those tests, for example Testcontainers.
+This may be slow, resource intensive or both.
+There are many reasons other for an app to be slow to start, like Hibernate scanning packages for JPA entities, or custom business logic you execute on startup.
+* *You want a fast feedback loop*.
+If your test app takes a minute to start, but you only pay the cost once, it may not be a problem for you.
+On the other hand, imagine you are iterating on a given feature, and run your tests every few minutes.
+Then getting around the startup overhead is a massive productivity boost.
 
 [#ch5-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Caption
