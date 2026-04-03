@@ -87,6 +87,7 @@ We have briefly touched on why you would want to test only a few classes in your
 Test slices are another strategy to make thinner applications for testing, and they come with opinions and specific tooling to make testing certain use-cases easier.
 Of course, as the saying goes, "there's no such thing as a free lunch", and test slices have their own limitations and tradeoffs.
 
+[#ch5-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == When to use test slices
 
 A slice, while loading a _smaller_ application, still builds a Spring app, and adds a few tens of milliseconds of overhead.
@@ -109,8 +110,43 @@ This may be slow, resource intensive or both.
 There are many reasons other for an app to be slow to start, like Hibernate scanning packages for JPA entities, or custom business logic you execute on startup.
 * *You want a fast feedback loop*.
 If your test app takes a minute to start, but you only pay the cost once, it may not be a problem for you.
-On the other hand, imagine you are iterating on a given feature, and run your tests every few minutes.
+But imagine you are iterating on a given feature, and run your tests every few minutes.
 Then getting around the startup overhead is a massive productivity boost.
+
+NOTE: You write tests because they bring value to you.
+But not all tests bring the same perspective on your code.
+I often go back to Kent Beck's _Test Desiderata_, which describes 12 properties that make tests more valuable.
+But some properties may interfere with each other.
+For example, you can strive for _Predictive_ tests, meaning that "if the tests all pass, then the code under test should be suitable for production", at the expense of _Fast_ tests.
+When I write a specific test suite, I try to qualify what I'm expecting to gain from it, and orient my design decisions around this.
+Read more on the minisite https://testdesiderata.com.
+
+The decision to use slices is very situational.
+I cannot be much more specific than the general advice above without getting lost in the details, but we can think through a couple of concrete examples.
+
+You work on a big, existing app, and a raw `@SpringBootTest` takes 20 seconds start.
+You are working on a new `@Controller`, and iterating on custom input parsing and validation.
+For now, you do not care about how the data flows to through your business domain after this initial step.
+Since you practice test-driven development, tens of seconds is too long of a wait.
+In this case, a slice test for the web layer is perfect.
+It only exercises the specific code paths you are working on, requires little setup and runs in 50 milliseconds.
+
+On the other hand, let's say you are working on a smaller CRUD application that only depends on a relational database, and exposes data through a few API endpoints.
+You are creating a new repository, and adding a few query methods such as `findByNameOrderByNameAsc`.
+Here a test slice won't be very useful.
+You are touching the slowest aspect of the application, and removing a thin web layer won't noticeably speed up execution, and a regular `@SpringBootTest` will fail if you get your query method names wrong.
+
+When a test suite starts being too slow, it's generally worth re-evaluating your current testing strategy, with mixes of slices and full `@SpringBootTest`.
+And when you create a new test class, consider what aspect of your code you are testing and what properties you would like to surface.
+This should inform you on whether to reach for a slice, or stay with a simpler `@SpringBootTest`.
+
+At the time of this writing, there are 19 slice annotations.
+This book does not strive to replace reference documentation, so we will not go over all of these, but we can discuss the most common.
+
+[#ch5-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== `@WebMvcTest` for the web layer
+
+// TODO
 
 [#ch5-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Caption
@@ -128,6 +164,7 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 
 
 // TODO: WebMvcTest
+// TODO: TestRestClient
 // TODO: DataJpaTest
 // TODO: ApplicationModuleTest
-// TODO: caveats
+// TODO: caveats, including @Tag
