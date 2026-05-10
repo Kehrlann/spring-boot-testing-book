@@ -19,8 +19,8 @@ This chapter covers
 
 * Testing a single layer of the application with test slices
 * Testing the web layer with `@WebMvcTest`
-* Testing the data layer with `@DataJpaTest`
-* Creating a custom test slice
+* Testing rest clients with `@RestClientTest`
+* Testing a Spring Modulith application module
 
 // TODO: 100 controllers, 12 seconds for controller-scoped WebMvcTest vs 4 seconds for raw mvc test
 
@@ -99,7 +99,7 @@ They were suffering from both the performance overhead and cache churn described
 Getting rid of them sped up their test suite by a factor of 4 or 5.
 
 NOTE: I reproduced this experiment, running a thousand very thin slices versus running a thousand tests against a single app context, and the single slice is an order of magnitude faster.
-You can find this very un-scientific benchmark in the examples repository, under `ch05/performance`.
+You can find this very un-scientific benchmark in the examples repository, under `ch5/performance`.
 
 Test slices shine when these two conditions are met:
 
@@ -141,26 +141,77 @@ And when you create a new test class, consider what aspect of your code you are 
 This should inform you on whether to reach for a slice, or stay with a simpler `@SpringBootTest`.
 
 At the time of this writing, there are 19 slice annotations.
-This book does not strive to replace reference documentation, so we will not go over all of these, but we can discuss the most common.
+This book does not strive to replace reference documentation, so we will not go over all of these, but we can study a few example among the most commonly used.
 
 [#ch5-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == `@WebMvcTest` for the web layer
 
-// TODO
+In chapter 4, we went over all the available tools for testing web applications.
+All of our examples used `@SpringBootTest`, and loaded the full app.
+If you go back and browse the sample code, you'll find enough test to cover all the features in the application.
+Some of these cover important edge cases that we have not discussed in detail.
+These tests are good candidates for a slice test, as they exercise some of the web features, like `@ControllerAdvice`, without touching too much business logic.
+Of course, the app is small enough that we can cover everything with full `@SpringBooTest`, but if you scale this demo 10 or 100-fold, it might become unwieldy, and a `@WebMvcTest` might become justified.
+Let's see how you would use this slice in practice.
 
-[#ch5-listing-basic-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Caption
+Before we start writing tests, let's discuss our weather application, and the changes we've made for this chapter..
+You can find the complete code under `ch5/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch5/weather.
+As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
+The sample has the same feature set and overall behavior as the application from chapter 4, with the addition of a "preferences" toolbar.
+With this, users can use the app dark mode, sort cities alphabetically or by date added, and use either metric or imperial units.
+You can see the toolbar in Figure <<ch5-figure-02>>.
+
+[#ch5-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.A screenshot of the application under test.
+image::ch05_f02_garniermoiroux.png[]
+
+The application also has some changes invisible to users.
+It now renders 100% in the browser, without any server-side rendering: the JavaScript code aggregates data from HTTP APIs exposed by the application.
+We have also re-architected the app using Spring Modulith, which we will discuss in detail further along in this chapter.
+The consequence is that there is now a `@Controller` for cities, one for weather data, and one for preferences.
+
+With this in mind, let's zoom in on one particular edge case we want to verify: a user can select a city only once.
+The UI does not show cities that are already selected in the dropdown menu.
+But if a race condition in the frontend causes the "select city" request to be sent twice, the Spring API also rejects it with a standard status code, `HTTP 409 Conflict`.
+Internally, the business logic is implemented in the service layer, in a method called `addCityById(String cityId)`.
+If the city has been selected previously, the method throws a `CityAlreadySelectedException`.
+To avoid handling the exception manually, we use a Spring `@ControllerAdvice`, which handles exceptions throw in Spring controllers, and returns the appropriate response code.
+We use the same mechanism for mapping `CityNotFoundException` to `HTTP 404 Not found`.
+
+To write a slice test, we use the `@WebMvcTest` annotation instead of `@SpringBootTest`.
+But, as the documentation states, only web-related components are loaded.
+This means that `@Component`, `@Service` and other non-web beans are excluded from the test.
+But our controllers have dependencies on such beans: the city controller depends on a `CityService`, and weather and preferences controllers have their own dedicated `WeatherService` and `PreferenceService`.
+So if you were to write a slice test with just the `@WebMvcTest` annotation, as demonstrated in <<ch5-listing-webmvc-test-failing>>, they would error out because of missing dependencies.
+
+[#ch5-listing-webmvc-test-failing, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using the @WebMvcTest annotation.
 [source,java]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
+@WebMvcTest
+class ExampleTests {
+    // ... test methods ...
+}
 ----
 
-<1> Inject MockMvcTester in the test
-<2> The HTTP verb
-<3> The URI
-<4> Perform the request
-<5> Check HTTP Status
-<6> Check the body
+The test above errors, with a message pointing a missing dependency: _Error creating bean with name 'cityController' defined in file [...]: Unsatisfied dependency expressed through constructor parameter 0_.
+One level deeper in the stack trace, Spring will helpfully point to the required bean. with: _No qualifying bean of type 'wf.garnier.spring.boot.test.ch5.weather.city.CityService' available_.
+A simple way to fix this particular problem is to provide the test app with the required bean, for example with a `@MockitoBean`, as we covered in chapter 3.
+But you'd need to provide mocks for the dependencies of every controller in the application.
+In our example, this represents only three services, but in a large production system, this might mean tens or hundreds of components, cluttering the test with just as many mocks you don't even use.
+A simpler way to restrict the number of mocks you need is to scope the test to just one or a few controllers, by using the `controllers` parameter of the annotation, like so:
+
+[#ch5-listing-webmvc-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A working @WebMvcTest example.
+[source,java]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
+----
+
+<1> This is a slice test with
+<2> Required mocks
+<3> Available through WebMvcTest
+<4> Mock CityService throwing an exception
 
 
 // TODO: WebMvcTest
@@ -168,3 +219,12 @@ include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weath
 // TODO: DataJpaTest
 // TODO: ApplicationModuleTest
 // TODO: caveats, including @Tag
+
+
+We have also reworked the architecture to use the Spring Modulith project, a Spring toolkit to build modular applications.
+That project deserves its own full book, so we'll cover the big picture of how we use it in this particular case.
+If you would like to learn more, a good place to start is the https://docs.spring.io/spring-modulith/reference/[official documentation].
+With Modulith, each top-level package represents a _module_.
+Modules may have an _internal_, inside which classes are considered, well, to that module.
+Even if they are public, they cannot be accessed from other modules.
+This renders dependencies between modules very explicit.
