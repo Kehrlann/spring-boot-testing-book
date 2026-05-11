@@ -39,6 +39,7 @@ Discuss JUnit 4 vs JUnit 5/6
 ** //@formatter:off
 ** add license to all code files
 ** Ensure license file present
+** Provide a mock open-meteo implementation!!
 
 
 == Examples
