@@ -177,6 +177,17 @@ Internally, the business logic is implemented in the service layer, in a method 
 If the city has been selected previously, the method throws a `CityAlreadySelectedException`.
 To avoid handling the exception manually, we use a Spring `@ControllerAdvice`, which handles exceptions throw in Spring controllers, and returns the appropriate response code.
 We use the same mechanism for mapping `CityNotFoundException` to `HTTP 404 Not found`.
+If you've never used controller advice, here's what handing "already selected" looks like in code:
+
+[#ch5-listing-controller-advice, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.The controller advice for city-related errors.
+[source,java]
+----
+include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/city/internal/CityControllerAdvice.java[tags=content]
+----
+
+NOTE: The exception handling methods could be in the controller itself.
+Having a dedicated advice class allows to share the behavior across controllers, and it is covered by the web test slice.
 
 To write a slice test, we use the `@WebMvcTest` annotation instead of `@SpringBootTest`.
 But, as the documentation states, only web-related components are loaded.
@@ -208,18 +219,66 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
 
-<1> This is a slice test with
-<2> Required mocks
-<3> Available through WebMvcTest
-<4> Mock CityService throwing an exception
+<1> Declare as a single-controller slice test
+<2> Provide missing beans
+<3> Inject test utilities
+<4> Configure mock to throw an exception
+
+This test only targets the `CityController`, and it's not possible to call endpoints declared in other controllers, such as `/api/weather`.
+By reducing the scope of the test, we only need to provide a single bean to make the test work, here the `CityService`.
+Mocks are most commonly used, but you can use any of the techniques discussed in chapter 3, such as custom test configurations or `@TestBean`.
+This test verifies the edge case where users try to select a city, but it is already selected.
+To signal this, the `CityService` throws a `CityAlreadySelectedException`, so we configure our mock service to throw an exception, using the `doThrow(...)` Mockito API.
+You may be unfamiliar with Mockito construct used in this example, but it's the API you need to use when the method you are mocking, here `addCityById` returns `void`, as `when(void)` is not valid Java and does not compile.
+Also note that you can use `MockMvcTester` directly in web slice tests, without having to annotate the class with `@AutoConfigureMockMvc`.
+
+This example shows a test slice loading a single controller, but this a side effect of having such a small demo application.
+In a bigger app, you typically want to avoid the "one controller, one test slice" pattern, as it leads to a lot of thrashing in the context cache, and much slower test suites.
+Usually, you want to test _related_ controllers together, that share similar dependencies, so that you can provide a single set of mock beans.
+The test annotation will have the list of controllers under test, in the form `@WebMvcTest(controllers = { A.class, B.class, ... })`.
+The most common challenges developers face is splitting up their application along well-defined boundaries, and have controllers reach out to multiple unrelated services.
+This, in turn, makes grouping controllers very difficult.
+If you struggle making clean web slice tests that have a limited number of dependencies, your tests are probably telling you something about the architecture of your application.
+In that case, you may want to take a look at Spring Modulith to give you some tools to split up your app into decoupled modules.
+We'll discuss the testing tools Modulith offers in section <<ch5-section-5>>.
+
+But before we explore architecture concerns, let's cover another technical aspect of our application: the HTTP clients it uses to call the external weather API.
+Spring Boot has a dedicated slice testing the client side of HTTP, called `@RestClientTest`.
+
+// TODO: note with anatomy of WebMvcTest
+
+[#ch5-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== `@RestClientTest` for HTTP clients
+
+The majority of Spring apps expose a web server, and `@WebMvcTest` has been included in Boot since version 1.4.0, in 2016.
+It is common in Spring test suites.
+
+Our application is a web app, but it is also a web *client*, that makes HTTP requests to Open Meteo to get weather data.
+If we want to keep our tests to be local, and avoid reaching out to network resources, we have to replace the external service with something else.
+One option is to stub the entire `WeatherService`, and assume the implementation will be fully covered by end-to-end tests, but that's not ideal for iterating of the implementation.
+The other option is to replace the third-party service with a server that presents pre-determined responses to our `RestClient`.
+It does not ensure the full system works - after all, if Open Meteo decides to change the fields in their JSON responses, our tests would not catch it.
+But it offers interesting properties:
+It allows us to iterate quickly and locally, which is useful the service contains logic we want to verify, for example transforming the upstream data to better fit our model.
+It also serves as a record of our understanding of the external service, a documentation of sort.
+In tests, we write down example API responses that a human can parse at a glance, and we cover all HTTP errors we have encountered with the real service.
+
+Spring has utilities for testing how our `RestClient`-based code interacts with a server, by mocking ou To ensure our integration with Open Meteo actually works, we need to talk to the real API, in an end-to-end testing scenario ... but that's beyond the scope of this book.
+On the other hand, if we write tests that are local and do not reach out to the service provider, we are testing against the _model of that service we built for our test suite_.
+If Open Meteo changes the parameters in their HTTP responses, our Spring-based tests will not catch this.
 
 
-// TODO: WebMvcTest
-// TODO: TestRestClient
-// TODO: DataJpaTest
-// TODO: ApplicationModuleTest
-// TODO: caveats, including @Tag
 
+// TODO
+NOTE: limitations MockRestServiceServer
+
+[#ch5-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Business-logic slices with Modulith
+
+TODO
+
+// TODO: caveat, tags?
+// TODO: data JPA
 
 We have also reworked the architecture to use the Spring Modulith project, a Spring toolkit to build modular applications.
 That project deserves its own full book, so we'll cover the big picture of how we use it in this particular case.
