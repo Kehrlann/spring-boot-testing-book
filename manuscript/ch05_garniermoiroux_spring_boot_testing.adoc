@@ -218,7 +218,6 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
-
 <1> Declare as a single-controller slice test
 <2> Provide missing beans
 <3> Inject test utilities
@@ -258,19 +257,126 @@ If we want to keep our tests to be local, and avoid reaching out to network reso
 One option is to stub the entire `WeatherService`, and assume the implementation will be fully covered by end-to-end tests, but that's not ideal for iterating of the implementation.
 The other option is to replace the third-party service with a server that presents pre-determined responses to our `RestClient`.
 It does not ensure the full system works - after all, if Open Meteo decides to change the fields in their JSON responses, our tests would not catch it.
-But it offers interesting properties:
-It allows us to iterate quickly and locally, which is useful the service contains logic we want to verify, for example transforming the upstream data to better fit our model.
-It also serves as a record of our understanding of the external service, a documentation of sort.
+What we are testing is a _model of that service_, purposefully built for our test suite, which gives us two interesting properties.
+First, it allows us to iterate quickly and locally, which is useful the service contains logic we want to verify, for example transforming the upstream data to better fit our model.
+Second, it serves as a record of our understanding of the external service, a documentation of sort.
 In tests, we write down example API responses that a human can parse at a glance, and we cover all HTTP errors we have encountered with the real service.
 
-Spring has utilities for testing how our `RestClient`-based code interacts with a server, by mocking ou To ensure our integration with Open Meteo actually works, we need to talk to the real API, in an end-to-end testing scenario ... but that's beyond the scope of this book.
-On the other hand, if we write tests that are local and do not reach out to the service provider, we are testing against the _model of that service we built for our test suite_.
-If Open Meteo changes the parameters in their HTTP responses, our Spring-based tests will not catch this.
+Spring has built-in utilities for testing how `RestClient` interacts with a server, by mocking out the HTTP responses, called a `MockRestServiceServer`.
+It is not a full server, and does not server real HTTP traffic, but it is lighter than alternatives that require you to run a separate web server in your tests, such as WireMock or MockServer.
+With this lightweight implementation, Spring hooks up to `RestClient` internals to create fake HTTP requests and produce programmed responses for most common use-cases.
+Let's test the service that calls out to OpenMeteo, `OpenMeteoWeatherDataService`.
+The service accepts a `RestClient.Builder` as a constructor argument, and uses it to build the client used internally:
 
+[#ch5-listing-weather-service-constructor, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.OpenMeteoWeatherDataService constructor
+[source,java]
+----
+include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataService.java[tags=class;fields;constructor]
+----
+
+We can write a test for this by connecting the `RestClient.Builder` to Spring's mock server, and configuring it for our tests.
+You can set up a client to use a `MockRestServiceServer` manually, but with Spring Boot test slices, this is done automatically:
+
+[#ch5-listing-restclienttest-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.OpenMeteoWeatherDataService constructor
+[source,java]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
+----
+
+1. The slice will only load the selected component
+2. The service under test is available for injection
+3. The mock server is also available
+
+This is a very small test slices, which only loads your service, the mock server and the infrastructure for testing HTTP clients.
+Slice tests scan your code and select which classes to load at the type level, before loading the classes in the JVM.
+So they cannot automatically detect which Spring components accept a `RestClient.Builder` as a constructor dependency, which means you need to explicitly list which components you intend to build.
+The `@RestClientTest` annotation loads both a `MockResterServiceServer` and a `RestClientCustomizer`, which will configure the client builder and connect it to the server.
+Here, our service's constructor only takes a rest client builder as a dependency.
+But if your code requires more dependencies, they will not be loaded automatically, and you'll have to provide them through the usual test configuration, mockito bean or test bean, as discussed in chapter 3.
+With the appropriate components wired in, we can write our first test:
+
+[#ch5-listing-restclienttest-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.A test using MockRestServerService
+[source,java]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=test]
+----
+
+1. Set up expected requests
+2. Configure the response
+3. Call the service
+
+First, we configure expected requests for `MockRestServiceServer`, and the pre-defined responses it should return for certain requests.
+The mock expectations are built using a `RequestMatcher` interface, which takes the client requests and decides if an incoming request matches.
+For most common requests, you can build them using factory methods in the `MockRestRequestMatchers` class, such as, `requestTo` for the full request URL, `queryParam`, `header`, `method`, etc.
+With this configuration, expectations are not strict: if no request is performed that matches the configuration, the test will not fail.
+But each expectation corresponds to a single request, so configuring two expected requests and making three will make the test fail.
+The order is also important: if the first configured request expects a latitude to be 48 and the second a latitude to be 32, making an HTTP request with latitude = 32 first will also fail.
+The responses are created using `ResponseCreator` interface, typically with factory methods from `MockRestResponseCreators`.
+Here, we are using `withSuccess()` to return HTTP 200, with a pre-programmed body.
+We can also test error cases with the appropriate responses, like so:
+
+[#ch5-listing-restclientest-error-case, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Testing error cases
+[source,java]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=error-test]
+----
+
+If you need more advanced setup for the requests, you can create your own `RequestMatcher`, which is a functional interface.
+It takes a Spring `ClientHttpRequest`, and has no return type.
+To express that a request doesn't match, you need to throw an `AssertionError`, otherwise it will be considered matching.
+The responses can also be configured with a fluent API, adding to the response types:
+
+[#ch5-listing-restclienttest-custom-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Testing error cases
+[source,java,indent=0]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=complex-setup]
+----
+
+1. Custom `RequestMatcher` with lambda
+2. Custom response, with headers and body
+
+Although we have used `MockRestServiceServer`  as a simple _stub_ in the previous examples, it is a true _mock_ object.
+This means that you can verify the expectations you set up on your mock server, that is, that all requests have actually been made.
+
+TIP: To learn more about the different types of test doubles, mocks, stubs, spies, fakes and dummies, refer to _Mocks aren't stubs_ article by Martin Fowler (2004, https://martinfowler.com/articles/mocksArentStubs.html).
+
+To exercise the verification features, simply call the `.verify()` method:
+
+[#ch5-listing-restclienttest-verifications, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Testing error cases
+[source,java,indent=0]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=verifications]
+----
+
+1. Setup expectations
+2. Verification fails: missing a call
+3. Verification succeeds: a single call was made
+4. Code fails: third call is not expected
+
+In this test, we expect at least one call to our mock rest server, and at most two.
+We call verify at different stages of using our service.
+When there are no calls made, `verify()` fails.
+When we have 1 or 2 calls, it succeeds.
+When we call the service a third times, it issues a third call to our mock server, which is unexpected, and fails.
+
+All in all, `MockRestServiceServer` is both simple to use and versatile.
+There are limitations to it though: it is not a full web server, and does ever intend to be one.
+Some features `RestClient`, such as read and connect timeouts, are implemented at the network layer by the underlying HTTP client, and cannot be tested this way.
+Some features are beyond the scope of the mocks, such as streaming responses.
+If you wish to test this, you'll need to move to a third party server.
+But for simple request-response scenarios, `MockRestServiceServer` is perfect.
 
 
 // TODO
 NOTE: limitations MockRestServiceServer
+
+// TODO: custom request params
 
 [#ch5-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Business-logic slices with Modulith
@@ -279,6 +385,7 @@ TODO
 
 // TODO: caveat, tags?
 // TODO: data JPA
+// TODO: scanning - how Spring detects classes
 
 We have also reworked the architecture to use the Spring Modulith project, a Spring toolkit to build modular applications.
 That project deserves its own full book, so we'll cover the big picture of how we use it in this particular case.
