@@ -1,0 +1,50 @@
+= MEAP marketing
+
+== TODO
+
+* Talk to Sergi
+* Research testing articles in magazines (JavaPro, JavaMag jug)
+* Endorsement / quotes
+** Sam Brannen
+** Brian Clozel
+
+== In progress
+
+* Talk to Josh
+* Talk to Dan Vega
+* Talk to Ulrike
+* Talk to Arnaud Héritier
+* Talk to James Ward
+* Endorsement / quotes
+** Stéphane Nicoll
+
+
+== Manning handles
+
+* Reddit
+* Java channel
+
+== Ideas
+
+* Free ebook learning path
+* Think about "pain points"
+* Magazine: think about pain points and write article
+* Meet the author
+
+== Josh / Dan
+
+Hey there 👋
+
+[I don't remember if I told you I was writing a book? With manning.]
+The MEAP (Manning Early Access Programm) for my book is online (here: https://www.manning.com/books/testing-spring-boot-applications) !
+First four chapters are available for purchase.
+Marketing campaign starts tomorrow.
+Their team is very eager to have me promote it.
+And since you're the #1 Spring'fluencer , I figured I'd reach out to you.
+
+They've bounced a few ideas, lmk if anything sounds interesting:
+
+- Of course, they suggested doing a podcast with you on the topic
+- They suggested you do a review (they'd give you a copy)
+- They offered to give you a few codes to do a free giveaway
+
