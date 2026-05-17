@@ -3,6 +3,8 @@
 .SHELLFLAGS = -c
 MAKEFLAGS += --silent
 
+export PATH := $(HOME)/.rbenv/shims:$(PATH)
+
 .PHONY: remove-blank-lines
 remove-blank-lines: manuscript/*.adoc
 	./resources/remove_blank_line.awk $^
