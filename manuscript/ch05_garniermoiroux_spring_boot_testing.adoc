@@ -13,7 +13,7 @@
 :tabsize: 2
 
 [#ch4-title, reftext={chapter}, caption='{chapter}']
-= Testing subsets of an application
+= Testing subsets of an application with test slices
 
 This chapter covers
 
@@ -218,6 +218,7 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
+
 <1> Declare as a single-controller slice test
 <2> Provide missing beans
 <3> Inject test utilities
@@ -291,7 +292,8 @@ include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weath
 
 This is a very small test slices, which only loads your service, the mock server and the infrastructure for testing HTTP clients.
 Slice tests scan your code and select which classes to load at the type level, before loading the classes in the JVM.
-So they cannot automatically detect which Spring components accept a `RestClient.Builder` as a constructor dependency, which means you need to explicitly list which components you intend to build.
+So they cannot automatically detect which Spring components accept a `RestClient.Builder` as a constructor dependency, which means you need to explicitly list which Spring beans you intend to test.
+In our example we're targeting a single service class, but you can add as many as you need.
 The `@RestClientTest` annotation loads both a `MockResterServiceServer` and a `RestClientCustomizer`, which will configure the client builder and connect it to the server.
 Here, our service's constructor only takes a rest client builder as a dependency.
 But if your code requires more dependencies, they will not be loaded automatically, and you'll have to provide them through the usual test configuration, mockito bean or test bean, as discussed in chapter 3.
@@ -368,29 +370,94 @@ When we call the service a third times, it issues a third call to our mock serve
 All in all, `MockRestServiceServer` is both simple to use and versatile.
 There are limitations to it though: it is not a full web server, and does ever intend to be one.
 Some features `RestClient`, such as read and connect timeouts, are implemented at the network layer by the underlying HTTP client, and cannot be tested this way.
-Some features are beyond the scope of the mocks, such as streaming responses.
-If you wish to test this, you'll need to move to a third party server.
-But for simple request-response scenarios, `MockRestServiceServer` is perfect.
-
-
-// TODO
-NOTE: limitations MockRestServiceServer
-
-// TODO: custom request params
+Some features are beyond the scope of the mock server, such as server-sent-events or websockets.
+If you want to test these kinds of features, you'll need to either perform end-to-end testing or use full mock web servers.
+But for simple request-response scenarios, `MockRestServiceServer` is more than enough.
 
 [#ch5-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Business-logic slices with Modulith
 
-TODO
+Spring Boot ties projects from the Spring portfolio together, adds ease of use, good defaults and hooks to configure everything further.
+Each project brings its own specific technical capabilities, such as connecting to a database or serving web request, and Boot can discover those aspect and offer dedicated slices.
+But it does not know anything about your business domain and the architecture of your code.
+But there is a project in the ecosystem dedicated to architecture only: Spring Modulith.
+
+[QUOTE,Spring Modulith reference documentation]
+____
+Spring Modulith is an opinionated toolkit to build domain-driven, modular applications with Spring Boot.
+In the same way that Spring Boot has an opinion on the technical arrangement of an application, Spring Modulith implements an opinion on how to structure an app functionally and allows its individual, logical parts to interact with each other.
+____
+
+The main idea behind Modulith is to _modularize_ your codebase, split it up into small, cohesive chunks of code.
+
+[NOTE]
+.A short introduction to Spring Modulith
+====
+
+In Modulith, you group cohesive sets of features into a module, represented by a Java package.
+For example, in our app, we have a module called City which handles listing all cities, and selecting/unselecting cities.
+Each module has an exposed API, which consist of public Java classes at the root of the package.
+It also has code that should only be accessed from the module, either package-private, or public classes in the `.internal` package, or called `...Internal.java`.
+Modulith has a testing utility to verify that Module boundaries are respected:
+
+[#ch5-listing-modulith-base, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Modulith architecture verification
+[source,java,indent=0]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/ModularityTests.java[tags=class;test]
+----
+
+1. Print the module structure to the console
+2. Run architecture verifications
+
+By calling `ApplicationModules.of(...).verify()`, you ensure that modules only access the public API of other modules, and that you have no cyclic dependencies between modules.
+You can also print the module configuration to the console, which outputs information about each module, in the following format:
+
+[#ch5-listing-modulith-println, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Printing module structure
+[source]
+----
+# Weather
+> Logical name: weather
+> Base package: wf.garnier.spring.boot.test.ch5.weather.weather
+> Excluded packages: none
+> Direct module dependencies:
+  + city
+> Spring beans:
+  o org.springframework.boot.cache.autoconfigure.CacheManagerCustomizer
+  + ….WeatherService
+  o ….internal.CacheConfiguration
+  o ….internal.OpenMeteoWeatherDataService
+  o ….internal.RandomWeatherDataService
+  o ….internal.WeatherController
+----
+
+We've used Modulith in our application, to define three modules, one for cities, one for weather data, and one for user preferences.
+The architecture is represented in figure <<ch5-figure-03>>.
+
+[#ch5-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.The module structure of our project. Each module has a public API visible to other parts of the application, and classes that implement internal behavior. Arrows symbolize dependencies between modules, in our case, direct API calls.
+image::ch05_f03_garniermoiroux.png[]
+
+Every module exposes a small external API, through a Service.
+But not all of our public APIs are used.
+In fact, only the Weather module has a dependency: it calls into the City module to get the list of selected cities and fetch weather data for those.
+
+Modulith also offers tooling for event-based communication between modules, runtime support and more.
+To keep this book focused on testing, we won't go further than this brief introduction, but if you'd like to learn more, head over to the https://docs.spring.io/spring-modulith/reference/[Modulith reference documentation].
+====
+
+Since Modulith is an architecture-focused project, it can infer things about the structure of your application, and help you test small, self-contained domains.
+In a way, it introduces _vertical_ test slices, that load all technical aspects, the web layer, the data layer, etc, but restricts to a given application module, without loading other modules.
+Figure <<ch5-figure-04>> shows tests for a single module:
+
+[#ch5-figure-04, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Tests for the City module cut across all slices of the application. Other modules, Weather and Preferences, are not loaded.
+image::ch05_f04_garniermoiroux.png[]
+
+// TODO: modulith figure
 
 // TODO: caveat, tags?
 // TODO: data JPA
 // TODO: scanning - how Spring detects classes
-
-We have also reworked the architecture to use the Spring Modulith project, a Spring toolkit to build modular applications.
-That project deserves its own full book, so we'll cover the big picture of how we use it in this particular case.
-If you would like to learn more, a good place to start is the https://docs.spring.io/spring-modulith/reference/[official documentation].
-With Modulith, each top-level package represents a _module_.
-Modules may have an _internal_, inside which classes are considered, well, to that module.
-Even if they are public, they cannot be accessed from other modules.
-This renders dependencies between modules very explicit.
+// TODO: finding more test slices in Spring Boot docs
