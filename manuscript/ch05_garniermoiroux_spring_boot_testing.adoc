@@ -152,6 +152,16 @@ If you go back and browse the sample code, you'll find enough test to cover all 
 Some of these cover important edge cases that we have not discussed in detail.
 These tests are good candidates for a slice test, as they exercise some of the web features, like `@ControllerAdvice`, without touching too much business logic.
 Of course, the app is small enough that we can cover everything with full `@SpringBooTest`, but if you scale this demo 10 or 100-fold, it might become unwieldy, and a `@WebMvcTest` might become justified.
+The annotation is in the `spring-boot-starter-webmvc-test` dependency we have been using for your tests up to this point, so it is already available in our tests.
+If you need to add it to your project, update your dependencies accordingly:
+
+[#ch5-listing-webmvc-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.WebMvc test dependency
+[source,xml,indent=0]
+----
+include::../code/ch5/weather/pom.xml[tags=webmvc-test]
+----
+
 Let's see how you would use this slice in practice.
 
 Before we start writing tests, let's discuss our weather application, and the changes we've made for this chapter..
@@ -181,7 +191,7 @@ If you've never used controller advice, here's what handing "already selected" l
 
 [#ch5-listing-controller-advice, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .The controller advice for city-related errors.
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/city/internal/CityControllerAdvice.java[tags=content]
 ----
@@ -197,7 +207,7 @@ So if you were to write a slice test with just the `@WebMvcTest` annotation, as 
 
 [#ch5-listing-webmvc-test-failing, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the @WebMvcTest annotation.
-[source,java]
+[source,java,indent=0]
 ----
 @WebMvcTest
 class ExampleTests {
@@ -214,7 +224,7 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 
 [#ch5-listing-webmvc-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A working @WebMvcTest example.
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
@@ -266,22 +276,31 @@ In tests, we write down example API responses that a human can parse at a glance
 Spring has built-in utilities for testing how `RestClient` interacts with a server, by mocking out the HTTP responses, called a `MockRestServiceServer`.
 It is not a full server, and does not server real HTTP traffic, but it is lighter than alternatives that require you to run a separate web server in your tests, such as WireMock or MockServer.
 With this lightweight implementation, Spring hooks up to `RestClient` internals to create fake HTTP requests and produce programmed responses for most common use-cases.
+To use the server in your tests, add the following testing dependency:
+
+[#ch5-listing-restclient-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.RestClient test dependency
+[source,xml,indent=0]
+----
+include::../code/ch5/weather/pom.xml[tags=restclient-test]
+----
+
 Let's test the service that calls out to OpenMeteo, `OpenMeteoWeatherDataService`.
 The service accepts a `RestClient.Builder` as a constructor argument, and uses it to build the client used internally:
 
 [#ch5-listing-weather-service-constructor, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .OpenMeteoWeatherDataService constructor
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataService.java[tags=class;fields;constructor]
 ----
 
 We can write a test for this by connecting the `RestClient.Builder` to Spring's mock server, and configuring it for our tests.
-You can set up a client to use a `MockRestServiceServer` manually, but with Spring Boot test slices, this is done automatically:
+You can set up a client to use a `MockRestServiceServer` manually, but with Spring Boot test slices, this is done automatically with the `@RestTestClient` slice:
 
 [#ch5-listing-restclienttest-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .OpenMeteoWeatherDataService constructor
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
 ----
@@ -301,7 +320,7 @@ With the appropriate components wired in, we can write our first test:
 
 [#ch5-listing-restclienttest-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .A test using MockRestServerService
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=test]
 ----
@@ -322,7 +341,7 @@ We can also test error cases with the appropriate responses, like so:
 
 [#ch5-listing-restclientest-error-case, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Testing error cases
-[source,java]
+[source,java,indent=0]
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=error-test]
 ----
@@ -455,9 +474,90 @@ Figure <<ch5-figure-04>> shows tests for a single module:
 .Tests for the City module cut across all slices of the application. Other modules, Weather and Preferences, are not loaded.
 image::ch05_f04_garniermoiroux.png[]
 
-// TODO: modulith figure
+A module test is equivalent to a full Spring Boot test for a single module.
+It contains all the beans and the configuration that the module declares, but nothing else.
+If your code depends on another module, it will need to be mocked out in the usual way.
+To use Modulith in your project and in your tests, you need the appropriate dependencies.
+They are slightly more involved than the simple test dependencies we've used so far, but if you create your project on https://start.spring.io, they're automatically included.
+Here's what you would get:
+
+[#ch5-listing-modulith-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Modulith dependencies
+[source,xml,indent=0]
+----
+include::../code/ch5/weather/pom.xml[tags=modulith-bom;dependencies;modulith;modulith-test]
+----
+
+Our Weather module returns weather data for the cities a user has selected, and therefore depends on the City module to get the selection.
+Let's write a test that shows weather selection.
+First, we need to setup the test:
+
+[#ch5-listing-application-module-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.ApplicationModuleTest setup
+[source,java,indent=0]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/WeatherApiTests.java[tags=package;class;dependencies;test]
+----
+
+1. Our test is scoped to the application module matching the package
+2. Stub out module dependencies with a MockitoBean
+3. Replace beans from the module itself
+4. Configure the mocked service
+
+This test is an `@ApplicationModuleTest`.
+It is a full Spring Boot Test, with all components and configuration classes within the module.
+By default, `@ApplicationModuleTest` relies the package in which the test is located to load the appropriate module, in our case `...ch5.weather.weather`.
+You can override this behavior with the  `module = ...` parameter of the annotation.
+When your module depends on other modules, you need to provide beans that represent these dependencies.
+Here, the `CityService` is external to the Weather domain, so it is not included in the context of this test.
+Without a bean of this type, the application would not start and throw and exception highlighting the missing dependency.
+We add it to the test application context with a Mockito bean, but you can use any of the usual means for providing beans, such as test configurations or test beans.
+In this example, we also decided to provide a `@TestBean WeatherDataService`.
+This is not required, as the default implementation, which calls out to open-meteo.com to get weather data, is included in the module.
+However, as we've covered in chapter 2, we would like to avoid external dependencies, so here we've provided a `@TestBean` with a very simple implementation that always returns "Clear sky, 20°C".
+With that in place, we can write the test, very similar to what we've seen so far.
+We've mocked the `CityService`, but we need the mock to return some data we can use in our test.
+It returns a `City`, a public interface from the City module, but the concrete implementation is an internal implementation detail.
+So in our test we also need to implement a `class TestCity implements City` we use as a return value for our Mockito bean.
+It is a simple data class, omitted from the example for brevity.
+
+[NOTE]
+.Module-scoped Spring Boot slices
+====
+`@ApplicationModuleTest` is an equivalent to `@SpringBootTest`.
+In some cases, you may want to use some of the features of Spring Boot-provided test slices for a given module.
+Test slices were not initially designed to be combined, but, since version `2.1.0`, released in June 2026, Modulith introduced a new annotation, `@ModuleSlicing`, which you can combine with Boot slices, for applying that particular slice to a single module.
+Listing <<ch5-listing-webmvc-test>> using `@WebMvcTest` can be simplified.
+By using module slicing, you don't have to specify which controllers to include in the test: Modulith uses all the controllers of the module:
+
+[#ch5-listing-module-slicing, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.ApplicationModuleTest setup
+[source,java,indent=0]
+----
+include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityModuleControllersTests.java[tags=class;fields]
+----
+====
+
+`@ApplicationModuleTest` gives you the unique ability to write tests for vertical slices of your application, but it is only available when you use Modulith.
+While I do encourage you to explore Modulith and the architecture opinions it brings, keep in mind it is simply one more option in the Spring portfolio.
+If you like what Modulith testing brings to the table, you can explore writing your own specific test slice, but this beyond the scope of this book.
+
+We've seen a few examples of test slices, and there are plenty more.
+We won't cover everything in this chapter, but here are a few closing thoughts.
+// TODO: ^^ rework
+
+// TODO: vv rework
+[#ch5-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Going further wih tests slices
+
+Whatever technology dependency you are using, there's likely a test slice for you in Spring Boot.
+Visit the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html#testing.spring-boot-applications.autoconfigured-tests::[Testing Spring Boot applications], for a full list of slices, and how to configure them.
+As a rule of thumb, they are in a related `spring-boot-starter-<PROJECT>-test`, such as `spring-boot-starter-restclient-test` or `spring-boot-starter-data-jpa-test`.
+
+
 
 // TODO: caveat, tags?
 // TODO: data JPA
 // TODO: scanning - how Spring detects classes
 // TODO: finding more test slices in Spring Boot docs
+// TODO: Multiple slices not suppported
