@@ -81,7 +81,9 @@ Here is a non-exhaustive list:
 * Spring Web Services (SOAP)
 * JSON serialization and deserialization with Jackson
 
-For a full list, referer to the reference documentation, under Testing > Testing Spring Boot Applications: https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html
+Whatever technology dependency you are using, there's likely a test slice for you in Spring Boot.
+As a rule of thumb, they are in a related `spring-boot-starter-<PROJECT>-test`, such as `spring-boot-starter-restclient-test` or `spring-boot-starter-data-jpa-test`.
+For a full list, referer to the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html::[Testing > Testing Spring Boot Applications].
 
 We have briefly touched on why you would want to test only a few classes in your application in chapter 3, when we discussed "Building a test application from manually selected classes", and "Stubbing out dependencies by using mocks".
 Test slices are another strategy to make thinner applications for testing, and they come with opinions and specific tooling to make testing certain use-cases easier.
@@ -228,7 +230,6 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
-
 <1> Declare as a single-controller slice test
 <2> Provide missing beans
 <3> Inject test utilities
@@ -548,16 +549,148 @@ We won't cover everything in this chapter, but here are a few closing thoughts.
 
 // TODO: vv rework
 [#ch5-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
-== Going further wih tests slices
+== Navigating tradeoffs of data-layer tests
 
-Whatever technology dependency you are using, there's likely a test slice for you in Spring Boot.
-Visit the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html#testing.spring-boot-applications.autoconfigured-tests::[Testing Spring Boot applications], for a full list of slices, and how to configure them.
-As a rule of thumb, they are in a related `spring-boot-starter-<PROJECT>-test`, such as `spring-boot-starter-restclient-test` or `spring-boot-starter-data-jpa-test`.
+One of the most common test slices you'll find in examples online is `@DataJpaTest`.
+When you learn about slice testing the first time, there's a temptation to use them everywhere.
+As we've touched in section <<ch5-section-2>>, there's a cost to using test slices, and you should weigh tradeoffs before making the decision, and decide if they bring enough value.
+Specifically, annotations for testing the data layer, such as `@DataJpaTest` or `@DataJdbcTest`, behave differently from web-layer tests.
+They sit at the bottom of the stack, or, more precisely, they are leaves in your bean graph: other beans depend on them, and they themselves have no dependencies.
+So data slices contain only `Repository` beans, but do not require you to inject or mock other beans.
+But if you already have `@SpringBootTest` tests, repositories are already included, and you can autowire them directly into your test classes.
+This means you can write data-focused tests using the same cached application as your regular `@SpringBootTest` tests, without incurring the costs of loading Hibernate entities a second time.
+There are legitimate use-cases for using data-layer slices, starting with the reasons we outlined in section <<ch5-section-2>>: the application under test is large, and you'd like to avoid loading the full context.
+You may also want to run tests that required specific fixtures loaded in the database when a test suite starts, and you don't want to mix this with the rest of your test suite.
 
+If you do go for `@DataJpaTest` or `@DataJdbcTest`, there are a few things you should be aware of.
+First, all tests are _transactional_.
+Your test class will be meta-annotated with `@Transactional`, and all tests will run inside a transaction.
+Any change you make to the database within a given test will be rolled back when the test finishes.
+We will not explore all of `@Transactional` support, but you can refer to the Spring Framework https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html::[Reference documentation] for more context.
+By default, the data annotations also replace the default database of your application with an in-memory database implemented in Java, such as Apache Derby or H2.
+For this to work, you need either in your classpath:
+
+[#ch5-listing-h2-derby, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Dependencies for H2 or Derby
+[source,xml]
+----
+<!-- H2 -->
+<dependency>
+  <groupId>com.h2database</groupId>
+  <artifactId>h2</artifactId>
+  <scope>test</scope>
+</dependency>
+<!-- Or Derby -->
+<dependency>
+  <groupId>org.apache.derby</groupId>
+  <artifactId>derby</artifactId>
+  <scope>test</scope>
+</dependency>
+----
+
+This may be useful when you want to run tests without running a full standalone relational database alongside your test suite.
+In `@DataJpaTest` and its JDBC equivalent, replacing the database is controlled by another annotation, `@AutoConfigureTestDatabase`.
+If you need it, you may use it with your full You can also apply this change in your regular tests by using the `@AutoConfigureTestDatabase` in conjunction with the usual `@SpringBootTest` annotation.
+
+But this only really works if your queries are portable across DB systems.
+If you use an engine-specific dialect, or database extensions, they won't be supported by these in-memory databases.
+In that case, you need to run the real system, and Spring Boot Tests can run Docker containers for you via the Testcontainers project.
+It simplifies the setup and lifecycle, and connects your test app to those containers automatically.
+To lean more, refer to chapter 9, "Testing against real service dependencies with Testcontainers".
+
+[#ch5-section-7, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Going further: understanding how test slices work
+
+We've seen how you can use tests slices to write focused tests, and how to use them.
+They auto-configure things, and that they load bean selectively.
+Like most things in Spring Boot, it looks like magic on the surface, but it's elegant code under the surface, that you can use an inspiration to write your own.
+Similar to what we've done with `@SpringBootTest` in chapter 3, let's look at `@WebMvcTest` in detail to understand the different parts:
+
+[#ch5-listing-wembvctest-explained, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Simplified code for `@WebMvcTest` annotation
+[source,java]
+----
+@ExtendWith(SpringExtension.class) <1>
+@BootstrapWith(WebMvcTestContextBootstrapper.class) <2>
+@TypeExcludeFilters(WebMvcTypeExcludeFilter.class) <3>
+@OverrideAutoConfiguration(enabled = false) <4>
+@ImportAutoConfiguration <4>
+@AutoConfigureWebMvc <4>
+@AutoConfigureMockMvc <4>
+public @interface WebMvcTest {
+
+	String[] properties() default {}; <5>
+
+	Class<?>[] controllers() default {}; <6>
+
+	Filter[] includeFilters() default {}; <7>
+
+	Filter[] excludeFilters() default {}; <7>
+
+}
+
+----
+<1> The Spring JUnit extension
+<2> Configure the JUnit extension
+<3> Configure which beans will be included by default
+<4> Selectively import auto-configurations
+<5> Configure application properties
+<6> Configure which controllers are included
+<7> User override for which beans are included
+
+Let's unpack what the annotation does.
+Let's start with a few elements you might recognize from the `@SpringBootTest` annotation.
+It imports the Spring JUnit extension, which hooks Spring into the JUnit lifecycle.
+It has its own "context bootstrapper" `WebMvcTestContextBootstrapper`, which is a sub-type of the `SpringBootTestContextBootstrapper` that `@SpringBootTest` uses.
+It is used to configure the test app for testing, by reading the `properties` parameter, and specifically setting up the equivalent of `webEnvironment = MOCK` mode, since we are doing web tests.
+
+And then there is code specific to this annotation, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.
+For autoconfiguration, we start with `@OverrideAutoConfiguration(enabled = false)` which disables the default Boot setup.
+This avoids loading, say, JPA autoconfiguration when we only want to configure web-related components.
+To load the few autoconfiguration classes you need for your web tests, the annotation uses `@AutoConfigureWebMvc` and `@AutoConfigureMockMvc`.
+The former loads configurations used in a typical web application, for example WebMVC or HTTP encoding config.
+We've used the latter manually in some tests: it adds Mock MVC support to your tests, with, for example, `MockMvcTester`.
+There's also `@ImportAutoConfiguration`, which is a Spring Boot hook for registering autoconfigurations on a given annotation.
+
+[NOTE]
+.Autoconfiguration discovery in Spring Boot
+====
+In Spring Boot, autoconfiguration is done through the `@EnableAutoConfiguration` annotation, which will automatically discover config classes as needed.
+But in tests, as we've seen, you want to restrict what is loaded to match whatever you are currently testing.
+Enters `@ImportAutoConfiguration`.
+It mimics the behavior of the regular Spring Boot autconfiguration mechanism, but scopes down which classes will be considered.
+You can pass a list of class you want to load, e.g. `@ImportAutoConfiguration(WebMvcAutoConfiguration.class)`, and in that case, it behaves like a Spring `@Import` but respecting the autoconf lifecycle.
+If you do not pass a list of classes, it is a signal that Boot should search the classpath for file describing which autoconfiguration classes to load.
+It will scan the classpath and find any file in `META-INF/spring/<fully qualified annotation name>.imports`, read it, and load the classes listed in it.
+For example, here's `META-INF/spring/org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureWebMvc.imports` from the `spring-boot-starter-webmvc-test` module, with package names shortened to fit on the page:
+
+----
+o.s.b.autoconfigure.context.MessageSourceAutoConfiguration
+o.s.b.autoconfigure.task.TaskExecutionAutoConfiguration
+o.s.b.servlet.autoconfigure.HttpEncodingAutoConfiguration
+o.s.b.webmvc.autoconfigure.WebMvcAutoConfiguration
+o.s.b.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration
+optional:o.s.b.h.c.autoconfigure.HttpMessageConvertersAutoConfiguration
+optional:o.s.b.validation.autoconfigure.ValidationAutoConfiguration
+----
+
+This means that you can provide your own customizations for `@WebMvcTest`, `@AutoConfigureWebMvc` or any annotation that bears `@ImportAutoConfiguration`.
+Simply create a file with the correct naming, list the classes you want to load as autoconfiguration, one class per line, and Spring Boot will happily load them for you.
+Spring Boot itself uses this to modularize configuration.
+For example, testing dependencies for the Thymeleaf templating engine is imported in the module `org.springframework.boot:spring-boot-starter-thymeleaf-test`.
+The jar contains its own `AutoConfigureWebMvc.imports` file, which adds `ThymeleafAutoConfiguration` to every web-related test, without users having to add anything to their config.
+====
+
+// TODO: here
+// TODO: type excludes
+
+=== The anatomy of a test slice
+
+=== Not combined
+
+=== Speed & other caveats
 
 
 // TODO: caveat, tags?
-// TODO: data JPA
 // TODO: scanning - how Spring detects classes
-// TODO: finding more test slices in Spring Boot docs
 // TODO: Multiple slices not suppported
