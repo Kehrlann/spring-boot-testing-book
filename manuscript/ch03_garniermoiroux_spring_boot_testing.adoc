@@ -56,7 +56,7 @@ Spring is an open-source project, so, to understand how it achieves all those th
 I've simplified it for you in listing <<ch3-listing-springboottest>>.
 
 [#ch3-listing-springboottest, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Simplified code for @SpringBootTest extension.
+.Simplified code for @SpringBootTest annotation.
 [source,java]
 ----
 @ExtendWith(SpringExtension.class) <1>
