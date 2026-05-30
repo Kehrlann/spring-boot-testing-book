@@ -29,3 +29,4 @@ ArchUnit testing
 
 - Use java 25
 - //@formatter:off //@formatter:on
+- @Transactional or data-related tests?
