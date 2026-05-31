@@ -12,17 +12,16 @@
 :listing-number:
 :tabsize: 2
 
-[#ch4-title, reftext={chapter}, caption='{chapter}']
+[#ch5-title, reftext={chapter}, caption='{chapter}']
 = Testing subsets of an application with test slices
 
 This chapter covers
 
 * Testing a single layer of the application with test slices
-* Testing the web layer with `@WebMvcTest`
-* Testing rest clients with `@RestClientTest`
+* When to use test slices
+* Example test slices with `@WebMvcTest` and `@RestClientTest`
 * Testing a Spring Modulith application module
-
-// TODO: 100 controllers, 12 seconds for controller-scoped WebMvcTest vs 4 seconds for raw mvc test
+* Anatomy of a test slice
 
 When testing applications with the `@SpringBootTest` annotation, as we've done extensively in the previous chapters, Spring Boot Tests loads the full application context, everything from controllers to repositories.
 For big applications, with hundreds or thousands of beans, or with dependencies that have a long startup time like Hibernate, the impact on test suite execution time can be significant.
@@ -141,6 +140,8 @@ You are touching the slowest aspect of the application, and removing a thin web 
 When a test suite starts being too slow, it's generally worth re-evaluating your current testing strategy, with mixes of slices and full `@SpringBootTest`.
 And when you create a new test class, consider what aspect of your code you are testing and what properties you would like to surface.
 This should inform you on whether to reach for a slice, or stay with a simpler `@SpringBootTest`.
+If you do want to write slice tests, there are other options for speeding up your test suite with some JUnit features for organizing your tests.
+Please refer to chapter 8 "Creating reusable test abstractions with JUnit" to learn more.
 
 At the time of this writing, there are 19 slice annotations.
 This book does not strive to replace reference documentation, so we will not go over all of these, but we can study a few example among the most commonly used.
@@ -643,8 +644,14 @@ Let's start with a few elements you might recognize from the `@SpringBootTest` a
 It imports the Spring JUnit extension, which hooks Spring into the JUnit lifecycle.
 It has its own "context bootstrapper" `WebMvcTestContextBootstrapper`, which is a sub-type of the `SpringBootTestContextBootstrapper` that `@SpringBootTest` uses.
 It is used to configure the test app for testing, by reading the `properties` parameter, and specifically setting up the equivalent of `webEnvironment = MOCK` mode, since we are doing web tests.
+There can only ever be one `TestContextBoostrapper` for a given test class, and therefore, a test class can only ever have a single slice annotation.
+If you try to combine test slices, the tests won't run and you'll get the following Spring TestContext Framework exception:
 
-And then there is code specific to this annotation, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.
+----
+Configuration error: found multiple declarations of @BootstrapWith for test class [you class]: ...
+----
+
+Then, `@WebMvctest` has specific code, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.
 For autoconfiguration, we start with `@OverrideAutoConfiguration(enabled = false)` which disables the default Boot setup.
 This avoids loading, say, JPA autoconfiguration when we only want to configure web-related components.
 To load the few autoconfiguration classes you need for your web tests, the annotation uses `@AutoConfigureWebMvc` and `@AutoConfigureMockMvc`.
@@ -676,21 +683,43 @@ optional:o.s.b.validation.autoconfigure.ValidationAutoConfiguration
 
 This means that you can provide your own customizations for `@WebMvcTest`, `@AutoConfigureWebMvc` or any annotation that bears `@ImportAutoConfiguration`.
 Simply create a file with the correct naming, list the classes you want to load as autoconfiguration, one class per line, and Spring Boot will happily load them for you.
-Spring Boot itself uses this to modularize configuration.
+We won't showcase a full example here, but if you'd like to see it in action, check out the `WebMvcTestUserAutoConfiguration` file in the samples for this chapter.
+It uses the import infrastructure to add a log line to every web slice tests.
+Spring Boot itself has modular configuration built using these hooks.
 For example, testing dependencies for the Thymeleaf templating engine is imported in the module `org.springframework.boot:spring-boot-starter-thymeleaf-test`.
 The jar contains its own `AutoConfigureWebMvc.imports` file, which adds `ThymeleafAutoConfiguration` to every web-related test, without users having to add anything to their config.
 ====
 
-// TODO: here
-// TODO: type excludes
+The second category of `@WebMvcTest` specific-specific code is related to _Type Exclusion_.
+The name originates from Spring's _Component Scanning_, which scans your classpath to find beans to add to the application context.
+This tool enables users to selectively exclude certain types from the context.
+In testing, though, it focuses on _including_ certain beans in your configuration, rather than explicitly excluding things.
+The `@TypeExcludeFilters(WebMvcTypeExcludeFilter.class)` annotation defines default rules for bean selection.
+The type exclude filter is where you'll find the list of included types, `@Controller`, `@ControllerAdvice`, etc.
+In addition to the defaults, it reads the `controllers = ...` parameter from the annotation, to include only certain specific controllers rather than all controllers in your app.
+You can customize the behavior with `includeFilters` and `excludeFilters`.
+Each slice annotation has its own filter.
+For example, `@DataJpaTest` does not include _any_ Spring component, and relies on pure JPA and Hibernate scanning for finding and wiring repository-related components.
+Type filtering is designed to be blazing fast.
+It does not load the classes in the JVM to make decisions, and instead reads the Java bytecode and parses just enough to read packages, class names and annotations.
+This is how it can find, for example, all `@Controller`-annotated classes without completely wrecking the startup time of the test application.
 
-=== The anatomy of a test slice
+[#ch5-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Summary
 
-=== Not combined
-
-=== Speed & other caveats
-
-
-// TODO: caveat, tags?
-// TODO: scanning - how Spring detects classes
-// TODO: Multiple slices not suppported
+- To avoid loading a full application context for tests, you can use Spring Boot test slices.
+- Test slices provided by Spring boot are technical in nature, and isolate a subset of the application by technical domain (Web, Data, RestClient, GraphQL, etc).
+- While powerful, test slices have associated costs and should be conscious choice.
+Watch out for context thrashing when using too many test slices.
+- `@WebMvcTest` is an annotation for tests focused on the web layer of your application.
+It brings all the required web components, including your own web code, such as `@Controller`s.
+Other layers are not present, so you need to provide replacement beans for the dependencies of your controllers, for example with `@MockitoBean` or `@TestBean`.
+- `@RestClientTest` provide all the necessary infrastructure for testing HTTP client integrations.
+It connects your `RestClient`s to a mock HTTP server, `MockRestServiceServer`, which you can configure with canned responses for your tests.
+- Spring Modulith brings "vertical" slices, cutting the application along business domain boundaries, or more specifically, slicing by "module".
+`@ApplicationModuleTest` is an equivalent of `@SpringBootTest` scoped to a single module, and `@ModuleSlicing` restricts existing Spring Boot slices to a module.
+- Data layer tests can often be achieved with the test context provided by `@SpringBootTest`, but may prove useful when you want fast feedback on a large app with many dependencies.
+They integrate annotations you can use in other contexts, such as `@AutoConfigureTestDatabase` and `@Transactional`.
+- A test slice is built on a Spring Boot specific `TestContextBootstrapper` which sets up the app for testing.
+It has specific `TypeExcluderFilters` to decide which classes to load, using Spring scanning technologies.
+It also has autoconfigurations dedicated to the technologies under test, such as `@AutoConfigureWebMvc` or `@AutoConfigureTestDatabase`, and third party libraries can contribute additional through `.imports` files.
