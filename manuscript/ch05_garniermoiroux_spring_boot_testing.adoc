@@ -257,8 +257,6 @@ We'll discuss the testing tools Modulith offers in section <<ch5-section-5>>.
 But before we explore architecture concerns, let's cover another technical aspect of our application: the HTTP clients it uses to call the external weather API.
 Spring Boot has a dedicated slice testing the client side of HTTP, called `@RestClientTest`.
 
-// TODO: note with anatomy of WebMvcTest
-
 [#ch5-section-4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == `@RestClientTest` for HTTP clients
 
@@ -545,10 +543,8 @@ While I do encourage you to explore Modulith and the architecture opinions it br
 If you like what Modulith testing brings to the table, you can explore writing your own specific test slice, but this beyond the scope of this book.
 
 We've seen a few examples of test slices, and there are plenty more.
-We won't cover everything in this chapter, but here are a few closing thoughts.
-// TODO: ^^ rework
+Another very common example is data-layer tests, but they are often misused, so let's discuss their tradeoffs.
 
-// TODO: vv rework
 [#ch5-section-6, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Navigating tradeoffs of data-layer tests
 
