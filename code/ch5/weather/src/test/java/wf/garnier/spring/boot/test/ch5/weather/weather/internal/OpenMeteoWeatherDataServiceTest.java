@@ -73,8 +73,8 @@ class OpenMeteoWeatherDataServiceTest {
 	// tag::error-test[]
 	@Test
 	void http400Throw() {
-		mockServer.expect(anything())
-				.andRespond(withBadRequest());
+		mockServer.expect(anything()) <1>
+				.andRespond(withBadRequest()); <2>
 
 		assertThatThrownBy(() -> service.getCurrentWeather(32.99, -97.68))
 				.isInstanceOf(IllegalStateException.class);
@@ -92,12 +92,12 @@ class OpenMeteoWeatherDataServiceTest {
 			var hasLatitude = queryParams.containsKey("latitude");
 			var hasLongitude = queryParams.containsKey("longitude");
 			if (!hasLatitude || !hasLongitude) {
-				throw new AssertionError("missing lat/lon");
+				throw new AssertionError("missing lat/lon"); <2>
 			}
 		}).andRespond(
-			withStatus(HttpStatus.I_AM_A_TEAPOT) <2>
-					.header("X-Custom-Error", "Teapot!") <2>
-					.body("There was no coffee left") <2>
+			withStatus(HttpStatus.I_AM_A_TEAPOT) <3>
+					.header("X-Custom-Error", "Teapot!") <3>
+					.body("There was no coffee left") <3>
 		);
 		// end::complex-setup[]
 
