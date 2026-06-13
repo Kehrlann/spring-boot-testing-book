@@ -17,10 +17,8 @@
 
 This chapter covers
 
-* Testing a single layer of the application with test slices
-* Deciding when to use test slices instead of `@SpringBootTest`
-* Testing the web layer with `@WebMvcTest`
-* Testing integration with external HTTP APIs with `@RestClientTest`
+* Testing a single layer of the application with test slices, and when to use them
+* Using slices in practice, such as `@WebMvcTest` and `@RestClientTest`
 * Testing a business domain module with Spring Modulith
 * Extending existing test slices and creating new slices
 
@@ -30,9 +28,8 @@ If your Spring application context takes a full minute to start up on your devel
 With context caching, subsequent tests should be much faster, but one extra minute is already too long when you run tests very frequently.
 And if you need multiple test contexts, the duration will scale linearly with the number of contexts, or worse.
 
-I have practiced Test Driven Development (TDD for short), which advocates for very short feedback loops.
-Practitioners follow a _Red-Green-Refactor_ cycle:
-You write a test, execute it and watch it fail (red), then write the minimal code you can to make it pass, execute it again and watch it pass (green).
+I have practiced _Test Driven Development_ (TDD for short), which advocates for very short feedback loops.
+Practitioners follow a _Red-Green-Refactor_ cycle: first you write a test, execute it and watch it fail (red), then write the minimal code you can to make it pass, execute it again and watch it pass (green).
 You then take time to improve the code, for example removing duplication while keeping the tests s green (refactor).
 In TDD, basic unit tests start in milliseconds and do not hinder your workflow.
 But the moment you introduce `@SpringBootTest`, you add latency, and having to wait for as little as 10 seconds is already a productivity killer.
@@ -48,7 +45,7 @@ We'll start by discussing what slices are, and then we'll discover some example 
 [#ch5-section-1, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Test slices: isolating technical components
 
-The name "test slice" brings the layered architecture pattern to mind.
+The name "test slice" brings the _layered architecture_ pattern to mind.
 It was very common in the 2000s, when Spring was first introduced.
 It presents an application as a multi-layered cake, each with its own scope, and is sometimes referred to as "three-tier architecture".
 The top layer is the _presentation_ layer, which, in your typical Spring Boot web application, would be the web part, with all the `@Controller` and related beans.
@@ -74,9 +71,7 @@ image::ch05_f01_garniermoiroux.png[]
 
 Both the presentation and data layer in this diagram get a test slice annotation.
 What's most important in figure <<ch5-figure-01>> is not the specific architecture, but rather the fact that Spring Boot Tests provides utilities for specific _technologies_.
-In fact, there are many more ways to design your apps, such as "hexagonal architecture" which has gained popularity in the current decade.
-No matter what architectural pattern, test slices cover aspects of your application that need Spring code, and this extends beyond just the web and data interfaces.
-Here is a non-exhaustive list of Spring APIs or projects that have dedicated test slices:
+These are part of core Spring projects Here is a non-exhaustive list of Spring APIs or projects that have dedicated test slices:
 
 * `RestClient` and `WebClient`
 * Most data-related projects such as JDBC, jOOQ, Redis, Mongo, LDAP, ElasticSearch and more
@@ -89,7 +84,8 @@ As a rule of thumb, they are in a related `spring-boot-starter-<PROJECT>-test`, 
 For a full list, referer to the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html::[Testing > Testing Spring Boot Applications].
 
 We have briefly touched on why you would want to test only a few classes in your application in chapter 3, when we discussed "Building a test application from manually selected classes", and "Stubbing out dependencies by using mocks".
-Test slices are another strategy to make thinner applications for testing, and they come with opinions and specific tooling to make testing certain use-cases easier.
+Test slices are another strategy to make thinner applications for testing, and they come with opinions about what to include your test app and how to configure it by default.
+They also package specific tooling to make testing certain use-cases easier.
 Of course, as the saying goes, "there's no such thing as a free lunch", and test slices have their own limitations and tradeoffs.
 
 [#ch5-section-2, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -97,38 +93,40 @@ Of course, as the saying goes, "there's no such thing as a free lunch", and test
 
 A slice, while loading a _smaller_ application, still builds a Spring app, and adds a few tens of milliseconds of overhead.
 Over enough tests, this can add up.
-In chapter 3, we discussed how Spring caches test apps between tests, dramatically speeding up integration tests.
-By default, the size of the cache is 32, and going over that limit will cause cache eviction, leading to a lot of thrashing in bigger test suites.
+Previously, we discussed how Spring caches test apps between tests, dramatically speeding up integration tests.
+By default, the size of the cache is 32, and going over that limit will cause entries to be _evicted_ (removed) from the cache.
+This leads to a lot of _thrashing_ in bigger test suites, where a given test app is created, cached, evicted and then re-created later on.
+Needless to say, this is a huge performance hit, as you are paying startup costs many times over.
 I once met Spring developers at a conference who told me they used to have hundreds of slices tests.
-They were suffering from both the performance overhead and cache churn described above.
-Getting rid of slices and consolidating tests under a small number of test contexts sped up their test suite by a factor of 4 or 5.
+They were suffering from both the performance overhead and cache issues described above.
+Getting rid of slices and consolidating tests under a small number of test contexts sped up their test suite by a factor of four or five.
 
 NOTE: I reproduced this experiment, running a thousand very thin slices versus running a thousand tests against a single app context.
 Using a single slice is an order of magnitude faster.
-You can find this very un-scientific benchmark in the examples repository, under `ch5/performance`.
+You can find this very un-scientific benchmark in the examples repository, under `ch5/performance/web`.
 
 Test slices shine when these two conditions are met:
 
-* *The app you are trying to test is large*.
+* _The app you are trying to test is large_.
 This may mean it has many dependencies, or that it is simply slow to start.
 When it has dependencies, like messages queues, databases and so forth, and you start some resource intensive process to support those tests, for example Testcontainers.
 This may be slow, resource intensive or both.
 There are many reasons other for an app to be slow to start, like Hibernate scanning packages for JPA entities, or custom business logic you execute on startup.
-* *You want a fast feedback loop*.
+* _You want a fast feedback loop_.
 If your test app takes a minute to start, but you only pay the cost once, it may not be a problem for you.
 But imagine you are iterating on a given feature, and run your tests every few minutes.
 Then getting around the startup overhead is a massive productivity boost.
 
 NOTE: You write tests because they bring value to you.
 "Value" is not a one-dimensional metric, and tests may be useful along multiple axes.
-I often go back to Kent Beck's _Test Desiderata_, which describes 12 properties that make tests more valuable.
+I often go back to Kent Beck's _Test Desiderata_, which describes twelve properties that make tests more valuable.
 But some properties may interfere with each other.
 For example, you can strive for _Predictive_ tests, meaning that "if the tests all pass, then the code under test should be suitable for production", at the expense of _Fast_ tests.
 When I write a specific test suite, I try to qualify what I'm expecting to gain from it, and orient my design decisions around this.
 Read more on the minisite https://testdesiderata.com.
 
 The decision to use slices is very situational.
-I cannot be much more specific than the general advice above without getting lost in the details, but we can think through a couple of scenarios to illustrate the thought process:
+I cannot be much more specific than the previous general advice without getting lost in the details, but we can think through a couple of scenarios to illustrate the thought process:
 
 You work on a big, existing app, and a raw `@SpringBootTest` takes 20 seconds start.
 You are working on a new `@Controller`, and iterating on custom input parsing and validation.
@@ -149,7 +147,7 @@ This should inform you on whether to reach for a slice, or stay with a simpler `
 If you do want to write slice tests, there are other options for speeding up your test suite, such as JUnit tags for organizing your tests, or Maven's Surefire "Integration Test" concepts.
 Please refer to chapter 8 "Creating reusable test abstractions with JUnit" to learn more.
 
-At the time of this writing, there are 19 slice annotations.
+At the time of this writing, there are nineteen slice annotations.
 This book does not strive to replace reference documentation, so we will not go over all of these, but we can study a few example among the most commonly used.
 
 [#ch5-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -160,14 +158,14 @@ All of our examples used `@SpringBootTest`, and loaded the full app.
 If you go back and browse the sample code, you'll find enough tests to cover all the features in the application, including many examples that did not make it into the chapter.
 Some of these cover important edge cases that were not our main focus at the time.
 Corner cases make good candidates for a slice test, as they exercise some of the web features, like `@ControllerAdvice`, without touching too much business logic.
-Of course, the app is small enough that we could cover everything with only `@SpringBooTest` classes without impacting the readability or performance, but if you scale this demo 10 or 100-fold, it might become so unwieldy that `@WebMvcTest` would be justified.
+Of course, the app is small enough that we could cover everything with only `@SpringBooTest` classes without impacting the readability or performance, but if you scale this demo ten or hundred-fold, it might become so unwieldy that `@WebMvcTest` would be justified.
 
 Before we start writing tests, let's discuss the changes we've made to our weather application for this chapter.
 You can find the complete code under `ch5/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch5/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
 The sample has the same feature set and overall behavior as the application from chapter 4, with the addition of a "preferences" toolbar.
 With this, users can use the app dark mode, sort cities alphabetically or by date added, and use either metric or imperial units.
-You can see the toolbar in Figure <<ch5-figure-02>>.
+You can see the toolbar in figure <<ch5-figure-02>>.
 
 [#ch5-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .A screenshot of the application under test.
@@ -175,7 +173,7 @@ image::ch05_f02_garniermoiroux.png[]
 
 The application also has some low-level changes invisible to users.
 It now renders 100% in the browser, without any server-side rendering.
-We have also re-architected the app using Spring Modulith, which we will discuss in detail further along in this chapter.
+We have also re-architected the app using Spring Modulith, which we will discuss in detail in a bit.
 The consequence is that there is now a `@Controller` for cities, one for weather data, and one for preferences.
 
 With this in mind, let's zoom in on one particular edge case we want to verify: a user can select a city only once.
@@ -212,7 +210,7 @@ include::../code/ch5/weather/pom.xml[tags=webmvc-test]
 As the `@WebMvcTest` documentation states, only web-related components are loaded.
 This means that `@Component`, `@Service` and other non-web beans are excluded from the test.
 But our controllers have dependencies on such beans: the city controller depends on a `CityService`, and weather and preferences controllers have their own dedicated `WeatherService` and `PreferenceService`.
-So if you were to write a slice test with just the `@WebMvcTest` annotation, as demonstrated in <<ch5-listing-webmvc-test-failing>>, they would error out because of missing dependencies.
+So if you were to write a slice test with just the `@WebMvcTest` annotation, as demonstrated in listing <<ch5-listing-webmvc-test-failing>>, they would error out because of missing dependencies.
 
 [#ch5-listing-webmvc-test-failing, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the @WebMvcTest annotation.
@@ -224,7 +222,7 @@ class ExampleTests {
 }
 ----
 
-The test above errors out, with a message pointing a missing dependency: _Error creating bean with name 'cityController' defined in file [...]: Unsatisfied dependency expressed through constructor parameter 0_.
+The test above errors out, with a message pointing to a missing dependency: _Error creating bean with name 'cityController' defined in file [...]: Unsatisfied dependency expressed through constructor parameter 0_.
 One level deeper in the stack trace, Spring will helpfully point out which required bean is missing: _No qualifying bean of type 'wf.garnier.spring.boot.test.ch5.weather.city.CityService' available_.
 A simple way to fix this particular problem is to provide the test app with the required bean, for example with a `@MockitoBean`, as we covered in chapter 3.
 But you'd need to provide mocks for the dependencies of every controller in the application.
@@ -273,7 +271,7 @@ Our application is a web app, but it is also a web *client*, that makes HTTP req
 If we want to keep our tests local, and avoid reaching out to network resources, we have to replace the external service with something else.
 One option is to stub the entire `WeatherService`, and assume the implementation will be fully covered by end-to-end tests.
 But when you are creating the service itself, it'd be nice to have some tests to iterate faster.
-other option is to replace the third-party service with a server that presents pre-determined responses to our `RestClient`.
+Another option is to replace the third-party service with a server that presents pre-determined responses to our `RestClient`.
 It does not ensure the full system works - after all, if Open Meteo decides to change the fields in their JSON responses, our tests would not catch it.
 What we are testing is a _model of that service_, purposefully built for our test suite, which gives us two interesting properties.
 First, it allows us to iterate quickly and locally, which is useful when the service contains logic we want to validate, for example transforming the upstream data to better fit our model.
@@ -311,10 +309,9 @@ In pure Spring, you need to set up the `MockRestServiceServer` and the client ma
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
 ----
-
-1. The slice will only load the selected component
-2. The service under test is available for injection
-3. The mock server is also available
+<1> The slice will only load the selected component
+<2> The service under test is available for injection
+<3> The mock server is also available
 
 This is a very small test slice, which only loads your service, the mock server and the infrastructure for testing HTTP clients.
 Slice tests scan your code and select which classes to load at the type level, before loading the classes in the JVM.
@@ -332,10 +329,9 @@ With the class setup in place, we can write our first test:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=test]
 ----
-
-1. Set up expected requests
-2. Configure the response
-3. Call the service
+<1> Set up expected requests
+<2> Configure the response
+<3> Call the service
 
 First, we configure expected requests for `MockRestServiceServer`, and the pre-defined responses it should return for certain requests.
 The mock expectations are built using a `RequestMatcher` interface, which takes the client requests and decides if an incoming request matches.
@@ -353,9 +349,8 @@ We can also test error cases with the appropriate responses, like so:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=error-test]
 ----
-
-1. Match every request
-2. Response with HTTP 400 Bad Request
+<1> Match every request
+<2> Response with HTTP 400 Bad Request
 
 If you need more advanced setup for the requests, you can create your own `RequestMatcher`.
 It is a functional interface that takes a Spring `ClientHttpRequest` as input, and returns `void`.
@@ -368,10 +363,9 @@ The responses can also be configured with a fluent API, like so:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=complex-setup]
 ----
-
-1. Custom `RequestMatcher` with lambda
-2. Ensure `latitude` and `longitude` params are present
-3. Custom response, with headers and body
+<1> Custom `RequestMatcher` with lambda
+<2> Ensure `latitude` and `longitude` params are present
+<3> Custom response, with headers and body
 
 Although we have used `MockRestServiceServer`  as a simple _stub_ in the previous examples, it is a true _mock_ object.
 This means that you can verify the expectations you set up on your mock server, that is, that all requests have actually been made.
@@ -387,11 +381,10 @@ To run mock verification, simply call the `.verify()` method:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=verifications]
 ----
-
-1. Setup expectations
-2. Verification fails: missing a call
-3. Verification succeeds: a single call was made
-4. Code fails: third call is not expected
+<1> Setup expectations
+<2> Verification fails: missing a call
+<3> Verification succeeds: a single call was made
+<4> Code fails: third call is not expected
 
 In this test, we expect at least one call to our mock rest server, and at most two.
 We call verify at different stages of using our service.
@@ -401,8 +394,8 @@ When we call the service a third times, it issues a third call to our mock serve
 
 `MockRestServiceServer` is both simple to use and versatile.
 There are limitations to it though: it is not a full web server, and is not intended to become one.
-Some features `RestClient`, such as read and connect timeouts, are implemented at the network layer by the underlying HTTP client, and cannot be tested this way.
-Some features are beyond the scope of the mock server, such as server-sent-events or websockets.
+Some features of `RestClient`, such as read and connect timeouts, are implemented at the network layer by the underlying HTTP client, and cannot be tested this way.
+Other features are beyond the scope of the mock server, such as server-sent-events or websockets.
 If you want to write tests for such features, you'll need to either perform end-to-end testing or use full mock web servers in your integration tests.
 But for simple request-response scenarios, `MockRestServiceServer` is more than enough.
 
@@ -420,13 +413,14 @@ Spring Modulith is an opinionated toolkit to build domain-driven, modular applic
 In the same way that Spring Boot has an opinion on the technical arrangement of an application, Spring Modulith implements an opinion on how to structure an app functionally and allows its individual, logical parts to interact with each other.
 ____
 
-The main idea behind Modulith is to _modularize_ your codebase, split it up into small, cohesive chunks of code.
+Since it is a relatively new project compared to most Spring projects, it is not widely adopted yet.
+Before we get to testing with Modulith, let's explain what the project does, and how we used it in our weather application.
 
-[NOTE]
-.A short introduction to Spring Modulith
-====
+[#ch5-section-5-introduction-modulith, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== A short introduction to Spring Modulith
 
-In Modulith, you group cohesive sets of features into a _module_, represented by a Java package.
+The main idea behind Modulith is to _modularize_ your codebase, by splitting it up into small, cohesive chunks of code.
+Each group of features is called a _module_ and is represented by a Java package.
 For example, in our app, we have a module called City which handles listing and searching cities as well as selecting/unselecting cities.
 Each module has an exposed API, which consists of public Java classes at the root of the package.
 It also has code that should only be accessed from the module.
@@ -441,9 +435,8 @@ Modulith has testing utilities to verify that boundaries are respected:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/ModularityTests.java[tags=class;test]
 ----
-
-1. Print the module structure to the console
-2. Run architecture verifications
+<1> Print the module structure to the console
+<2> Run architecture verifications
 
 By calling `ApplicationModules.of(...).verify()`, you ensure that modules only access the public API of other modules, and that you have no cyclic dependencies between modules.
 You can also print the module configuration to the console, which outputs information about each module, in the following format:
@@ -479,7 +472,9 @@ In our example, only the Weather module has a dependency: it calls into the City
 
 Modulith also offers tooling for event-based communication between modules, runtime support and more.
 To keep this book focused on testing, we won't go further than this brief introduction, but if you'd like to learn more, head over to the https://docs.spring.io/spring-modulith/reference/[Modulith reference documentation].
-====
+
+[#ch5-section-5-testing-with-modulith, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== Testing with Modulith
 
 Since Modulith is an architecture-focused project, it can infer things about the _structure_ of your application, and help you test small, self-contained domains.
 In a way, it introduces _vertical_ test slices, that load all technical aspects, the web layer, the data layer, etc., but restricts the scope of the test to a given application module, without loading other modules.
@@ -502,10 +497,9 @@ Here's what you would get:
 ----
 include::../code/ch5/weather/pom.xml[tags=modulith-bom;dependencies;modulith;modulith-test]
 ----
-
-1. Modulith Bill-Of-Material
-2. Modulith for your production code
-3. Testing dependencies
+<1> Modulith Bill-Of-Material
+<2> Modulith for your production code
+<3> Testing dependencies
 
 Our Weather module returns weather data for the cities a user has selected, and therefore depends on the City module to get the selection.
 Let's write a test that shows weather selection.
@@ -517,11 +511,10 @@ First, we need to set up the test:
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/WeatherApiTests.java[tags=package;class;dependencies;test]
 ----
-
-1. Our test is scoped to the application module matching the package of the test
-2. Stub out module dependencies with a MockitoBean
-3. Replace beans from the module itself
-4. Configure the mocked service
+<1> Our test is scoped to the application module matching the package of the test
+<2> Stub out module dependencies with a MockitoBean
+<3> Replace beans from the module itself
+<4> Configure the mocked service
 
 This test is an `@ApplicationModuleTest`.
 It is a full Spring Boot Test, with all components and configuration classes within the module.
@@ -533,7 +526,7 @@ Without a bean of this type, the application would not start and throw and excep
 We add it to the test application context with a Mockito bean, but you can use any of the usual means for providing beans, such as test configurations or test beans.
 In this example, we also decided to provide a `@TestBean WeatherDataService`.
 This is not required, as the default implementation, which calls out to open-meteo.com to get weather data, is included in the module.
-However, as we've covered in chapter 2, we would like to avoid external dependencies, so here we've provided a `@TestBean` with a very simple implementation that always returns "Clear sky, 20°C".
+As we've pointed out earlier, we would like to avoid external dependencies, so here we've provided a `@TestBean` with a very simple implementation that always returns "Clear sky, 20°C".
 With that in place, we can write the test, very similar to what we've seen so far.
 We've stubbed the `CityService`, and we configure Mockito to return some data we can use in our test.
 The service returns an instance `City`.
@@ -577,7 +570,7 @@ Specifically, annotations for testing the data layer, such as `@DataJpaTest` or 
 `Repository` beans sit at the bottom of the stack, or, more precisely, they are leaves in your bean graph: other beans depend on them, and they themselves have no dependencies.
 Data slices contain only repositories and do not require you to inject or mock other beans.
 If you already have `@SpringBootTest` tests, repositories are already included, and you can autowire them directly into your test classes.
-This means you can write data-focused tests using the same cached application as your regular `@SpringBootTest` tests, without incurring the costs of entity scanning a second time.
+This means you can write data-focused tests using the same cached application as your regular `@SpringBootTest` tests, without incurring the costs of bootstrapping the data infrastructure a second time, saving seconds or tens of seconds at a time.
 There are legitimate use-cases for using data-layer slices, starting with the reasons we outlined in section <<ch5-section-2>>: the application under test is large, and you'd like to avoid loading the full context.
 You may also want to run tests that required specific fixtures loaded in the database when a test suite starts, and you don't want to mix this with the rest of your integration tests.
 
@@ -619,7 +612,7 @@ If you use an engine-specific dialect, or database extensions, they won't be sup
 In that case, you need to run an instance of, for example, Postgres.
 Spring Boot Tests can automate this via the Testcontainers project.
 It simplifies setting up and managing Docker containers, and connects your test app to those containers automatically.
-To lean more, refer to chapter 9, "Testing against real service dependencies with Testcontainers".
+To learn more, refer to chapter 9, "Testing against real service dependencies with Testcontainers".
 
 [#ch5-section-7, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Going further: understanding how test slices work
@@ -674,24 +667,26 @@ If you try to combine test slices, the tests won't run and you'll get the follow
 Configuration error: found multiple declarations of @BootstrapWith for test class [your class]: ...
 ----
 
-Then, `@WebMvctest` has specific code, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.
+`@WebMvctest` also has code you won't find in `@SpringBootTest`, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.
+Every slice is built this way, and the difference is in the configuration of these features.
+
+[#ch5-section-6-autoconfiguration, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== Test slice autoconfiguration
+
 On the autoconfiguration side, `@OverrideAutoConfiguration(enabled = false)` disables the default Boot setup.
 This avoids loading, say, JPA autoconfiguration when we only want to configure web-related components.
 To load the few autoconfiguration classes you need for your web tests, the annotation uses `@AutoConfigureWebMvc` and `@AutoConfigureMockMvc`.
 The former loads configurations used in a typical web application, for example WebMVC or HTTP encoding config.
 We've used the latter manually in some tests: it adds Mock MVC support to your tests, with, for example, `MockMvcTester`.
-There's also `@ImportAutoConfiguration`, which is a Spring Boot hook for registering additional autoconfiguration classes on any given annotation.
 
-[NOTE]
-.Autoconfiguration discovery in Spring Boot
-====
-In Spring Boot, autoconfiguration is done through the `@EnableAutoConfiguration` annotation, which will automatically discover config classes as needed.
-But in tests, as we've seen, you want to restrict what is loaded to match whatever you are currently testing.
-Enters `@ImportAutoConfiguration`.
+There's also `@ImportAutoConfiguration`, which is a Spring Boot hook for registering additional autoconfiguration classes on any given annotation.
+In your production Boot application, autoconfiguration is done through the `@EnableAutoConfiguration` annotation, which will automatically discover config classes as needed.
+But in tests, you want to restrict what is loaded in the context to match what you are currently testing, and ideally nothing more.
+This is where `@ImportAutoConfiguration` comes in.
 It mimics the behavior of the regular Spring Boot autoconfiguration mechanism, but scopes down which classes will be considered.
-You can pass a list of class you want to load, e.g. `@ImportAutoConfiguration(WebMvcAutoConfiguration.class)`, and in that case, it behaves like a Spring `@Import` but respecting the autoconf lifecycle.
-If you do not pass a list of classes, it is a signal that Boot should search the classpath for file describing which autoconfiguration classes to load.
-It will scan the classpath and find any file in `META-INF/spring/<fully qualified annotation name>.imports`, read it, and load the classes listed in it.
+You can pass a list of class you want to load, e.g. `@ImportAutoConfiguration(classes = { WebMvcAutoConfiguration.class })`, and in that case, it behaves like a Spring `@Import` but respecting the autoconf lifecycle.
+If omit the classes parameter, the annotation acts as a signal that Boot should search the classpath for file describing which autoconfiguration classes to load.
+It will find any file in `META-INF/spring/<fully qualified annotation name>.imports`, read it, and load the classes listed in it.
 For example, here's `META-INF/spring/org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureWebMvc.imports` from the `spring-boot-starter-webmvc-test` module, with package names shortened to fit on the page:
 
 ----
@@ -711,7 +706,9 @@ It uses the import infrastructure to add a log line to every web slice test.
 Spring Boot itself has modular configuration built using these hooks.
 For example, testing dependencies for the Thymeleaf templating engine is imported in the module `org.springframework.boot:spring-boot-starter-thymeleaf-test`.
 The jar contains its own `AutoConfigureWebMvc.imports` file, which adds `ThymeleafAutoConfiguration` to every web-related test, without users having to add anything to their config.
-====
+
+[#ch5-section-6-type-exclusion, reftext={chapter}.{section}.{counter:subsection}, caption='{chapter}.{section}.{subsection}']
+=== Type exclusion (and inclusion)
 
 The second category of `@WebMvcTest` specific code is related to _Type Exclusion_.
 The name originates from Spring's _Component Scanning_, which scans your classpath to find beans to add to the application context.
