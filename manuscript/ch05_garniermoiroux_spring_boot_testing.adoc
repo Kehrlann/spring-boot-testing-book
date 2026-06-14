@@ -144,7 +144,8 @@ Removing a thin web layer won't noticeably speed up execution, and a plain `@Spr
 When a test suite starts being too slow, it's generally worth re-evaluating your current testing strategy, with a mix of slices and full `@SpringBootTest`.
 And when you create a new test class, consider what aspect of your code you are testing and what properties you would like to surface.
 This should inform you on whether to reach for a slice, or stay with a simpler `@SpringBootTest`.
-If you do want to write slice tests, there are other options for speeding up your test suite, such as JUnit tags for organizing your tests, or Maven's Surefire "Integration Test" concepts.
+If you settle on writing slice tests, and you want to improve performance, there are other options for speeding up your test suite.
+You could use JUnit tags for organizing your tests, or Maven's Surefire "Integration Test" concepts.
 Please refer to chapter 8 "Creating reusable test abstractions with JUnit" to learn more.
 
 At the time of this writing, there are nineteen slice annotations.
@@ -202,7 +203,7 @@ NOTE: The exception handling methods could be in the controller itself.
 Having a dedicated advice class allows to share the behavior across controllers, and it is covered by the web test slice.
 
 To write a slice test, we use the `@WebMvcTest` annotation instead of `@SpringBootTest`.
-The annotation is in the `spring-boot-starter-webmvc-test` dependency we have been using for your tests up to this point, so it is already available on the classpath.
+The annotation is in the `spring-boot-starter-webmvc-test` dependency we have been using for our tests up to this point, so it is already available on the classpath.
 If you need to add it to your project, update your dependencies:
 
 [#ch5-listing-webmvc-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -381,7 +382,7 @@ include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weath
 
 Although we have used `MockRestServiceServer`  as a simple _stub_ in the previous examples, it is a true _mock_ object.
 This means that you can verify the expectations you set up on your mock server, that is, that all requests have actually been made.
-You can also refine the mock expectations to simplify your configuration code.
+You can also define the number of requests you are expecting for a single endpoint to simplify your configuration code.
 
 TIP: To learn more about the different types of test doubles, mocks, stubs, spies, fakes and dummies, refer to _Mocks aren't stubs_ article by Martin Fowler (2004, https://martinfowler.com/articles/mocksArentStubs.html).
 
