@@ -159,6 +159,11 @@ If you go back and browse the sample code, you'll find enough tests to cover all
 Some of these cover important edge cases that were not our main focus at the time.
 Corner cases make good candidates for a slice test, as they exercise some of the web features, like `@ControllerAdvice`, without touching too much business logic.
 Of course, the app is small enough that we could cover everything with only `@SpringBooTest` classes without impacting the readability or performance, but if you scale this demo ten or hundred-fold, it might become so unwieldy that `@WebMvcTest` would be justified.
+Figure <<ch5-figure-03>> illustrates how a test slice produces a thinner test application, with only the code you are testing, the minimal infrastructure to make it run and the appropriate testing utilities:
+
+[#ch5-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.A WebMvcTest-based application, compared to a full running Spring Boot application.
+image::ch05_f03_garniermoiroux.png[]
 
 Before we start writing tests, let's discuss the changes we've made to our weather application for this chapter.
 You can find the complete code under `ch5/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch5/weather.
@@ -279,8 +284,15 @@ Second, it serves as a record of our understanding of the external service, a do
 In tests, we write down example API responses that a human can parse at a glance, and we cover all HTTP errors we have encountered with the real service.
 
 Spring has built-in utilities for testing how `RestClient` interacts with a server, by returning mock HTTP responses from a `MockRestServiceServer`.
-It is not a full server, and does not server real HTTP traffic, and is thus lighter than alternatives that require you to run a separate web server in your tests, such as WireMock or MockServer.
+It is not a full server, and does not serve real HTTP traffic, and is thus lighter than alternatives that require you to run a separate web server in your tests, such as WireMock or MockServer.
 With this lightweight implementation, Spring hooks up to `RestClient` internals to create fake HTTP requests and produce programmed responses for most common use-cases.
+Since `RestClient` is immutable, it is configured through a property of the `RestClient.Builder`.
+These customizations are depicted on Figure <<ch5-figure-04>>:
+
+[#ch5-figure-04, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Customizations of a Service class using a RestClient for testing. From the point of view of the service under test, the HTTP client is a plain RestClient, with no special features. The server is exposed to the testing code for extra configuration.
+image::ch05_f04_garniermoiroux.png[]
+
 To use the server in your tests, add the following testing dependency:
 
 [#ch5-listing-restclient-test-dependencies, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -461,11 +473,11 @@ You can also print the module configuration to the console, which outputs inform
 ----
 
 We've used Modulith in our application, to define three modules, one for cities, one for weather data, and one for user preferences.
-The architecture is represented in figure <<ch5-figure-03>>.
+The architecture is represented in figure <<ch5-figure-05>>.
 
-[#ch5-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+[#ch5-figure-05, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The module structure of our project. Each module has a public API visible to other parts of the application, and classes that implement internal behavior. Arrows symbolize dependencies between modules, in our case, direct API calls.
-image::ch05_f03_garniermoiroux.png[]
+image::ch05_f05_garniermoiroux.png[]
 
 Every module exposes a small external API, through a `@Service` class.
 In our example, only the Weather module has a dependency: it calls into the City module to get the list of selected cities and fetch weather data for those.
@@ -478,11 +490,11 @@ To keep this book focused on testing, we won't go further than this brief introd
 
 Since Modulith is an architecture-focused project, it can infer things about the _structure_ of your application, and help you test small, self-contained domains.
 In a way, it introduces _vertical_ test slices, that load all technical aspects, the web layer, the data layer, etc., but restricts the scope of the test to a given application module, without loading other modules.
-Figure <<ch5-figure-04>> shows tests for a single module:
+Figure <<ch5-figure-06>> shows tests for a single module:
 
-[#ch5-figure-04, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+[#ch5-figure-06, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .Tests for the City module cut across all slices of the application. Other modules, Weather and Preferences, are not loaded.
-image::ch05_f04_garniermoiroux.png[]
+image::ch05_f06_garniermoiroux.png[]
 
 A module test is equivalent to a full Spring Boot test for a single module.
 It contains all the beans and the configuration that the module declares, but nothing else.

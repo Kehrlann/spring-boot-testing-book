@@ -30,3 +30,9 @@ ArchUnit testing
 - Use java 25
 - //@formatter:off //@formatter:on
 - @Transactional or data-related tests?
+
+## Review chapter 5
+
+- [ ] Figures: arrows and "bubbles" explaining
+- [ ] More figures?
+- [ ] Paragraph-per-paragraph review
