@@ -19,6 +19,10 @@
 - RestTemplate / TestRestTemplate: already deprecated?
 - Removed: "Testing client applications with `MockRestServiceServer`", should this go somewhere else?
 
+== Chapter 5
+
+- Dustin suggested I correct "19" -> "nineteen", but that's inconsistent with the rest
+
 == Chapter 8 - Junit
 
 Discuss JUnit 4 vs JUnit 5/6

@@ -54,9 +54,6 @@ Starting up a Spring Boot application is a time-intensive operation, ranging fro
 4. Discovering the capabilities of pre-configured Spring Boot test slices
 5. Standardizing test configuration with custom test slices
 
-// TODO: consider Modulith testing
-// TODO: consider data-related testing
-
 === 6. Testing Configuration and Properties
 
 Some applications support multiple configuration options, usually through properties files. This allows end-users to configure the application for their own use-cases, for example an app that could be configured to authenticate users either using an internal database or an external Single-Sign-On system. In this chapter, we will discuss the different levels at which to test configuration for your applications, and we will explore how to implement tests at each of these levels.

@@ -28,7 +28,7 @@ If your Spring application context takes a full minute to start up on your devel
 With context caching, subsequent tests should be much faster, but one extra minute is already too long when you run tests very frequently.
 And if you need multiple test contexts, the duration will scale linearly with the number of contexts, or worse.
 
-I have practiced _Test Driven Development_ (TDD for short), which advocates for very short feedback loops.
+I practice _Test Driven Development_ (TDD for short), which advocates for very short feedback loops.
 Practitioners follow a _Red-Green-Refactor_ cycle: first you write a test, execute it and watch it fail (red), then write the minimal code you can to make it pass, execute it again and watch it pass (green).
 You then take time to improve the code, for example removing duplication while keeping the tests green (refactor).
 In TDD, basic unit tests start in milliseconds and do not hinder your workflow.
@@ -59,6 +59,9 @@ For testing purposes, this cake can be _sliced_, separating layers and providing
 Spring Boot gives you simple annotations for each technical scope it manages, which you can use instead of `@SpringBootTest`.
 Each carves out a slice of your application and adds the appropriate beans for testing said slice.
 For example, `@WebMvcTest` will only load your web layer, such as `@Controller` and `@ControllerAdvice` beans, and also autoconfigures `MockMvcTester`.
+
+NOTE: `@ControllerAdvice` is a Spring abstraction for sharing features across Spring `@Controller`s, such as exception handling or data binding.
+
 Another annotation, `@DataJpaTest`, helps with data tests and limits scanning to `@Entity` classes and associated repositories.
 It also loads data-related auto-configurations, replaces the default database with an in-memory instance and makes all tests transactional.
 In between these, the business layer doesn't need much in terms of framework support, so there is no dedicated annotation for it.
@@ -81,7 +84,7 @@ These are part of core Spring projects. Here is a non-exhaustive list of Spring 
 
 Whatever technology dependency you are using, there's likely a test slice for you in Spring Boot.
 As a rule of thumb, they are in a related `spring-boot-starter-<PROJECT>-test`, such as `spring-boot-starter-restclient-test` or `spring-boot-starter-data-jpa-test`.
-For a full list, refer to the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html::[Testing > Testing Spring Boot Applications].
+For a full list, refer to the Spring Boot reference documentation, under https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html[Testing > Testing Spring Boot Applications].
 
 We have briefly touched on why you would want to test only a few classes in your application in chapter 3, when we discussed "Building a test application from manually selected classes", and "Stubbing out dependencies by using mocks".
 Test slices are another strategy to make thinner applications for testing, and they come with opinions about what to include in your test app and how to configure it by default.
@@ -94,7 +97,7 @@ Of course, as the saying goes, "there's no such thing as a free lunch", and test
 A slice, while loading a _smaller_ application, still builds a Spring app, and adds a few tens of milliseconds of overhead.
 Over enough tests, this can add up.
 Previously, we discussed how Spring caches test apps between tests, dramatically speeding up integration tests.
-By default, the size of the cache is 32, and going over that limit will cause entries to be _evicted_ (removed) from the cache.
+By default, the size of the cache is 32 application contexts, and going over that limit will cause entries to be _evicted_ (removed) from the cache.
 This leads to a lot of _thrashing_ in bigger test suites, where a given test app is created, cached, evicted and then re-created later on.
 Needless to say, this is a huge performance hit, as you are paying startup costs many times over.
 I once met Spring developers at a conference who told me they used to have hundreds of slice tests.
@@ -119,7 +122,7 @@ Then getting around the startup overhead is a massive productivity boost.
 
 NOTE: You write tests because they bring value to you.
 "Value" is not a one-dimensional metric, and tests may be useful along multiple axes.
-I often go back to Kent Beck's _Test Desiderata_, which describes twelve properties that make tests more valuable.
+I often go back to Kent Beck's _Test Desiderata_, which describes 12 properties that make tests more valuable.
 But some properties may interfere with each other.
 For example, you can strive for _Predictive_ tests, meaning that "if the tests all pass, then the code under test should be suitable for production", at the expense of _Fast_ tests.
 When I write a specific test suite, I try to qualify what I'm expecting to gain from it, and orient my design decisions around this.
@@ -148,7 +151,7 @@ If you settle on writing slice tests, and you want to improve performance, there
 You could use JUnit tags for organizing your tests, or Maven's Surefire "Integration Test" concepts.
 Please refer to chapter 8 "Creating reusable test abstractions with JUnit" to learn more.
 
-At the time of this writing, there are nineteen slice annotations.
+At the time of this writing, there are 19 slice annotations.
 This book does not strive to replace reference documentation, so we will not go over all of these, but we can study a few examples among the most commonly used.
 
 [#ch5-section-3, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
@@ -190,7 +193,7 @@ If the city has been selected previously, the method throws a `CityAlreadySelect
 To avoid handling the exception explicitly with try-catch blocks in our controller methods, we use a Spring `@ControllerAdvice`.
 It maps exceptions thrown in Spring controllers to responses we define, for example with a custom error code.
 We use the same mechanism for mapping `CityNotFoundException` to `HTTP 404 Not found`.
-If you've never used controller advice, here's what handing "already selected" looks like in code:
+If you've never used controller advice, here's what handling "already selected" looks like in code:
 
 [#ch5-listing-controller-advice, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .The controller advice for city-related errors.
@@ -317,7 +320,7 @@ We can write a test for this by connecting the `RestClient.Builder` to Spring's 
 In pure Spring, you need to set up the `MockRestServiceServer` and the client manually, but with Spring Boot test slices, this is done automatically with the `@RestClientTest` slice:
 
 [#ch5-listing-restclienttest-setup, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.OpenMeteoWeatherDataService constructor
+.Using the @RestClientTest annotation.
 [source,java,indent=0]
 ----
 include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
@@ -591,7 +594,7 @@ If you do go for `@DataJpaTest` or `@DataJdbcTest`, there are a few things you s
 First, all tests are _transactional_.
 Your test class will be meta-annotated with `@Transactional`, and all tests will run inside a transaction.
 Any change you make to the database within a given test will be rolled back when the test finishes.
-We will not explore `@Transactional` support here, but you can refer to the Spring Framework https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html::[Reference documentation] for more context.
+We will not explore `@Transactional` support here, but you can refer to the Spring Framework https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html[Reference documentation] for more context.
 By default, the data annotations also replace the default database of your application with an in-memory database implemented in Java.
 This is controlled by the `@AutoConfigureTestDatabase` annotation that slice tests embed.
 Supported test databases are Apache Derby and H2.
