@@ -146,33 +146,37 @@ In the following chapters, you will learn how each one works individually, and h
 
 [NOTE]
 ====
-To visualize the dependencies that `spring-boot-starter-test` brings for yourself, you can use your build tool of choice.
+To visualize the dependencies that `spring-boot-starter-webmvc-test` brings for yourself, you can use your build tool of choice.
 
 - With Maven: `./mvnw dependency:tree -Dscope=test`
 - With Gradle: `./gradlew dependencies --configuration testCompileClasspath`
 
 Both commands will show you a tree-like representation of your dependencies.
-Looking for the root dependency of `org.springframework.boot:spring-boot-starter-test`, you should see something like:
+Running the maven command, you'll see the production dependencies first, followed by tests under `spring-boot-starter-webmvc-test`.
+The output looks something like this, here with `org.spring.framework.boot` shortened to `o.s.b`:
 
 [source]
 ----
-testCompileClasspath - Compile classpath for source set 'test'.
-+--- org.springframework.boot:spring-boot-starter-web -> 4.0.0
+--- dependency:3.10.0:tree (default-cli) @ maven ---
+wf.garnier.spring.boot.test.ch1:maven:jar:0.0.1-SNAPSHOT
++- o.s.b:spring-boot-starter-webmvc:jar:4.1.0:compile
 
 ... omitted ...
 
-\--- org.springframework.boot:spring-boot-starter-test -> 4.0.0
-     +--- org.springframework.boot:spring-boot-starter:4.0.0
-     +--- org.springframework.boot:spring-boot-test:4.0.0
-     |    +--- org.springframework.boot:spring-boot:4.0.0
-     |    +--- org.springframework:spring-core:7.0.0
-     |    \--- org.springframework:spring-test:7.0.0
-     +--- org.springframework.boot:spring-boot-test-autoconfigure:4.0.0
+\- o.s.b:spring-boot-starter-webmvc-test:jar:4.1.0:test
+   +- o.s.b:spring-boot-starter-jackson-test:jar:4.1.0:test
+   +- o.s.b:spring-boot-starter-test:jar:4.1.0:test
+   |  +- o.s.b:spring-boot-test:jar:4.1.0:test
+   |  +- o.s.b:spring-boot-test-autoconfigure:jar:4.1.0:test
 
 ... omitted ...
+
+   |  +- org.springframework:spring-test:jar:7.0.8:test
+   +- o.s.b:spring-boot-webmvc-test:jar:4.1.0:test
+   |  \- o.s.b:spring-boot-web-server:jar:4.1.0:compile
 ----
 
-Everything in the tree below `org.springframework.boot:spring-boot-starter-test` are the dependencies that this starter brings, such as `org.springframework.boot:spring-boot-test` or `org.springframework.boot:spring-boot-test-autoconfigure`.
+Everything in the tree below `org.springframework.boot:spring-boot-starter-webmvc-test` are the dependencies that this starter brings, such as `org.springframework.boot:spring-boot-test` or `org.springframework.boot:spring-boot-test-autoconfigure`.
 ====
 
 In this book, when we use "Spring Boot Tests", we will be referring to tests written using the tools in `spring-boot-starter-test` or the specialized web starters, and loosely to using the patterns associated with these tools.

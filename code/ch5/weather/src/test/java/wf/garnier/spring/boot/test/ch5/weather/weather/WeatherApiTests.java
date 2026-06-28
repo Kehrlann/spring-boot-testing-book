@@ -53,7 +53,8 @@ class WeatherApiTests {
 
 		assertThat(response)
 				.hasStatus(HttpStatus.OK)
-				.bodyJson().isLenientlyEqualTo("""
+				.bodyJson()
+				.isLenientlyEqualTo("""
 				[
 				  {
 				    "cityName": "Paris",
