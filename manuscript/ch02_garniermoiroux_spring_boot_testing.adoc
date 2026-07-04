@@ -122,7 +122,7 @@ In this example, the test is in `WeatherApplicationTests.java`.
 .The test bundled in a Spring Initialzr-based project.
 [source,java]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/WeatherApplicationTests.java[tag=content]
 ----
 <1> The annotation turns the class into a Spring Boot integration test.
 <2> Annotated methods contain your test code
@@ -185,7 +185,7 @@ This is such a common scenario that Spring Boot Test has specialized utility cla
 .Verifying that the application responds to HTTP queries.
 [source,java]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mock-mvc-tester;first-test]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=annotations;class;mock-mvc-tester;first-test]
 ----
 <1> The test is a Spring Boot Test.
 <2> Make `MockMvcTester` available in the test method.
@@ -234,7 +234,7 @@ Instead of worrying about HTML structure, DOM element IDs or ARIA roles, let's c
 .Validating that users can select a city.
 [source,java]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=class;selection-repository;selection-test]
 ----
 <1> Access the repository bean from the test app.
 <2> Query the repository to ensure data was added.
@@ -257,7 +257,7 @@ I suggest wrapping the `POST` request in a convenient `selectCity` helper functi
 .A helper function for city selection.
 [source,java,indent=0]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=select-city]
 ----
 
 With this, we have a method, with an explicit name, which we can reuse in our tests to better express our intent.
@@ -285,7 +285,7 @@ Using our `selectCity(...)` helper method from the previous section, we can writ
 .Verify that there are no duplicates in the list of selected cities.
 [source,java,indent=0]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=no-duplicates]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=no-duplicates]
 ----
 
 Running this test by itself works.
@@ -305,7 +305,7 @@ Fortunately, you can factor common setup code with JUnit, resulting in listing <
 .Cleanup the repository before every test.
 [source,java,indent=0]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=before-each]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=before-each]
 ----
 
 With this, each test starts with a clean slate and can make independent assertions on the state and data in the database.
@@ -329,7 +329,7 @@ Putting it all together, our test would look like:
 .Ensure that weather data is available in the API.
 [source,java,indent=0]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=weather-data;!weather-data-mock]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=weather-data;!weather-data-mock]
 ----
 
 The structure is familiar: ensure that the city is selected (arrange), call the `/api/weather` endpoint (act), and verify that the result has the correct values (assert).
@@ -353,7 +353,7 @@ We can replace beans in the application context with a mock and configure it to 
 .Replace a bean in the application context by a mock.
 [source,java,indent=0]
 ----
-include::../code/ch2/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=mockito-bean;weather-data;!weather-data-assertions]
+include::../code/ch02/weather/src/test/java/wf/garnier/spring/boot/test/ch2/weather/ExampleTests.java[tags=mockito-bean;weather-data;!weather-data-assertions]
 ----
 <1> Replace the bean by a mock.
 <2> Configure the mock for usage.

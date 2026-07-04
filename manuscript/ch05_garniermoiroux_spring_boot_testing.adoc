@@ -199,7 +199,7 @@ If you've never used controller advice, here's what handling "already selected" 
 .The controller advice for city-related errors.
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/city/internal/CityControllerAdvice.java[tags=content]
+include::../code/ch05/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/city/internal/CityControllerAdvice.java[tags=content]
 ----
 
 NOTE: The exception handling methods could be in the controller itself.
@@ -213,7 +213,7 @@ If you need to add it to your project, update your dependencies:
 .WebMvc test dependency
 [source,xml,indent=0]
 ----
-include::../code/ch5/weather/pom.xml[tags=webmvc-test]
+include::../code/ch05/weather/pom.xml[tags=webmvc-test]
 ----
 
 As the `@WebMvcTest` documentation states, only web-related components are loaded.
@@ -242,7 +242,7 @@ A simpler way to restrict the number of mocks you need is to scope the test to j
 .A working @WebMvcTest example.
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityControllersTests.java[tags=class;fields;test]
 ----
 <1> Declare as a single-controller slice test
 <2> Provide missing beans
@@ -303,7 +303,7 @@ To use the server in your tests, add the following testing dependency:
 .RestClient test dependency
 [source,xml,indent=0]
 ----
-include::../code/ch5/weather/pom.xml[tags=restclient-test]
+include::../code/ch05/weather/pom.xml[tags=restclient-test]
 ----
 
 Let's test the service that calls out to OpenMeteo, `OpenMeteoWeatherDataService`.
@@ -313,7 +313,7 @@ The service accepts a `RestClient.Builder` as a constructor argument, and uses i
 .OpenMeteoWeatherDataService constructor
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataService.java[tags=class;fields;constructor]
+include::../code/ch05/weather/src/main/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataService.java[tags=class;fields;constructor]
 ----
 
 We can write a test for this by connecting the `RestClient.Builder` to Spring's mock server, and configuring it for our tests.
@@ -323,7 +323,7 @@ In pure Spring, you need to set up the `MockRestServiceServer` and the client ma
 .Using the @RestClientTest annotation.
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=class;fields]
 ----
 <1> The slice will only load the selected component
 <2> The service under test is available for injection
@@ -343,7 +343,7 @@ With the class setup in place, we can write our first test:
 .A test using MockRestServerService
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=test]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=test]
 ----
 <1> Set up expected requests
 <2> Configure the response
@@ -363,7 +363,7 @@ We can also test error cases with the appropriate responses, like so:
 .Testing error cases
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=error-test]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=error-test]
 ----
 <1> Match every request
 <2> Response with HTTP 400 Bad Request
@@ -377,7 +377,7 @@ The responses can also be configured with a fluent API, like so:
 .Customizing request matchers and response creators
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=complex-setup]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=complex-setup]
 ----
 <1> Custom `RequestMatcher` with lambda
 <2> Ensure `latitude` and `longitude` params are present
@@ -395,7 +395,7 @@ To run mock verification, simply call the `.verify()` method:
 .Testing error cases
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=verifications]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/internal/OpenMeteoWeatherDataServiceTest.java[tags=verifications]
 ----
 <1> Setup expectations
 <2> Verification fails: missing a call
@@ -449,7 +449,7 @@ Modulith has testing utilities to verify that boundaries are respected:
 .Modulith architecture verification
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/ModularityTests.java[tags=class;test]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/ModularityTests.java[tags=class;test]
 ----
 <1> Print the module structure to the console
 <2> Run architecture verifications
@@ -511,7 +511,7 @@ Here's what you would get:
 .Modulith dependencies
 [source,xml,indent=0]
 ----
-include::../code/ch5/weather/pom.xml[tags=modulith-bom;dependencies;modulith;modulith-test]
+include::../code/ch05/weather/pom.xml[tags=modulith-bom;dependencies;modulith;modulith-test]
 ----
 <1> Modulith Bill-Of-Material
 <2> Modulith for your production code
@@ -525,7 +525,7 @@ First, we need to set up the test:
 .ApplicationModuleTest setup
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/WeatherApiTests.java[tags=package;class;dependencies;test]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/weather/WeatherApiTests.java[tags=package;class;dependencies;test]
 ----
 <1> Our test is scoped to the application module matching the package of the test
 <2> Stub out module dependencies with a MockitoBean
@@ -563,7 +563,7 @@ By using module slicing, you don't have to specify which controllers to include 
 .ApplicationModuleTest setup
 [source,java,indent=0]
 ----
-include::../code/ch5/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityModuleControllersTests.java[tags=class;fields]
+include::../code/ch05/weather/src/test/java/wf/garnier/spring/boot/test/ch5/weather/city/CityModuleControllersTests.java[tags=class;fields]
 ----
 ====
 

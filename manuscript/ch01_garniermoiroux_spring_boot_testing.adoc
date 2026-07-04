@@ -314,7 +314,7 @@ The exact content of the configuration is not relevant, but it shows how much kn
 .A sample configuration for a "test application", without Spring Boot.
 [source,java]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=configuration,indent=0]
+include::../code/ch01/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=configuration,indent=0]
 ----
 
 Second, you have to manage the lifecycle of the "test application" manually.
@@ -345,7 +345,7 @@ It would be better wrapped in some utility, where you could call, say, `post("ur
 .Sending a POST request in Spring.
 [source,java]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=restclient,indent=0]
+include::../code/ch01/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/manual/ManualSpringBootTests.java[tag=restclient,indent=0]
 ----
 
 With the first three steps we mentioned above, configuration, setup and test, you are able to execute tests against a running application, swapping some beans for a stub.
@@ -379,7 +379,7 @@ Writing tests for the Widget application from <<ch1-section3>> requires much les
 .A typical Spring Boot Tests configuration.
 [source,java]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=content;!test;!ignored]
+include::../code/ch01/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=content;!test;!ignored]
 ----
 <1> Declare this is a test of your Spring Boot application.
 <2> Test-specific Spring capabilities.
@@ -400,7 +400,7 @@ Similarly, you can use `.andExpect(status().isCreated())` to verify that the HTT
 .A sample test using `MockMvc`.
 [source,java,indent=0]
 ----
-include::../code/ch1/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=test;!annotations;!class-members;!ignored]
+include::../code/ch01/widget/src/test/java/wf/garnier/spring/boot/test/ch1/widget/test/boot/AwesomeSpringBootTests.java[tags=test;!annotations;!class-members;!ignored]
 ----
 <1> Configure the `WidgetValidator` mock so that it never throws an exception.
 <2> Make HTTP calls to your application, without having to worry about the URL or the exact details about the body of the request.

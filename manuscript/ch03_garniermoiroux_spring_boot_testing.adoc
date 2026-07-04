@@ -132,7 +132,7 @@ Listing <<ch3-listing-interact>> demonstrates the APIs you can use for accessing
 .Accessing the Spring context
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/InteractWithAppTests.java[tags=interact-tests;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/InteractWithAppTests.java[tags=interact-tests;!ignored]
 ----
 <1> Get a bean or collection of beans from the context
 <2> Get a property from the environment
@@ -173,7 +173,7 @@ Imagine you have the following properties in your application, with some default
 .Properties defined application.properties
 [source,properties]
 ----
-include::../code/ch3/configuration/src/main/resources/default-configuration.properties[]
+include::../code/ch03/configuration/src/main/resources/default-configuration.properties[]
 ----
 
 To override the values, you can use the `properties` parameter of the annotation with an array of properties:
@@ -182,7 +182,7 @@ To override the values, you can use the `properties` parameter of the annotation
 .Overriding properties with the `@SpringBootTest` annotation
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-array;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-array;!ignored]
 ----
 
 You can also use a single Java text block to override the values:
@@ -191,7 +191,7 @@ You can also use a single Java text block to override the values:
 .Overriding properties using a Java text block
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-textblock;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-textblock;!ignored]
 ----
 
 The examples in both listings will produce the same result: they will override the value of `demo.value` and `demo.message`.
@@ -208,7 +208,7 @@ It has a `properties` parameter like the `@SpringBootTest` annotation, but also 
 .Using `@TestPropertySource`
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=property-source;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=property-source;!ignored]
 ----
 
 This is more convenient than specifying big text blocks with 20 different properties.
@@ -230,7 +230,7 @@ Then add the profile in your tests using `@ActiveProfiles`:
 .Using a profile in tests
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-profile;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/PropertiesTests.java[tags=properties-profile;!ignored]
 ----
 
 With this, the "test" profile is applied to the test application.
@@ -296,7 +296,7 @@ One option is to nest the configuration class inside your test class, like so:
 .Nested `@TestConfiguration`
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=nested-testconfiguration;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=nested-testconfiguration;!ignored]
 ----
 
 In this example, all beans defined within the `TestConfig` class will be added to the test app for the `NestedConfigTests`.
@@ -312,7 +312,7 @@ If you would like to re-use the `@TestConfiguration` class across test files, yo
 .Importing `@TestConfiguration`
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=import-testconfiguration;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/TestConfigurationTests.java[tags=import-testconfiguration;!ignored]
 ----
 <1> A class annotated with `@TestConfiguration`
 
@@ -334,7 +334,7 @@ In that case, you can configure a much smaller test application context while re
 .Using the `classes = {...}` parameter
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=mockito-beans;!beans;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=mockito-beans;!beans;!ignored]
 ----
 <1> List the classes you want to include
 
@@ -393,7 +393,7 @@ In Spring Boot Tests, the most common way to inject a dummy object into your app
 .Providing beans with `@MockitoBean`
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=mockito-beans;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=mockito-beans;!ignored]
 ----
 <1> Scope our test to ThingConfiguration
 <2> Provide a stub Gizmo bean
@@ -425,7 +425,7 @@ There is another way to provide a bean in tests that does not rely on the Mockit
 .Providing beans with @TestBean
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=testbeans;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/configuration/CustomConfigTests.java[tags=testbeans;!ignored]
 ----
 <1> A simple TestBean
 <2> TestBean with a name and method reference
@@ -494,7 +494,7 @@ Consider the small, toy Spring application:
 .A Boot app that starts slowly
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplication.java[tags=code;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplication.java[tags=code;!ignored]
 ----
 <1> Takes 3 seconds to start up
 
@@ -508,7 +508,7 @@ We can see it in action by running two test classes:
 .Tests for our slow application
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplicationTests.java[tags=slow-tests;!ignored]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplicationTests.java[tags=slow-tests;!ignored]
 ----
 <1> Tell JUnit the order in which tests should run
 
@@ -596,7 +596,7 @@ In fact, you can create your own custom meta-annotation, reusable across all you
 .A testing meta-annotation
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/CustomSpringTest.java[tags=custom-spring-test]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/CustomSpringTest.java[tags=custom-spring-test]
 ----
 <1> Override some properties
 <2> Override some beans in the context
@@ -630,7 +630,7 @@ You can do that by using the `@DirtiesContext` annotation, either on a test clas
 .Recreating the test app after a test
 [source,java,indent=0]
 ----
-include::../code/ch3/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplicationTests.java[tags=dirties-context]
+include::../code/ch03/configuration/src/test/java/wf/garnier/spring/boot/test/ch3/contextcache/SlowApplicationTests.java[tags=dirties-context]
 ----
 
 In this example, the test app will be removed from the cache after the `breakStuff` test completes.

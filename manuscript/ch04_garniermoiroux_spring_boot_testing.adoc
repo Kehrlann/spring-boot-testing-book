@@ -75,7 +75,7 @@ As a refresher, here is what a basic test would look like with our weather appli
 .Basic MockMvcTester-based test
 [source,java]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=class;mock-mvc-tester;index-page]
 ----
 <1> Inject MockMvcTester in the test
 <2> The HTTP verb
@@ -97,7 +97,7 @@ There's even a third option: you can skip the `response` object, thanks to a spe
 .MockMvcTester fluent assertions
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=fluent-assertions]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=fluent-assertions]
 ----
 
 These three styles are functionally equivalent, and the fluency is mostly syntactic sugar.
@@ -155,7 +155,7 @@ Assuming we have mocked the service that returns actual weather data, we can wri
 .MockMvcTester API tests
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test;!json-convertto;!json-path-and-convertto]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=api-test;!json-convertto;!json-path-and-convertto]
 ----
 <1> Make assertions on the JSON response
 <2> Check the body as a whole, with lenient rules
@@ -187,7 +187,7 @@ First, you need a `WeatherResponse` object, with a structure that matches the JS
 
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=weather-response]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=weather-response]
 ----
 
 We're using a record, but a class would be perfectly fine as well.
@@ -199,7 +199,7 @@ We can use this with a `MockMvcTester` response object, using the `.convertTo(<T
 .MockMvcTester converting to Java objects
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=json-convertto]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=json-convertto]
 ----
 
 The `.convertTo(...)` method turns the response into a Java object, which we can then test with regular AssertJ assertions.
@@ -218,7 +218,7 @@ You will also need to explicitly set the content type of the request, so that th
 .MockMvcTester POST request
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=post-request]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=post-request]
 ----
 
 We're sending a JSON POST request, and spelling out that we want the `Content-Type` header to be `application/json`.
@@ -279,7 +279,7 @@ If you find yourself customizing all requests in your tests in the same way, for
 .Using a RequestPostProcessor
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=request-post-processor]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiTests.java[tags=request-post-processor]
 ----
 
 We introduce a static method, `.apiUser()`, which allows us to set the `accept` header, an `x-answer` custom header and a cookie value to a MockMvc request.
@@ -308,7 +308,7 @@ A typical `MockMvc` test might look something like this:
 .A test using MockMvc
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiMockMvcTests.java[tags=class;mockmvc;mockmvc-test]
 ----
 <1> Inject `MockMvc` through the usual means
 <2> Perform a get request
@@ -339,7 +339,7 @@ To use `WebTestClient`, you need a specific WebFlux testing module in your build
 .WebFlux testing dependencies
 [source,xml,indent=0]
 ----
-include::../code/ch4/weather/pom.xml[tags=webflux-test-dependency]
+include::../code/ch04/weather/pom.xml[tags=webflux-test-dependency]
 ----
 
 This module is added to your `pom.xml` whenever you create a new Spring Reactive Web project on the Spring Initializr, and should already be present in most projects that will make use of it.
@@ -352,7 +352,7 @@ A typical test would look something like:
 .A WebTestClient-based test
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=class;web-test-client;test]
 ----
 <1> Autoconfigure the class with a test client
 <2> Inject the client
@@ -370,7 +370,7 @@ If you prefer AssertJ, Spring Framework 7, included in Spring Boot 4, introduced
 .Bridging WebTestClient and AssertJ
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=test-assertj]
 ----
 <1> Execute request
 <2> Transform the result to an AssertJ-compatible response
@@ -416,7 +416,7 @@ An example test would look something like:
 .Using WebTestClient without mocking the network stack
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiWebClientTests.java[tags=webtestclient-manning;!ignored]
 ----
 <1> Build a generic WebTestClient
 <2> Point the client to a full URL
@@ -444,7 +444,7 @@ We won't dive into usage details, as it is almost a copy-paste of the previous s
 .A RestTestClient-based test
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiRestTestClientTests.java[tags=class;resttestclient;test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/ApiRestTestClientTests.java[tags=class;resttestclient;test]
 ----
 
 Compare it to the `WebTestClient` examples in listings <<ch4-listing-webclient-test>> and <<ch4-listing-webclient-test-assert>>, and you'll notice that the only differences are the autoconfiguration annotation and the type of our `client`, in this case `RestTestClient`.
@@ -472,7 +472,7 @@ If you try to test this with the Mock MVC stack, the page body will be empty, be
 .No error page in MockMvc
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=no-body-error]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=no-body-error]
 ----
 
 `MockMvcTester` lets you know that the status is HTTP 404, and gives you access to Spring's internal error message, but stops there.
@@ -503,7 +503,7 @@ In practice, this looks like:
 .Full web server tests
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;rest-test-client;test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=class;rest-test-client;test]
 ----
 <1> Autoconfiguration to make RestTestClient available
 <2> Inject the RestTestClient in the test
@@ -526,7 +526,7 @@ In the listing below, we use the port with a regular, non-test `RestClient`:
 .Access the port of the running test app
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=local-server-port;use-local-server-port;!ignored]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/TomcatTests.java[tags=local-server-port;use-local-server-port;!ignored]
 ----
 
 From a testing perspective, this can be useful when you're checking configuration values or specific log lines, or when you're testing multi-component systems in which you connect your app under test to another external application.
@@ -581,7 +581,7 @@ To use it, add the dependency to your project:
 .HtmlUnit dependency
 [source,xml,indent=0]
 ----
-include::../code/ch4/weather/pom.xml[tags=htmlunit]
+include::../code/ch04/weather/pom.xml[tags=htmlunit]
 ----
 
 The core class of HtmlUnit is `WebClient`, which simulates the browser.
@@ -605,7 +605,7 @@ Let's use `HtmlUnit` to find the card in our HTML document, and check its conten
 ----
 import org.htmlunit.WebClient;
 
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=class;webclient;simple-test]
 ----
 <1> The WebClient from org.htmlunit
 <2> Making a GET request returns an HtmlPage
@@ -634,7 +634,7 @@ We can write a test for this behavior:
 .HtmlUnit executing JavaScript
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/HtmlUnitTests.java[tags=javascript]
 ----
 <1> Type into an input field
 <2> Click on an element
@@ -710,7 +710,7 @@ To use Selenium in your project, first add the dependency:
 .Selenium testing dependencies
 [source,xml,indent=0]
 ----
-include::../code/ch4/weather/pom.xml[tags=selenium]
+include::../code/ch04/weather/pom.xml[tags=selenium]
 ----
 
 Selenium has more moving pieces than the test utilities we've presented so far, and requires a more involved setup.
@@ -726,7 +726,7 @@ This will involve a bit of boilerplate:
 .Selenium test setup
 [source,java]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=class;setup-webdriver]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=class;setup-webdriver]
 ----
 <1> Set up the driver server
 <2> Create an instance of a browser
@@ -798,7 +798,7 @@ Let's create a test that shows that when users type in our auto-complete search 
 .Test the auto-completion feature with Selenium
 [source,java,indent=0]
 ----
-include::../code/ch4/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=autocomplete-test]
+include::../code/ch04/weather/src/test/java/wf/garnier/spring/boot/test/ch4/weather/SeleniumTests.java[tags=autocomplete-test]
 ----
 <1> Navigate to the page under test
 <2> Find the auto-complete box
