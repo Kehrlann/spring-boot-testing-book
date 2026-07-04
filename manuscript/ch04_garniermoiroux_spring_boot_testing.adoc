@@ -595,7 +595,7 @@ On each card, the first line contains the name of the city and the country, foll
 
 [#ch4-figure-03, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .A weather card for the city of Paris
-image::ch04_f02_garniermoiroux.png[194,380]
+image::ch04_f03_garniermoiroux.png[194,380]
 
 Let's use `HtmlUnit` to find the card in our HTML document, and check its contents:
 
