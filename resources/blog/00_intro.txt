@@ -1,0 +1,3 @@
+Hey Spring community 🍃
+
+I'm writing a book about testing Spring Boot apps, learning a lot in the process. I'm going to start a series of posts sharing tips, tricks and some glimpses of how it works under the hood.

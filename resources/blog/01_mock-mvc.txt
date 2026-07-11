@@ -1,0 +1,21 @@
+Hey Spring community 🍃
+
+I'm writing a book about testing Spring Boot apps, learning a lot in the process. I'm going to start a series of posts sharing tips, tricks and some glimpses of how it works under the hood.
+
+📄 1: Mock MVC
+
+If you've ever written tests for Spring web apps, chances are you've used "Mock MVC" in some way, shape or form. For example, you've used the @AutoConfigureMockMvc annotation, used the MockMvc testing client or its more modern alternative MockMvcTester. But why is this all called mock?
+
+When you write @SpringBootTest, it's equivalent to the default, @SpringBootTest(webEnvironment = MOCK). This means that Tomcat is not present in your test, and instead Spring Boot loads a "mock" web stack. In the case of WebMVC, it's the Mock Mvc stack. In your tests, you make "pretend" HTTP requests instead of hitting the network.
+
+Tomcat is a Servlet container, a standardized way to serve Java web apps. A Servlet is a class that handles HTTP requests through a .service(...) method. Spring has its own implementation, called the DispatcherServlet. It reads metadata from the request, parses the body, finds which controller method to call and wraps the return value into an HTTP "response" object that's handed back to the container.
+
+In the case of the Mock MVC stack, Tomcat is not present. When you "perform" an HTTP request with a testing client, using mockMvc.perform(...) or mockMvcTester.get().uri(...).exchange(), the testing client creates a mock request object and calls into a test-specific version of the DispatcherServlet. In practice, when you call .exchange(), MockMvcTester will call TestDispatcherServlet.service(...) directly, without hitting the network at all. The diagram attached to this post summarizes the differences.
+
+This has important implications:
+
+• None of the features implemented in the Servlet container are available. If you want to use a custom Tomcat "Valve" in your test case, or you need to validate error dispatch and session management, you cannot do it with the MockMvc stack.
+
+• Since your test code calls "MockMvcTester", which calls "DispatcherServlet.service(...)", which ultimately calls your controller methods, your controller code is executed in the same thread as the calling test, usually the main thread. Very useful for thread locals, and Spring Security testing utilities rely on this.
+
+• There's "MVC" in "Mock MVC", so you can't test a WebFlux-only app. In that case, you will probably want to use another testing utility, "WebTestClient".
