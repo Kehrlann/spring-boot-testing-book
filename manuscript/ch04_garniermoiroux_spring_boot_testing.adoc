@@ -257,7 +257,7 @@ First, none of the logic implemented by the container itself is called: no Tomca
 So if you integrate with Tomcat directly, for example by writing `Valve`, that code will not be included.
 Session management, or error page management, both a responsibility of the container, are not invoked either.
 Second, since your test code calls `MockMvcTester`, which in turns calls `DispatcherServlet.service(...)` and your controller methods, that means that your controller code is executed in the same thread as the calling test, usually the main thread.
-That may be useful for everything that works with thread-locals.
+That is useful for everything that works with thread-locals, such as Spring Security or the `@Transactional` annotation.
 Lastly, relying on the dispatcher servlet means that WebMvc is required.
 If your app and tests are WebFlux only, you can't use the Mock MVC stack.
 Head over to section <<ch4-section-2-2>> to learn how to test WebFlux apps with `WebTestClient`.
@@ -692,12 +692,14 @@ Spring Boot Tests has support for Selenium, the reference library for managing w
 [#ch4-section-5, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing through a real web browser with Selenium
 
-Selenium has been around for over 20 years. It started as a JavaScript in-browser testing library and evolved into the dominant testing tool, with integrations for most major programming languages, starting with Java.
+Selenium has been around for over 20 years.
+It started as a JavaScript in-browser testing library and evolved into the dominant testing tool, with integrations for most major programming languages, starting with Java.
 It does not have the limitations of HtmlUnit, but since the tests use a real browser, your test app needs to be accessible over the network, and you need to run a web server, as described in section <<ch4-section-3>>.
 Of course, your test code has no way to interact with the Chrome or Firefox that's installed on your desktop.
 You need two pieces of dedicated tooling to make this work.
 The first is a _WebDriver_, a piece of software that lets you programmatically interact with a browser, send it commands, and read state from it.
-It exposes an HTTP interface for easy interoperability. While you could write the HTTP requests yourself, it would be repetitive, and you'd likely end up writing many helper functions.
+It exposes an HTTP interface for easy interoperability.
+While you could write the HTTP requests yourself, it would be repetitive, and you'd likely end up writing many helper functions.
 Instead, you'll use the second tool, Selenium, which provides efficient abstractions for managing the driver lifecycle and interacting with it.
 
 NOTE: The concept of a WebDriver started as an independent project, later merged with the Selenium project, and it is now a World Wide Web Consortium (W3C) specification, describing how programs can interact with web browsers.
