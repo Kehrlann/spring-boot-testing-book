@@ -1,0 +1,44 @@
+= Spring Boot Testing In Action
+:chapter: 6
+:sectnums:
+:figure-caption: Figure {chapter}
+:listing-caption: Listing {chapter}
+:table-caption: Table {chapter}
+:sectnumoffset: 5
+:leveloffset: 1
+:imagesdir: ../images/ch06/
+:table-number:
+:figure-number:
+:listing-number:
+:tabsize: 2
+
+[#ch6-title, reftext={chapter}, caption='{chapter}']
+= Testing Configuration and Properties
+
+This chapter covers
+
+* Injecting property values in test classes
+* Testing property validation logic, including failure cases
+* Deciding when to test Configuration and Property classes
+
+Spring Boot has many built-in options for configuring your application, from selecting the port it runs on to setting up a connection to a database.
+The same infrastructure is also available for any configuration you create, declared through `@ConfigurationProperties`-annotated classes.
+This allows anyone running your application to configure it for their own use-cases.
+For example, with our "weather app" example, you could make the URL of the external weather service configurable.
+You could also imagine more complex use-cases, such as enabling caching only when a key-value store is present.
+To implement either of those features, you'd need to write code, in one case to add properties and validate them, in the other to react to existing properties with custom configuration.
+
+That code is slightly different from what we've tested so far, as it is usually only exercised once at startup and may stop your application from running if some configuration is invalid.
+Of course, Spring Boot Tests has tooling dedicated to testing configuration, but there are also some lesser tricks you can use to write more efficient tests.
+
+[#ch6-section-injecting-properties-into-test-classes, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Injecting properties into test classes
+
+At the time of this writing, Spring Boot has https://docs.spring.io/spring-boot/reference/features/external-config.html[15 ways] (!) of loading configuration properties into an application, either for production or for testing.
+
+[#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Summary
+
+- A thing.
+- Another.
+- One last point/
