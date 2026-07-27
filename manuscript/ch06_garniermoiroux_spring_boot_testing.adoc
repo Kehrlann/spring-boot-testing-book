@@ -34,7 +34,84 @@ Of course, Spring Boot Tests has tooling dedicated to testing configuration, but
 [#ch6-section-injecting-properties-into-test-classes, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Injecting properties into test classes
 
-At the time of this writing, Spring Boot has https://docs.spring.io/spring-boot/reference/features/external-config.html[15 ways] (!) of loading configuration properties into an application, either for production or for testing.
+When your code reacts to configuration properties, writing tests for them means writing tests for multiple values or value pairings and asserting on certain behavior.
+To do this, you need to pass the appropriate configuration properties to the application under test, and Spring Boot Tests has four main APIs for this.
+
+For our tests, we'll use the now familiar weather application, with a few new configuration options.
+You can find the complete code under `ch6/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch6/weather.
+As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
+There is a single new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
+The main difference with the previous chapter is less visible, though.
+When someone runs our application, they can configure it, beyond Spring Boot defaults like the server port.
+First, they can set the defaults for the preferences in the app: dark mode, unit system and whether cities are sorted by last added or alphabetically.
+For example, the administrator can decide that, by default, the website is in dark mode.
+When the user has not expressed their preferences, they get the default set by the administrator.
+
+// TODO: diagram
+
+Second, they can configure the values for the cold and hot thresholds.
+There is a pre-determined maximum range, such that cold cannot be set below -90˚C, and hot must not be over 57˚C (both sitting at the extremes of temperatures recorded on Earth).
+And, of course, the cold threshold must be above the hot threshold.
+The structure of the properties is as follows:
+
+[#ch6-listing-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Properties structure for our application, in YAML format
+[source,yaml]
+----
+include::../code/ch06/weather/src/main/resources/application-custom.yml[]
+----
+
+They are all mapped into a `@ConfigurationProperties` class, called `PreferencesProperties`, with regular Spring Boot property binding techniques we won't be detailing here.
+
+To test how the configuration impacts the code, we need to create a test app with specific configuration properties.
+At the time of this writing, Spring Boot lists 15 ways (!) of loading configuration properties into an application.
+Most of them are for production use, but some can be used in tests, including:
+
+* The `properties` parameter in `@SpringBootTest`
+* The `@TestPropertySource` annotation, pointing to a file
+* The `@ActiveProfiles` annotation and profile-based configuration files
+* The Dynamic Properties infrastructure, with `@DynamicPropertySource` and `DynamicPropertyRegistrar` beans, which allows injecting properties representing resources whose lifecycle is managed outside your application.
+It was originally designed for Testcontainers, and we'll discuss it in depth in chapter 9, "Testing against real service dependencies with Testcontainers".
+
+TIP: Take some time to go over https://docs.spring.io/spring-boot/reference/features/external-config.html[Externalized Configuration] section in the Spring Boot reference, you'll discover configuration options you've never heard of before.
+
+Let's see some of these options in practice.
+We'll write a test that verifies that our The most obvious one is using the `@SpringBootTest` annotation with some properties inlined, as we've seen before:
+
+[#ch6-spring-boot-test-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Properties in the @SpringBootTest annotation
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=spring-boot-test-properties]
+----
+
+<1> Pass properties to the annotation
+<2> Restrict the test to the "preferences" module
+
+This is the simplest form of configuring the application under test.
+You pass whatever properties you want to test directly in the annotation as a string and then test.
+Then we verify that, when the user has not set preferences, the `PreferencesService` returns defaults configured by the admin, here dark mode and imperial units.
+Here we are using a test block with properties on each line, but you can also write the equivalent configuration:
+
+[source,java,indent=0]
+----
+@SpringBootTest(properties = {
+    "preferences.defaults.dark-mode=false",
+    "preferences.defaults.units=imperial"
+})
+----
+
+If you start writing variations of the same test by tweaking the properties, remember, the test context will be different, and Spring Boot Tests will spin up a new app.
+And while writing a text block and an array of strings in the annotation results in the same behavior, it's considered a different test context.
+Even changing the order of the properties creates a new app, so this can get very slow, very quickly.
+As much as possible, you should try and create a single configuration with your custom values, as to not pay the startup price every time.
+
+In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
+From here on out, we will create smaller test applications by only loading the configuration class for the preferences module, and we'll only access the properties themselves in our tests.
+It's not a very useful test in a real production application, as we're essentially testing that Spring Boot bindings the properties correctly.
+But for demonstration purposes, they're much faster to run as they skip the slowest part of the application, here the data layer.
+
+Another possibility for passing properties is to use the Spring `@TestPropertySource` annotation.
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
@@ -42,3 +119,5 @@ At the time of this writing, Spring Boot has https://docs.spring.io/spring-boot/
 - A thing.
 - Another.
 - One last point/
+
+// TODO: should we keep weather-service.url ?
