@@ -64,6 +64,9 @@ include::../code/ch06/weather/src/main/resources/application-custom.yml[]
 They are all mapped into a `@ConfigurationProperties` class, called `PreferencesProperties`, with regular Spring Boot property binding techniques we won't be detailing here.
 
 To test how the configuration impacts the code, we need to create a test app with specific configuration properties.
+The simplest thing you can do is write an `application.properties` or its YAML equivalent in your test resources folder `src/test/resources`, but beware!
+This overrides the file of the same name from your _main_ sources directory, possibly leading to a lot of duplication and configuration drift between prod and tests.
+If you want to touch only a few values in your tests, you should use one of the dedicated APIs for property loading.
 At the time of this writing, Spring Boot lists 15 ways (!) of loading configuration properties into an application.
 Most of them are for production use, but some can be used in tests, including:
 
@@ -101,17 +104,39 @@ Here we are using a test block with properties on each line, but you can also wr
 })
 ----
 
-If you start writing variations of the same test by tweaking the properties, remember, the test context will be different, and Spring Boot Tests will spin up a new app.
+This `properties` parameter is available in every test slice annotation, so even your slice tests can have custom properties.
+But keep in mind that if you start writing variations of the same test by tweaking the properties, the test context will be different, and Spring Boot Tests will spin up a new app.
 And while writing a text block and an array of strings in the annotation results in the same behavior, it's considered a different test context.
-Even changing the order of the properties creates a new app, so this can get very slow, very quickly.
+Even changing the order of the properties creates a new app, so this can cause a lot of context cache thrashing, massively slowing own your test suite!
 As much as possible, you should try and create a single configuration with your custom values, as to not pay the startup price every time.
+In my own tests, I typically have a "default" case with no properties, and sometimes a single "custom" case with all the customizations I want to write tests for.
 
-In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
+NOTE: In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
 From here on out, we will create smaller test applications by only loading the configuration class for the preferences module, and we'll only access the properties themselves in our tests.
 It's not a very useful test in a real production application, as we're essentially testing that Spring Boot bindings the properties correctly.
 But for demonstration purposes, they're much faster to run as they skip the slowest part of the application, here the data layer.
 
-Another possibility for passing properties is to use the Spring `@TestPropertySource` annotation.
+When the number of properties you write in `@SpringBootTest` grows, pasting values in the annotation becomes error-prone and subject to drift.
+Fortunately, there are possibility for passing properties is to use the Spring `@TestPropertySource` annotation.
+You specify the `locations` of the properties files you want to load in your tests, and Spring Boot Tests will load it in your application:
+
+[#ch6-spring-boot-testpropertysources, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.The @TestPorpertySource annotation
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=test-property-source]
+----
+
+<1> Load the minimal set of classes for our tests
+<2> Exclude the web layer
+<3> Specify the properties files to load
+<4> Inject the resulting Properties class
+
+This is a smaller test, that only loads the properties and whatever supporting configuration we may need.
+The `PreferencesConfiguration` is the configuration class that loads properties related to preferences through the `@EnableConfigurationProperties` annotation, and is therefore the entrypoint to our test app.
+In `@TestPropertySource`, you can define one or more locations where your properties are defined.
+They are read in order, and if a property is defined multiple times, the last declaration wins.
+This is useful for composing multiple source of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides, and a few files dedicated to specific features.
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
