@@ -73,8 +73,9 @@ Most of them are for production use, but some can be used in tests, including:
 * The `properties` parameter in `@SpringBootTest`
 * The `@TestPropertySource` annotation, pointing to a file
 * The `@ActiveProfiles` annotation and profile-based configuration files
-* The Dynamic Properties infrastructure, with `@DynamicPropertySource` and `DynamicPropertyRegistrar` beans, which allows injecting properties representing resources whose lifecycle is managed outside your application.
-It was originally designed for Testcontainers, and we'll discuss it in depth in chapter 9, "Testing against real service dependencies with Testcontainers".
+
+There are also `@DynamicPropertySource` and `DynamicPropertyRegistrar` beans, which allows injecting properties representing resources whose lifecycle is managed outside your application.
+It was originally designed for Testcontainers, and we'll discuss in depth further along, in chapter 9, "Testing against real service dependencies with Testcontainers".
 
 TIP: Take some time to go over https://docs.spring.io/spring-boot/reference/features/external-config.html[Externalized Configuration] section in the Spring Boot reference, you'll discover configuration options you've never heard of before.
 
@@ -108,10 +109,12 @@ This `properties` parameter is available in every test slice annotation, so even
 But keep in mind that if you start writing variations of the same test by tweaking the properties, the test context will be different, and Spring Boot Tests will spin up a new app.
 And while writing a text block and an array of strings in the annotation results in the same behavior, it's considered a different test context.
 Even changing the order of the properties creates a new app, so this can cause a lot of context cache thrashing, massively slowing own your test suite!
-As much as possible, you should try and create a single configuration with your custom values, as to not pay the startup price every time.
+Keep this in mind, as it applies to every example in this section.
+
+TIP: As much as possible, you should try and create a single configuration with your custom values, as to not pay the startup price every time.
 In my own tests, I typically have a "default" case with no properties, and sometimes a single "custom" case with all the customizations I want to write tests for.
 
-NOTE: In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
+In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
 From here on out, we will create smaller test applications by only loading the configuration class for the preferences module, and we'll only access the properties themselves in our tests.
 It's not a very useful test in a real production application, as we're essentially testing that Spring Boot bindings the properties correctly.
 But for demonstration purposes, they're much faster to run as they skip the slowest part of the application, here the data layer.
@@ -135,8 +138,66 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 This is a smaller test, that only loads the properties and whatever supporting configuration we may need.
 The `PreferencesConfiguration` is the configuration class that loads properties related to preferences through the `@EnableConfigurationProperties` annotation, and is therefore the entrypoint to our test app.
 In `@TestPropertySource`, you can define one or more locations where your properties are defined.
-They are read in order, and if a property is defined multiple times, the last declaration wins.
-This is useful for composing multiple source of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides, and a few files dedicated to specific features.
+Here we use two separate files, containing the following:
+
+[#ch6-spring-boot-properties-files, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Properties files values
+[source,properties,indent=0]
+----
+# units-imperial.properties
+include::../code/ch06/weather/src/test/resources/units-imperial.properties[]
+
+# dark-mode.properties
+include::../code/ch06/weather/src/test/resources/dark-mode.properties[]
+----
+
+When you specify multiple files, they are read in order, and if a property is defined multiple times, the last declaration wins.
+This is useful for composing multiple sources of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides and a few files dedicated to specific features.
+
+Both examples were using the properties format, where data is expressed as `<key>=<value>`, such as `spring.application.name=weather-app`.
+Spring Boot also supports the YAML format for properties, which is commonly used for deeply nested properties structure, such as Spring Security's OAuth2 support.
+Neither `@SpringBootTest` nor `@TestPropertySource` support YAML out of the box, but there is one feature that does support both formats: Spring profiles.
+
+NOTE: With a bit of elbow grease, or a mid-range coding agent, you can make `@TestPropertySource` read YAML files, using the `factory` parameter.
+This is beyond the scope of this book, but you'll find an example in the sample repository.
+
+Spring profiles allow apps to run with different configuration simply with simple names as keys.
+You could imagine a `staging` profile that configures a different, cheaper database or LLM for your staging environment.
+You can use them in your Spring configuration files, and Spring Boot automatically loads the associated configuration file, in our case named `application-staging.yaml` or `application-staging.properties`.
+This also applies in tests.
+For example, here's a configuration file setting the sort order for cities in our app:
+
+[#ch6-listing-yaml-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.application-date-added.yaml
+[source,yaml]
+----
+include::../code/ch06/weather/src/test/resources/application-date-added.yaml[]
+----
+
+If you call it `application-date-added.yaml` and save it to the `src/test/resources` directory, you can use the `date-added` profile in your tests using the `@ActiveProfiles` annotation.
+Of course, you can apply multiple profiles in a single test suite, achieving the same result as using multiple test property sources:
+
+[#ch6-spring-boot-profiles, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.The @ActiveProfiles annotation
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=profiles;!ignored]
+----
+
+Using this annotation, you can activate profiles from your production code, such as the `staging` example from above, or test-specific configuration files.
+You can even mix `.properties` and `.yaml` files without issues.
+
+All the examples from this chapter come with the same tradeoff.
+While it is extremely convenient to tweak the properties you set in your test app, with each and every variation, Spring Boot Tests spins up new test apps, potentially evicting the most common version of your app from its cache, over and over again.
+But what if you have complex validation rules that check user-provided configuration on startup, and you want to test all of them?
+The solution is to avoid `@SpringBootTest` entirely, and writing simpler validation tests.
+
+[#ch6-section-testing-property-validation-logic, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Testing property validation logic
+
+// TODO:
+1. Property validation in unit tests
+2. Failure cases
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
