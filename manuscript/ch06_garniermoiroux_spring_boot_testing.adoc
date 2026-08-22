@@ -298,7 +298,47 @@ To work around this, you must manage the lifecycle of your test apps manually.
 [#ch6-section-manual-spring-application-builder, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Manually creating test applications
 
-Testing for failure requires you to forego `@SpringBootTest`. Instead,
+Testing for failure requires you to forego `@SpringBootTest`.
+Instead, you can create the test application with a `SpringApplicationBuilder`.
+Let's start with a validation configuration:
+
+[#ch6-listing-test-application-programmatic, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Building a test application programmatically
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=manual-app;!ignored]
+----
+
+<1> Build the application from Spring components
+<2> Set properties
+<3> Disable web capabilities
+<4> Run in try-with-resources to auto-close the app
+<5> Access beans from the application context
+
+`SpringApplicationBuilder` is very similar to the `@SpringBootTest` annotation we've used so far.
+You can specify which classes should the application be configured from, select the web environment type and pass properties.
+The difference is that you are responsible for managing the lifecycle, that is, calling `.run()` to start it, and stop the application once the test has completed.
+Here we achieve this with the Java _try-with-resources_ construct, which calls `.close()` once the `try` block exits.
+You can then use the app's application context to access beans and perform your verifications.
+This allows you to check validation _failures_, when the app cannot start, which an annotated test class does not support.
+The `.run()` method throws an exception, which we can verify and use in our assertions.
+In that case, the application context closes automatically, and you don't need a try-with-resources.
+
+One of the rules of our cold-hot temperature range we have not validated yet is that `cold` should be smaller than `hot`.
+This does not surface in the pure validation tests, as this is enforced in an `.afterPropertiesSet()` method.
+We can test it with a `SpringApplicationBuilder`:
+
+[#ch6-listing-test-application-failure, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Verifying pplication failures
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=manual-app-failure]
+----
+
+<1> Set the properties so that hot < cold
+<2> Wrap the run() method in an exception-based assertion
+
+// TODO
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
