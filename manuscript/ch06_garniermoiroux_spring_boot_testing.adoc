@@ -77,12 +77,14 @@ Most of them are for production use, but some can be used in tests, including:
 There are also `@DynamicPropertySource` and `DynamicPropertyRegistrar` beans, which allows injecting properties representing resources whose lifecycle is managed outside your application.
 It was originally designed for Testcontainers, and we'll discuss in depth further along, in chapter 9, "Testing against real service dependencies with Testcontainers".
 
+// TODO: diagram of the properties injection infrastructure
+
 TIP: Take some time to go over https://docs.spring.io/spring-boot/reference/features/external-config.html[Externalized Configuration] section in the Spring Boot reference, you'll discover configuration options you've never heard of before.
 
 Let's see some of these options in practice.
 We'll write a test that verifies that our The most obvious one is using the `@SpringBootTest` annotation with some properties inlined, as we've seen before:
 
-[#ch6-spring-boot-test-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch6-listing-test-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Properties in the @SpringBootTest annotation
 [source,java,indent=0]
 ----
@@ -120,10 +122,10 @@ It's not a very useful test in a real production application, as we're essential
 But for demonstration purposes, they're much faster to run as they skip the slowest part of the application, here the data layer.
 
 When the number of properties you write in `@SpringBootTest` grows, pasting values in the annotation becomes error-prone and subject to drift.
-Fortunately, there are possibility for passing properties is to use the Spring `@TestPropertySource` annotation.
+Fortunately, there are possibilities for passing properties is to use the Spring `@TestPropertySource` annotation.
 You specify the `locations` of the properties files you want to load in your tests, and Spring Boot Tests will load it in your application:
 
-[#ch6-spring-boot-testpropertysources, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch6-listing-testpropertysources, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .The @TestPorpertySource annotation
 [source,java,indent=0]
 ----
@@ -140,7 +142,7 @@ The `PreferencesConfiguration` is the configuration class that loads properties 
 In `@TestPropertySource`, you can define one or more locations where your properties are defined.
 Here we use two separate files, containing the following:
 
-[#ch6-spring-boot-properties-files, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch6-listing-properties-files, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Properties files values
 [source,properties,indent=0]
 ----
@@ -177,7 +179,7 @@ include::../code/ch06/weather/src/test/resources/application-date-added.yaml[]
 If you call it `application-date-added.yaml` and save it to the `src/test/resources` directory, you can use the `date-added` profile in your tests using the `@ActiveProfiles` annotation.
 Of course, you can apply multiple profiles in a single test suite, achieving the same result as using multiple test property sources:
 
-[#ch6-spring-boot-profiles, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch6-listing-spring-boot-profiles, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .The @ActiveProfiles annotation
 [source,java,indent=0]
 ----
@@ -195,9 +197,108 @@ The solution is to avoid `@SpringBootTest` entirely, and writing simpler validat
 [#ch6-section-testing-property-validation-logic, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing property validation logic
 
-// TODO:
-1. Property validation in unit tests
-2. Failure cases
+When you introduce custom properties in your codebase, it is very common to add some validation to it: "this field must be blank", "this property must be a valid URL", "that value must be greater or equals to zero", etc.
+Some of that logic may be involved enough that you want to ensure its correctness through automated tests.
+In that case, creating five separate test contexts would be excessively expensive, and it's much easier to write unit tests with just the validation bits from Spring.
+
+For this version of the application, we have `preferences.temperature-threshold` configuration hook, with `cold` (min -57˚C) and `hot` (max 90˚C).
+This is implemented as configuration properties:
+
+[#ch6-listing-preferences-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Temperature thresholds properties
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/main/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesProperties.java[tags=class;threshold-field;threshold-class]
+----
+
+The core of the property validation is declared through `@Min`, `@Max`, `@Valid` and `@Validated`.
+
+// TODO: diagram of unit test ...?
+
+The simplest thing you can do is test the `TemperatureThreshold` rules themselves.
+To do this, you do not need a full Spring Boot app, only the Spring validation infrastructure:
+
+[#ch6-listing-threshold-validation-test, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Temperature thresholds validation test
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesPropertiesTests.java[tags=class;validator;constraint-validation]
+----
+
+<1> Create and configure the validation infrastructure
+<2> Create a valid object and ensure no errors are thrown
+<3> Create an invalid object and capture constraint validation violations
+<4> Check which field in the object is invalid, and what the message is
+
+Notice that this test class is not annotated with `@SpringBootTest` or any slice annotation.
+It's our first "unit test" example!
+It is not simply testing code you wrote, and needs some Spring bits to be relevant.
+The difference with slice or Boot tests is that you manage the lifecycle of the Spring objects yourself.
+You need to create a `LocalValidatorFactoryBean` and call `.afterPropertiesSet()` explicitly instead of relying on the Spring context management to do it for you.
+Then you can use that validator on `TemperatureThreshold` objects, to exercise the constraints we placed on them via annotations.
+The second object, called `invalid`, uses a cold threshold of `-100`, which is below the `-90` limit we set.
+Therefore, the `validator.validate(...)` method returns a constraint violation for the field `cold` with the appropriate message.
+
+There are a few limitations to this test.
+First, it does not test the actual binding of properties to the Java object, and ignores things like default values.
+We'll work around this in the next section.
+Second, related to the validation process itself, it only tests the temperature threshold sub-property, not a realistic scenario where all the nested objects are set up.
+If you ever forget the `@Valid` annotation on `PreferencesProperties.temperatureThreshold`, then the validation on the properties under `preferences.temperature-threshold` never runs.
+But our test is focused on the thresholds object, and misses this issue.
+To be more thorough, we'd have to create a full `PreferencesProperties` object, like so:
+
+[#ch6-listing-full-properties-object, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Full properties object
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesPropertiesTests.java[tags=full-properties-object]
+----
+
+Running validation against this object would apply the proper cascading logic, and verify that the `@Valid` annotation is present.
+But now there's a mysterious "null" in the properties object, unrelated to what we're testing.
+It represents the "defaults"-related properties, but that's not clear from reading the test.
+And imagine there are six different keys under `preferences.[something]`, that's five `null` constructor parameters we'd need to pass.
+The problems compounds very quickly when you have multiple levels of nesting, such as `preferences.[thing].[stuff].[gizmo]`.
+In that case, I prefer using the YAML file format for my properties files, and use the same in my tests.
+To transform YAML into objects in Spring, the library of choice is Jackson, which you've likely used to work with JSON.
+
+NOTE: Under the hood, Spring Boot uses another YAML library, SnakeYAML, but the API is much less friendly that the usual Jackson.
+
+To work with YAML, you the to add the associated Jackson format library in your `pom.xml`:
+
+[#ch6-listing-jackson-yaml, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Jackson YAML dataformat
+[source,xml,indent=0]
+----
+include::../code/ch06/weather/pom.xml[tags=jackson]
+----
+
+In our examples, we're using Spring Boot version 4 and up, so we favor the newer Jackson version, v3, which is in the Maven `tools.jackson...` groups instead of `com.fasterxml.jackson...`.
+If you've used previous versions of Jackson, you should be familiar with the `ObjectMapper` API.
+In v3, this has been replaced with dedicated mappers, such as `JsonMapper`, `XmlMapper`, or, you guessed right, `YAMLMapper`.
+With this, instead of writing complicated objects, you can write something that looks like an `applications.yaml` file and use it in:
+
+[#ch6-listing-yaml-preferences, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.YAML-based preferences test
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesPropertiesTests.java[tags=class;mapper;yaml-preferences;!ignored]
+----
+
+You need to build a `YAMLMapper`, which you can configure any way you see fit.
+Here we use the _kebab case_ format, all lowercase words linked by dashes, which is common in YAML documents.
+But it's a great first approximation, and makes complicated and nested configuration much easier to parse visually.
+
+This is not exactly a one-for-one equivalent to what Spring Boot does - it won't apply default values, for one.
+Or if you are performing checks by making your properties classes implement `InitializingBean`, the validator will not find those errors.
+Instead, you'll have to create a small test application and try to start it.
+But `@SpringBootTest` does not support "invalid" configurations that make the app crash on startup - the tests are marked as failing before they even start.
+To work around this, you must manage the lifecycle of your test apps manually.
+
+[#ch6-section-manual-spring-application-builder, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
+== Manually creating test applications
+
+Testing for failure requires you to forego `@SpringBootTest`. Instead,
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
