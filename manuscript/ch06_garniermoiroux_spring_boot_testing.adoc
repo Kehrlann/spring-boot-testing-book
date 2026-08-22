@@ -329,7 +329,7 @@ This does not surface in the pure validation tests, as this is enforced in an `.
 We can test it with a `SpringApplicationBuilder`:
 
 [#ch6-listing-test-application-failure, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Verifying pplication failures
+.Verifying application failures with SpringApplicationBuilder
 [source,java,indent=0]
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=manual-app-failure]
@@ -338,7 +338,33 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 <1> Set the properties so that hot < cold
 <2> Wrap the run() method in an exception-based assertion
 
-// TODO
+In contrast with the previous example, we wrap the call to `run` in `assertThatThrownBy`, an AssertJ exception-focused utility.
+We can then inspect the throwable, extract the root cause and validate that the message matches our expectations.
+The properties here are passed in `key=value` format, and cannot be YAML.
+But the `.properties()` method also accepts a `Properties` object, and, using Spring Boot, you can create such instances from YAML, either from raw strings or files.
+I generally create utility functions to help me with this:
+
+[#ch6-listing-yaml-utility-functions, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.YAML to properties utility functions
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=yaml-utilities]
+----
+
+You can use those directly in your `SpringApplicationBuilder` tests, which flavor you chose.
+You can even combine multiple of these, for example, when you want a set of defaults in a file, and a few overloads for a test.
+
+[#ch6-listing-yaml-utility-functions, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.Using the YAML utility functions
+[source,java,indent=0]
+----
+include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=properties-loaders]
+----
+
+Here we mix both properties from a file and from a raw string.
+When a given property is defined multiple times, the last declared takes precedence over previous sources.
+
+// TODO: costs
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
