@@ -90,7 +90,6 @@ We'll write a test that verifies that our The most obvious one is using the `@Sp
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=spring-boot-test-properties]
 ----
-
 <1> Pass properties to the annotation
 <2> Restrict the test to the "preferences" module
 
@@ -131,7 +130,6 @@ You specify the `locations` of the properties files you want to load in your tes
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=test-property-source]
 ----
-
 <1> Load the minimal set of classes for our tests
 <2> Exclude the web layer
 <3> Specify the properties files to load
@@ -224,7 +222,6 @@ To do this, you do not need a full Spring Boot app, only the Spring validation i
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesPropertiesTests.java[tags=class;validator;constraint-validation]
 ----
-
 <1> Create and configure the validation infrastructure
 <2> Create a valid object and ensure no errors are thrown
 <3> Create an invalid object and capture constraint validation violations
@@ -308,7 +305,6 @@ Let's start with a validation configuration:
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=manual-app;!ignored]
 ----
-
 <1> Build the application from Spring components
 <2> Set properties
 <3> Disable web capabilities
@@ -317,10 +313,19 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 
 `SpringApplicationBuilder` is very similar to the `@SpringBootTest` annotation we've used so far.
 You can specify which classes should the application be configured from, select the web environment type and pass properties.
-The difference is that you are responsible for managing the lifecycle, that is, calling `.run()` to start it, and stop the application once the test has completed.
+You do The difference is that you are responsible for managing the lifecycle, that is, calling `.run()` to start it, and stop the application once the test has completed.
 Here we achieve this with the Java _try-with-resources_ construct, which calls `.close()` once the `try` block exits.
 You can then use the app's application context to access beans and perform your verifications.
-This allows you to check validation _failures_, when the app cannot start, which an annotated test class does not support.
+
+[NOTE]
+====
+You MUST set the web type to `NONE`, otherwise you'll get an error, because it defaults to `SERVLET`.
+The default requires a full Servlet environment to run, that is, a Tomcat server configured.
+This is not the same as `@SpringBootTest(webEnvironment = ...)`, instead it matches the Spring Boot property `spring.main.web-application-type`, which can be `NONE`, `SERVLET` or `REACTIVE`.
+There is no `MOCK` equivalent, it's only for configuring an app with a full web server, either WebMVC or WebFlux.
+====
+
+With this construct, you can check validation _failures_, when the app cannot start, which an annotated test class does not support.
 The `.run()` method throws an exception, which we can verify and use in our assertions.
 In that case, the application context closes automatically, and you don't need a try-with-resources.
 
@@ -334,7 +339,6 @@ We can test it with a `SpringApplicationBuilder`:
 ----
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=manual-app-failure]
 ----
-
 <1> Set the properties so that hot < cold
 <2> Wrap the run() method in an exception-based assertion
 
@@ -354,7 +358,7 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 You can use those directly in your `SpringApplicationBuilder` tests, which flavor you chose.
 You can even combine multiple of these, for example, when you want a set of defaults in a file, and a few overloads for a test.
 
-[#ch6-listing-yaml-utility-functions, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+[#ch6-listing-yaml-utility-functions-usage, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the YAML utility functions
 [source,java,indent=0]
 ----
@@ -362,15 +366,24 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 ----
 
 Here we mix both properties from a file and from a raw string.
-When a given property is defined multiple times, the last declared takes precedence over previous sources.
+When a given property is defined multiple times, the last declared value takes precedence over previous ones.
 
-// TODO: costs
+In these examples, we've been spinning up one application context, albeit small, for every single test.
+We don't use the integrated lifecycle management from `@SpringBootTest`, so we do not benefit from context caching.
+That's why we create the tiniest application context possible, with just a few classes: it only adds a few tens of milliseconds extra execution time per test.
+It should have no noticeable impact on your test suite run time, unless you run thousands of these tests, or the test app has too many moving parts involved.
+If you try to create bigger test apps with `SpringApplicationBuilder`, this is a sign that something is wrong.
+Either your app's architecture is problematic and makes it hard to test, or you are trying to write an integration test, in which case you should probably reach for `@SpringBootTest`.
+While `SpringApplicationBuilder` adds CPU cycles to your tests, the memory impact is negligible.
+Each context will consume a few megabytes of RAM, but with try-with-resources, it is closed after use and memory is released.
 
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
 
-- A thing.
-- Another.
-- One last point/
-
-// TODO: should we keep weather-service.url ?
+- To test different configuration of your application, you can use either `@SpringBootTest(properties = "...")` to declare properties inline.
+To declare your properties in a configuration file, use `@ActiveProfiles`  or `@TestPropertySource`.
+- Avoid creating too many variants of your test app with different configuration profiles.
+Each variant will result in a new test app stored in the test context cache, leading to cache evictions and thrashing.
+- To test validation of your `@ConfigurationProperties` classes, unit tests manipulating a simple `Validator` instance are much more efficient than full-blown `@SpringBootTest`.
+You can construct your properties instances either as plain Java objects, or write YAML configuration and parse it with Jackson.
+- You can build small test applications programmatically using `SpringApplicationBuilder`, which allows you to test failure cases beyond single-property validation failures.
