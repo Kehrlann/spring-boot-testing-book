@@ -22,34 +22,41 @@ This chapter covers
 * Deciding when to test Configuration and Property classes
 
 Spring Boot has many built-in options for configuring your application, from selecting the port it runs on to setting up a connection to a database.
-The same infrastructure is also available for any configuration you create, declared through `@ConfigurationProperties`-annotated classes.
-This allows anyone running your application to configure it for their own use-cases.
-For example, with our "weather app" example, you could make the URL of the external weather service configurable.
-You could also imagine more complex use-cases, such as enabling caching only when a key-value store is present.
-To implement either of those features, you'd need to write code, in one case to add properties and validate them, in the other to react to existing properties with custom configuration.
+The same infrastructure is also available for configuration options you create, declared through `@ConfigurationProperties`-annotated classes.
+This allows anyone running your application to set it up for their own use-cases.
+For example, in our "weather app" sample, you could make the URL of the external weather service configurable.
+You could also imagine more complex use-cases, such as enabling caching only when a key-value store is available.
+To implement either of those features, you'd need to write code, in one case to add properties and validate them, in the other to react to existing Spring Boot properties with custom configuration.
 
-That code is slightly different from what we've tested so far, as it is usually only exercised once at startup and may stop your application from running if some configuration is invalid.
-Of course, Spring Boot Tests has tooling dedicated to testing configuration, but there are also some lesser tricks you can use to write more efficient tests.
+Configuration code is slightly different from what we've tested so far, as it is usually only exercised once at startup and may stop your application from running if even a single user-provided value is invalid.
+Think of a database URL, for example: if users point their Spring application to a non-existing database, it won't even start.
+As such, there are specific techniques for testing configuration code.
+And, of course, Spring Boot Tests has dedicated utilities to make your life easier!
 
 [#ch6-section-injecting-properties-into-test-classes, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Injecting properties into test classes
 
-When your code reacts to configuration properties, writing tests for them means writing tests for multiple values or value pairings and asserting on certain behavior.
-To do this, you need to pass the appropriate configuration properties to the application under test, and Spring Boot Tests has four main APIs for this.
+To test configuration properties, you need to write tests that run your application with different options, and then write assertions against each variant.
+This requires passing the settings you're verifying to the test framework.
+Spring Boot Tests has four main APIs to achieve this.
 
-For our tests, we'll use the now familiar weather application, with a few new configuration options.
+But before we jump into our first tests, let's revisit our trusty weather application, with its brand-new configuration options.
 You can find the complete code under `ch6/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch6/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-There is a single new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
+There is a single user-facing new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
+
 The main difference with the previous chapter is less visible, though.
-When someone runs our application, they can configure it, beyond Spring Boot defaults like the server port.
-First, they can set the defaults for the preferences in the app: dark mode, unit system and whether cities are sorted by last added or alphabetically.
+When someone (say, an admin) runs our application, they can configure it, beyond Spring Boot defaults like the server port.
+First, they can set the defaults for the preferences in the app: dark mode, unit system and whether cities are sorted alphabetically or by date added.
 For example, the administrator can decide that, by default, the website is in dark mode.
 When the user has not expressed their preferences, they get the default set by the administrator.
+A flow chart helps visualize the behavior for preferences:
 
-// TODO: diagram
+[#ch6-figure-01, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
+.Flow chart to decide whether the app should be displayed in light or dark mode.
+image::ch06_f01_garniermoiroux.png[]
 
-Second, they can configure the values for the cold and hot thresholds.
+Second, the admin can configure the values for the cold and hot thresholds.
 There is a pre-determined maximum range, such that cold cannot be set below -90˚C, and hot must not be over 57˚C (both sitting at the extremes of temperatures recorded on Earth).
 And, of course, the cold threshold must be above the hot threshold.
 The structure of the properties is as follows:
@@ -61,10 +68,13 @@ The structure of the properties is as follows:
 include::../code/ch06/weather/src/main/resources/application-custom.yml[]
 ----
 
-They are all mapped into a `@ConfigurationProperties` class, called `PreferencesProperties`, with regular Spring Boot property binding techniques we won't be detailing here.
+They are all mapped into a `@ConfigurationProperties` class, called `PreferencesProperties`.
+
+NOTE: This "mapping" of configuration files into beans is a feature of Spring Boot.
+To learn more, please refer to the https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties[Reference documentation].
 
 To test how the configuration impacts the code, we need to create a test app with specific configuration properties.
-The simplest thing you can do is write an `application.properties` or its YAML equivalent in your test resources folder `src/test/resources`, but beware!
+The simplest thing you can do is write an `application.properties` file (or its YAML equivalent) in your test resources folder `src/test/resources`, but beware!
 This overrides the file of the same name from your _main_ sources directory, possibly leading to a lot of duplication and configuration drift between prod and tests.
 If you want to touch only a few values in your tests, you should use one of the dedicated APIs for property loading.
 At the time of this writing, Spring Boot lists 15 ways (!) of loading configuration properties into an application.
@@ -74,7 +84,9 @@ Most of them are for production use, but some can be used in tests, including:
 * The `@TestPropertySource` annotation, pointing to a file
 * The `@ActiveProfiles` annotation and profile-based configuration files
 
-There are also `@DynamicPropertySource` and `DynamicPropertyRegistrar` beans, which allows injecting properties representing resources whose lifecycle is managed outside your application.
+We will demonstrate all three of them.
+There is a fourth option, which we will not be discussing here: `@DynamicPropertySource` and `DynamicPropertyRegistrar`.
+They allow injecting properties representing resources whose lifecycle is managed outside your application.
 It was originally designed for Testcontainers, and we'll discuss in depth further along, in chapter 9, "Testing against real service dependencies with Testcontainers".
 
 // TODO: diagram of the properties injection infrastructure
