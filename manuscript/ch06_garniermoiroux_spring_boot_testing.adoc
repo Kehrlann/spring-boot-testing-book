@@ -29,7 +29,7 @@ You could also imagine more complex use-cases, such as enabling caching only whe
 To implement either of those features, you'd need to write code, in one case to add properties and validate them, in the other to react to existing Spring Boot properties with custom configuration.
 
 Configuration code is slightly different from what we've tested so far, as it is usually only exercised once at startup and may stop your application from running if even a single user-provided value is invalid.
-Think of a database URL, for example: if users point their Spring application to a non-existing database, it won't even start.
+Think of a database URL, for example: if users point their Spring application to a non-existent database, it won't even start.
 As such, there are specific techniques for testing configuration code.
 And, of course, Spring Boot Tests has dedicated utilities to make your life easier!
 
@@ -43,10 +43,10 @@ Spring Boot Tests has four main APIs to achieve this.
 But before we jump into our first tests, let's revisit our trusty weather application, with its brand-new configuration options.
 You can find the complete code under `ch6/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch6/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
-There is a single user-facing new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
+For end users, there is a single new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
 
-The main difference with the previous chapter is less visible, though.
-When someone (say, an admin) runs our application, they can configure it, beyond Spring Boot defaults like the server port.
+The main difference from the previous chapter is less visible, though.
+When someone (say, an admin) runs our application, they can configure it well beyond Spring Boot defaults like the server port.
 First, they can set the defaults for the preferences in the app: dark mode, unit system and whether cities are sorted alphabetically or by date added.
 For example, the administrator can decide that, by default, the website is in dark mode.
 When the user has not expressed their preferences, they get the default set by the administrator.
@@ -57,8 +57,8 @@ A flow chart helps visualize the behavior for preferences:
 image::ch06_f01_garniermoiroux.png[]
 
 Second, the admin can configure the values for the cold and hot thresholds.
-There is a pre-determined maximum range, such that cold cannot be set below -90˚C, and hot must not be over 57˚C (both sitting at the extremes of temperatures recorded on Earth).
-And, of course, the cold threshold must be above the hot threshold.
+There is a predetermined maximum range, such that cold cannot be set below -90˚C, and hot must not be over 57˚C (both sitting at the extremes of temperatures recorded on Earth).
+And, of course, the cold threshold must be below the hot threshold.
 The structure of the properties is as follows:
 
 [#ch6-listing-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -68,7 +68,7 @@ The structure of the properties is as follows:
 include::../code/ch06/weather/src/main/resources/application-custom.yml[]
 ----
 
-They are all mapped into a `@ConfigurationProperties` class, called `PreferencesProperties`.
+They are all mapped into a `@ConfigurationProperties` class called `PreferencesProperties`.
 
 NOTE: This "mapping" of configuration files into beans is a feature of Spring Boot.
 To learn more, please refer to the https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties[Reference documentation].
@@ -86,13 +86,13 @@ Most of them are for production use, but some can be used in tests, including:
 
 There is a fourth option, which we will not be discussing here: `@DynamicPropertySource` and `DynamicPropertyRegistrar`.
 They allow injecting properties representing resources whose lifecycle is managed outside your application.
-It was originally designed for Testcontainers, and we'll discuss in depth further along, in chapter 9, "Testing against real service dependencies with Testcontainers".
+They were originally designed for Testcontainers, and we'll discuss them in depth later, in chapter 9, "Testing against real service dependencies with Testcontainers".
 
 TIP: To learn all about Spring Boot configuration management, take some time to go over the https://docs.spring.io/spring-boot/reference/features/external-config.html[Externalized Configuration] section in the Spring Boot reference.
 You'll likely discover options you've never heard of before.
 
 Let's demonstrate the three most prominent alternatives.
-We'll write a test that verifies that our app respects the defaults as expressed in a configuration file.
+We'll write a test that verifies that our app respects the defaults expressed in a configuration file.
 The most obvious one is using the `@SpringBootTest` annotation with some properties inlined, as we've seen before:
 
 [#ch6-listing-test-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -105,8 +105,8 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 <2> Restrict the test to the "preferences" module
 
 This is the simplest form of configuring the application under test: passing whatever properties you want to test directly in the annotation as a string.
-Once the test context is up and running, we verify that, when the user has not set preferences, the `PreferencesService` returns defaults configured by the admin, here dark mode and imperial units.
-In this sample test, we are using a test block with properties on each line, but you can equally write one string per property:
+Once the test context is up and running, we verify that, when the user has not set preferences, the `PreferencesService` returns the defaults configured by the admin, here dark mode and imperial units.
+In this sample test, we are using a text block with properties on each line, but you can just as well write one string per property:
 
 [source,java,indent=0]
 ----
@@ -119,19 +119,19 @@ In this sample test, we are using a test block with properties on each line, but
 The `properties` parameter is available in every test slice annotation, so even your slice tests can have custom properties.
 But remember from previous chapters that if you start writing variations of the same test by tweaking the properties, the test context will be different, and Spring Boot Tests will spin up a new app.
 And while writing a text block and an array of strings in the annotation results in the same behavior, it's considered a different test context.
-Even changing the order of the properties creates a new app, so this can cause a lot of context cache thrashing, massively slowing own your test suite!
+Even changing the order of the properties creates a new app, so this can cause a lot of context cache thrashing, massively slowing down your test suite!
 Keep this in mind, as it applies to every example in this section.
 
-TIP: As much as possible, you should try and create a single configuration with your custom values, as to not pay the startup price every time.
+TIP: As much as possible, you should try to create a single configuration with your custom values, so as not to pay the startup price every time.
 In my own tests, I typically have a "default" case with no properties, and sometimes a single "custom" case with all the customizations I want to write tests for.
 
 In this example, we scoped the test down to the "Preferences" module, but it's still a full integration test, loading all the JPA infrastructure, so it takes a few seconds.
 From here on out, we will create smaller test applications by only loading the configuration class for the preferences module, and we'll only access the properties themselves in our tests.
-It's not a very useful test in a real production application, as we're essentially testing that Spring Boot binds the properties correctly.
-But for demonstration purposes, they're much faster to run as they avoid loading the data layer, which is the slowest part of the application.
+Such tests aren't very useful in a real production application, as we're essentially testing that Spring Boot binds the properties correctly.
+But for demonstration purposes, they're much faster to run, as they avoid loading the data layer, which is the slowest part of the application.
 
 When the number of properties you write in `@SpringBootTest` grows, pasting values in the annotation becomes error-prone and subject to drift.
-Fortunately, there are possibilities for passing properties consistently across tests is to use the Spring `@TestPropertySource` annotation.
+Fortunately, there is a way to pass properties consistently across tests: the Spring `@TestPropertySource` annotation.
 You specify the `locations` of the properties files you want to load in your tests, and Spring Boot Tests will add them to your app's settings:
 
 [#ch6-listing-testpropertysources, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -146,9 +146,9 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 <4> Inject the resulting Properties class for further assertions
 
 This is a smaller test, which only loads the properties and whatever supporting configuration we may need.
-We `PreferencesConfiguration` as the entrypoint for our test application.
+We use `PreferencesConfiguration` as the entry point for our test application.
 It's the class that loads properties related to preferences with `@EnableConfigurationProperties(PreferencesProperties.class)`.
-In `@TestPropertySource`, you can define one or more locations where your properties are defined.
+In `@TestPropertySource`, you can list one or more locations where your properties are defined.
 Here we use two separate files, containing the following:
 
 [#ch6-listing-properties-files, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -163,13 +163,13 @@ include::../code/ch06/weather/src/test/resources/dark-mode.properties[]
 ----
 
 When you specify multiple files, they are read in order, and if a property is defined multiple times, the last declaration wins.
-This is useful for composing multiple sources of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides and a maybe few other files with config for specific features.
+This is useful for composing multiple sources of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides, and maybe a few other files with config for specific features.
 
-Both examples were using the properties format, where data is expressed as `<key>=<value>`, such as `spring.application.name=weather-app`.
-Spring Boot also supports the YAML format for properties, which is commonly used for deeply nested properties structure, such as Spring Security's OAuth2 support.
-Neither `@SpringBootTest` nor `@TestPropertySource` support YAML out of the box, but there is one feature that does support both formats: Spring profiles.
+Both examples used the properties format, where data is expressed as `<key>=<value>`, such as `spring.application.name=weather-app`.
+Spring Boot also supports the YAML format for properties, which is commonly used for deeply nested properties structures, such as Spring Security's OAuth2 support.
+Neither `@SpringBootTest` nor `@TestPropertySource` supports YAML out of the box, but there is one feature that does support both formats: Spring profiles.
 
-NOTE: With a bit of elbow grease, or a mid-range coding agent, you can make `@TestPropertySource` read YAML files, using the `factory` parameter.
+NOTE: With a bit of elbow grease, or a mid-range coding agent, you can make `@TestPropertySource` read YAML files using the `factory` parameter.
 This is beyond the scope of this book, but you'll find an example named `YamlPropertySourceFactory` in the sample repository.
 
 Spring profiles allow apps to run with different configurations simply by referencing a profile by name.
@@ -185,7 +185,7 @@ For example, here's a configuration file selecting the sort order for cities in 
 include::../code/ch06/weather/src/test/resources/application-date-added.yaml[]
 ----
 
-If you call it `application-date-added.yaml` and save it to the `src/test/resources` directory, you can use the `date-added` profile in your tests using the `@ActiveProfiles` annotation.
+If you call it `application-date-added.yaml` and save it to the `src/test/resources` directory, you can activate the `date-added` profile in your tests with the `@ActiveProfiles` annotation.
 Of course, you can apply multiple profiles in a single test suite, achieving the same result as using multiple test property sources:
 
 [#ch6-listing-spring-boot-profiles, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -195,20 +195,20 @@ Of course, you can apply multiple profiles in a single test suite, achieving the
 include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weather/preferences/internal/PreferencesConfigurationTests.java[tags=profiles;!ignored]
 ----
 
-Using this annotation, you can activate profiles from your production code, such as the `staging` example from above, or test-specific configuration files.
+Using this annotation, you can activate profiles defined in your production code, such as the `staging` example above, as well as profiles backed by test-specific configuration files.
 You can even mix `.properties` and `.yaml` files.
 
 All the examples from this chapter come with the same tradeoff.
-While it is extremely convenient to tweak the properties you set in your test app, with every single variation, Spring Boot Tests spins up new test apps, potentially evicting the most common version of your app from its cache, over and over again.
+While it is very convenient to tweak the properties you set in your test app, every single variation makes Spring Boot Tests spin up a new test app, potentially evicting the most common version of your app from the cache, over and over again.
 But what if you have complex validation rules that check user-provided configuration on startup, and you want to test all of them without blowing up the context cache?
-The solution is avoiding `@SpringBootTest` entirely, and writing simpler validation tests.
+The solution is to avoid `@SpringBootTest` entirely and write simpler validation tests.
 
 [#ch6-section-testing-property-validation-logic, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Testing property validation logic
 
-When you introduce custom properties in your codebase, it is very common to add some validation to it: "this field must be blank", "this property must be a valid URL", "that value must be greater or equals to zero", etc.
+When you introduce custom properties in your codebase, it is very common to add some validation to it: "this field must not be blank", "this property must be a valid URL", "that value must be greater than or equal to zero", etc.
 Some of that logic may be involved enough that you want to ensure its correctness through automated tests.
-In that case, creating five separate test contexts would be excessively expensive.
+In that case, creating a separate test context for each rule would be excessively expensive.
 To load configuration files into property objects, Spring Boot does a lot of work, as demonstrated in Figure <<ch6-figure-02>>.
 
 [#ch6-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
@@ -217,14 +217,15 @@ image::ch06_f02_garniermoiroux.png[]
 
 Spring Boot first finds all relevant files, reads them and transforms them into a `PropertySource`, the Spring API for loading properties.
 We've used property sources in the previous section, with the `@TestPropertySource` annotation.
-Then Spring creates beans, and when a class is annotated with `@ConfigurationProperties`, Spring Boot _binds_ data to it: it fetches properties from all available property sources and sets the fields in the beans, and computes defaults if necessary.
-Once the object is created and set up with all the necessary values, Spring runs _validation_ on it, verifying the constraints you've set on the object's fields ("must not be blank", etc.) Lastly, all the post-initialization steps run (`@PostContruct`, `IntializingBean#afterPropertiesSet()`, etc).
+Then Spring creates beans, and when a class is annotated with `@ConfigurationProperties`, Spring Boot _binds_ data to it: it fetches properties from all available property sources and sets the fields in the bean, computing defaults if necessary.
+Once the object is created and set up with all the necessary values, Spring runs _validation_ on it, verifying the constraints you've set on the object's fields ("must not be blank", etc.).
+Lastly, all the post-initialization steps run (`@PostConstruct`, `InitializingBean#afterPropertiesSet()`, etc.).
 
-To run a proper end-to-end test on these configuration objects, you need the full Spring Boot infrastructure, with the caching tradeoffs.
+To run a proper end-to-end test on these configuration objects, you need the full Spring Boot infrastructure, with the caching tradeoffs that entails.
 But you don't need to run full data loading and binding to verify your validation rules.
-You can focus on the single "property validation" box, which you isolate and check with blazing fast unit tests.
+You can focus on the single "property validation" box, which you isolate and check with blazing-fast unit tests.
 
-For the first unit tests of this book, we'll verify the behavior of the `preferences.temperature-threshold` configuration hook, with `cold` (min -57˚C) and `hot` (max 90˚C).
+For the first unit tests of this book, we'll verify the behavior of the `preferences.temperature-threshold` configuration option, with `cold` (min -90˚C) and `hot` (max 57˚C).
 This is implemented as configuration properties:
 
 [#ch6-listing-preferences-properties, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -251,18 +252,18 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 <4> Check which field in the object is invalid, and what the message is
 
 Notice that this test class is not annotated with `@SpringBootTest` or any slice annotation.
-It is a humble unit test, but it does more than testing a function or a class you wrote, and needs some Spring bits to be relevant.
-The difference with slice or Boot tests is that you manage the lifecycle of the Spring objects yourself.
-You need to create a `LocalValidatorFactoryBean` and call `.afterPropertiesSet()` explicitly instead of relying on the Spring context management to do it for you.
-Then you can use that validator on `TemperatureThreshold` objects, to exercise the constraints we placed on them via annotations.
+It is a humble unit test, but it does more than exercise a function or a class you wrote: it needs a few Spring bits to be relevant.
+The difference from slice or Boot tests is that you manage the lifecycle of the Spring objects yourself.
+You need to create a `LocalValidatorFactoryBean` and call `.afterPropertiesSet()` explicitly instead of relying on Spring's context management to do it for you.
+Then you can use that validator on `TemperatureThreshold` objects to exercise the constraints we placed on them via annotations.
 The second object, called `invalid`, uses a cold threshold of `-100`, which is below the `-90` limit we set earlier.
 Therefore, the `validator.validate(...)` method returns a constraint violation for the field `cold` with the appropriate message.
 
 There are a few limitations to this test.
 First, it does not test the actual binding of properties to the Java object, and ignores things like default values.
-Second, related to the validation process itself, it only tests the temperature threshold subproperty, not a realistic scenario where all the nested objects are set up.
-If you ever forget the `@Valid` annotation on the `temperatureThreshold` field from `PreferencesProperties.`, then the validation on the properties under `preferences.temperature-threshold` never runs.
-But our test is focused on the threshold object, and missing issues related to nested properties.
+Second, as far as validation itself is concerned, it only tests the temperature threshold subproperty, not a realistic scenario where all the nested objects are set up.
+If you ever forget the `@Valid` annotation on the `temperatureThreshold` field in `PreferencesProperties`, then the validation on the properties under `preferences.temperature-threshold` never runs.
+But our test focuses on the threshold object alone, and would miss issues related to nested properties.
 To be more thorough, we'd have to create a full `PreferencesProperties` object, like so:
 
 [#ch6-listing-full-properties-object, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
@@ -275,14 +276,14 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 Running validation against this object would apply the proper cascading logic, and verify that the `@Valid` annotation is present.
 But now there's a mysterious `null` value in the properties object, unrelated to what we're testing.
 It represents the `defaults`-related properties, but that's not clear from reading the test.
-And imagine there are six different keys under `preferences.[something]`, that's five `null` constructor parameters we'd need to pass.
+And imagine there were six different keys under `preferences.[something]`: that would be five `null` constructor parameters to pass.
 The problem compounds very quickly when you have multiple levels of nesting, such as `preferences.[thing].[stuff].[gizmo]`.
-In that case, I prefer using the YAML file format for my settings files, and use the same in my tests.
-To transform YAML into objects in Spring, the library of choice is Jackson, which you've likely used to work with JSON.
+In that case, I prefer to use the YAML file format for my settings files, and to write my tests with the same format.
+To turn YAML into objects in Spring, the library of choice is Jackson, which you've likely used to work with JSON.
 
-NOTE: Under the hood, Spring Boot uses another YAML library, SnakeYAML, but the API is more complicated than that of the more familiar Jackson.
+NOTE: Under the hood, Spring Boot uses another YAML library, SnakeYAML, but its API is more complicated than that of the more familiar Jackson.
 
-To parse YAML, you the to add the associated Jackson format library in your `pom.xml`:
+To parse YAML, you need to add the associated Jackson format library to your `pom.xml`:
 
 [#ch6-listing-jackson-yaml, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Jackson YAML dataformat
@@ -294,10 +295,10 @@ include::../code/ch06/weather/pom.xml[tags=jackson]
 We add both `jackson-databind` and `jackson-dataformat-yaml`.
 Both could be scoped to `test` only, but we also use the data binding capabilities in the production code through some `@JsonProperty` annotations.
 
-In our examples, we're using Spring Boot version 4 and up, so we favor the newer Jackson version, v3, which is in the Maven `tools.jackson...` groups instead of `com.fasterxml.jackson...`.
+In our examples, we're using Spring Boot version 4 and up, so we favor the newer Jackson version, v3, which is in the Maven `tools.jackson...` group instead of `com.fasterxml.jackson...`.
 If you've used previous versions of Jackson, you should be familiar with the `ObjectMapper` API.
-In v3, this has been replaced with dedicated mappers, such as `JsonMapper`, `XmlMapper`, or, you guessed right, `YAMLMapper`.
-With this, instead of writing complicated objects, you can write something that looks like an `applications.yaml` file and use it in tests:
+In v3, this has been replaced with dedicated mappers, such as `JsonMapper`, `XmlMapper`, or, you guessed it, `YAMLMapper`.
+With this, instead of writing complicated objects, you can write something that looks like an `application.yaml` file and use it in tests:
 
 [#ch6-listing-yaml-preferences, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .YAML-based preferences test
@@ -309,11 +310,11 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 You need to build a `YAMLMapper`, which you can configure any way you see fit.
 Here we use the _kebab case_ format, all lowercase words linked by dashes, which is common in YAML documents.
 
-This is not exactly a one-for-one equivalent to what Spring Boot does - it won't apply default values, for one.
-But it's a great first approximation and makes complicated and nested configuration much easier to parse visually than constructing deeply nested objects.
+This is not exactly a one-for-one equivalent of what Spring Boot does - it won't apply default values, for one.
+But it's a great first approximation, and it makes complicated, nested configuration much easier to parse visually than constructing deeply nested objects.
 
 Of course, there are cases where you want to perform the full end-to-end configuration lifecycle described in Figure <<ch6-figure-02>>.
-In our weather sample, our temperature threshold bean implements `InitializingBean` to ensure that `cold < hot`, and a validation unit-test will not raise that.
+In our weather sample, our temperature threshold bean implements `InitializingBean` to ensure that `cold < hot`, and a validation unit test will not catch that.
 For complex scenarios with multiple property objects interacting with each other, it might be better to create a small test application and try to start it.
 Unfortunately, `@SpringBootTest` does not support "invalid" configurations that make the app crash on startup: the tests are marked as failing, and the test method doesn't even execute.
 To work around this, you must manage the lifecycle of your test apps manually.
@@ -321,9 +322,9 @@ To work around this, you must manage the lifecycle of your test apps manually.
 [#ch6-section-manual-spring-application-builder, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Programmatically running test applications
 
-Testing for failure requires you to forego `@SpringBootTest`.
+Testing for failure requires you to forgo `@SpringBootTest`.
 Instead, you can create the test application with a `SpringApplicationBuilder`.
-Let's start with a validation configuration:
+Let's start with a valid configuration:
 
 [#ch6-listing-test-application-programmatic, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Building a test application programmatically
@@ -337,26 +338,26 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 <4> Run in try-with-resources to automatically close the application context once it's dereferenced
 <5> Access beans from the application context
 
-`SpringApplicationBuilder` is very similar to the `@SpringBootTest` annotation you should now be familiar.
-You can specify which classes should the application be configured from, select the web environment type and pass properties.
-The difference is that you are responsible for managing the lifecycle, that is, calling `.run()` to start it, and stop the application once the test has completed.
+`SpringApplicationBuilder` is very similar to the `@SpringBootTest` annotation you should now be familiar with.
+You can specify which classes the application should be configured from, select the web environment type and pass properties.
+The difference is that you are responsible for managing the lifecycle, that is, calling `.run()` to start the application and stopping it once the test has completed.
 Here we achieve this with the Java _try-with-resources_ construct, which calls `.close()` once the `try` block exits.
 You can then use the app's application context to access beans and perform your verifications.
 
 [NOTE]
 ====
-You MUST set the web type to `NONE`, otherwise you'll get an error, because it defaults to `SERVLET`.
-The default requires a full Servlet environment to run, that is, a Tomcat server configured.
+Because it defaults to `SERVLET`, you MUST set the web type to `NONE`, otherwise you'll get an error.
+The default requires a full Servlet environment to run, that is, a configured Tomcat server.
 This option matches the `spring.main.web-application-type` setting in Spring Boot, which can be `NONE`, `SERVLET` or `REACTIVE`.
 This is different from `@SpringBootTest(webEnvironment = ...)`, and there is no straightforward `MOCK` equivalent.
 Setting any value other than `NONE` starts a full web application context.
 ====
 
-With this construct, you can check validation _failures_, when the app cannot start, which an annotated test class does not support.
-The `.run()` method throws an exception, which we can verify and use in our assertions.
+With this construct, you can check validation _failures_, cases where the app cannot start, which an annotated test class does not support.
+The `.run()` method throws an exception, which we can capture and use in our assertions.
 In that case, the application context closes automatically, and you don't need a try-with-resources.
 
-One of the rules of our cold-hot temperature range we have not validated yet is that `cold` should be smaller than `hot`.
+One rule of our cold-hot temperature range that we have not tested yet is that `cold` should be smaller than `hot`.
 This does not surface in the pure validation tests, as it is enforced in an `.afterPropertiesSet()` method.
 We can test it with a `SpringApplicationBuilder`:
 
@@ -383,7 +384,7 @@ include::../code/ch06/weather/src/test/java/wf/garnier/spring/boot/test/ch6/weat
 ----
 
 You can use those directly in your `SpringApplicationBuilder` tests, whether you load properties from a string or a file.
-You can even combine multiple of these, for example, when you want a set of defaults in a file, and a few overloads for a test.
+You can even combine several of them, for example when you want a set of defaults in a file and a few overrides for a test.
 
 [#ch6-listing-yaml-utility-functions-usage, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
 .Using the YAML utility functions
@@ -397,9 +398,9 @@ When a given property is defined multiple times, the last declared value takes p
 
 In these examples, we've been spinning up one application context, albeit small, for every single test.
 We don't use the integrated lifecycle management from `@SpringBootTest`, so we do not benefit from context caching.
-That's why we create the tiniest application context possible, with just a few classes: it only adds a few tens of milliseconds extra execution time per test.
-It should have no noticeable impact on your test suite run time, unless you run thousands of these tests, or the test app has too many moving parts involved.
-If you try to create bigger test apps with `SpringApplicationBuilder`, this is a sign that something is wrong.
+That's why we create the tiniest application context possible, with just a few classes: it only adds a few tens of milliseconds of extra execution time per test.
+It should have no noticeable impact on your test suite run time, unless you run thousands of these tests, or the test app has too many moving parts.
+If you find yourself creating bigger test apps with `SpringApplicationBuilder`, it's a sign that something is wrong.
 Either your app's architecture is problematic and makes it hard to test, or you are trying to write an integration test, in which case you should probably reach for `@SpringBootTest`.
 While `SpringApplicationBuilder` adds CPU cycles to your tests, the memory impact is negligible.
 Each context will consume a few megabytes of RAM, but with try-with-resources, it is closed after use and memory is released.
@@ -407,8 +408,8 @@ Each context will consume a few megabytes of RAM, but with try-with-resources, i
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
 
-- To test different configuration of your application, you can use `@SpringBootTest(properties = "...")` to declare properties inline.
-To declare your properties in a configuration file, use `@ActiveProfiles`  or `@TestPropertySource`.
+- To test different configurations of your application, you can use `@SpringBootTest(properties = "...")` to declare properties inline.
+To declare your properties in a configuration file, use `@ActiveProfiles` or `@TestPropertySource`.
 - Avoid creating too many variants of your test app with different configuration profiles.
 Each variant will result in a new test app stored in the test context cache, leading to cache evictions and thrashing.
 - To test validation of your `@ConfigurationProperties` classes, unit tests exercising a simple `Validator` instance are much more efficient than full-blown `@SpringBootTest`.
