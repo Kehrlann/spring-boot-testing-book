@@ -10,14 +10,13 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch6-title, reftext={chapter}, caption='{chapter}']
 = Testing Configuration and Properties
 
 This chapter covers
 
-* Injecting property values in test classes
+* Injecting property values to test classes
 * Testing property validation logic, including failure cases
 * Deciding when to test Configuration and Property classes
 
@@ -38,10 +37,9 @@ And, of course, Spring Boot Tests has dedicated utilities to make your life easi
 
 To test configuration properties, you need to write tests that run your application with different options, and then write assertions against each variant.
 This requires passing the settings you're verifying to the test framework.
-Spring Boot Tests has four main APIs to achieve this.
 
 But before we jump into our first tests, let's revisit our trusty weather application, with its brand-new configuration options.
-You can find the complete code under `ch6/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch6/weather.
+You can find the complete code under `ch06/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch06/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
 For end users, there is a single new feature: the weather cards now display the temperature in blue when it's below a certain "cold threshold", and in red when it's above the equivalent "hot threshold".
 
@@ -149,21 +147,26 @@ This is a smaller test, which only loads the properties and whatever supporting 
 We use `PreferencesConfiguration` as the entry point for our test application.
 It's the class that loads properties related to preferences with `@EnableConfigurationProperties(PreferencesProperties.class)`.
 In `@TestPropertySource`, you can list one or more locations where your properties are defined.
-Here we use two separate files, containing the following:
+Here we use two separate files, `units-imperial.properties` for units:
 
-[#ch6-listing-properties-files, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
-.Properties files values
+[#ch6-listing-properties-files-units-imperial, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.units-imperial.properties
 [source,properties,indent=0]
 ----
-# units-imperial.properties
 include::../code/ch06/weather/src/test/resources/units-imperial.properties[]
+----
 
-# dark-mode.properties
+And `dark-mode.properties` for dark mode:
+
+[#ch6-listing-properties-files-dark-mode, reftext={chapter}.{counter:listing}, caption='{listing-caption}.{counter:listing-number} ']
+.dark-mode.properties
+[source,properties,indent=0]
+----
 include::../code/ch06/weather/src/test/resources/dark-mode.properties[]
 ----
 
-When you specify multiple files, they are read in order, and if a property is defined multiple times, the last declaration wins.
-This is useful for composing multiple sources of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides, and maybe a few other files with config for specific features.
+When you specify multiple files, they are read in order, and if a property is defined multiple times, the last declaration overrides earlier ones.
+This is useful for composing multiple sources of properties: you can have a production `application.properties` that is loaded every time, a test file called `tests.properties` replacing some of the production values with test-focused overrides and maybe a few other files with config for specific features.
 
 Both examples used the properties format, where data is expressed as `<key>=<value>`, such as `spring.application.name=weather-app`.
 Spring Boot also supports the YAML format for properties, which is commonly used for deeply nested properties structures, such as Spring Security's OAuth2 support.
@@ -209,7 +212,7 @@ The solution is to avoid `@SpringBootTest` entirely and write simpler validation
 When you introduce custom properties in your codebase, it is very common to add some validation to it: "this field must not be blank", "this property must be a valid URL", "that value must be greater than or equal to zero", etc.
 Some of that logic may be involved enough that you want to ensure its correctness through automated tests.
 In that case, creating a separate test context for each rule would be excessively expensive.
-To load configuration files into property objects, Spring Boot does a lot of work, as demonstrated in Figure <<ch6-figure-02>>.
+To load configuration files into property objects, Spring Boot does a lot of work, as demonstrated in figure <<ch6-figure-02>>.
 
 [#ch6-figure-02, reftext={chapter}.{counter:figure}, caption='{figure-caption}.{counter:figure-number} ']
 .The different steps involved in transforming configuration files into Spring beans, including data loading, binding and validation.
@@ -313,7 +316,7 @@ Here we use the _kebab case_ format, all lowercase words linked by dashes, which
 This is not exactly a one-for-one equivalent of what Spring Boot does - it won't apply default values, for one.
 But it's a great first approximation, and it makes complicated, nested configuration much easier to parse visually than constructing deeply nested objects.
 
-Of course, there are cases where you want to perform the full end-to-end configuration lifecycle described in Figure <<ch6-figure-02>>.
+Of course, there are cases where you want to perform the full end-to-end configuration lifecycle described in figure <<ch6-figure-02>>.
 In our weather sample, our temperature threshold bean implements `InitializingBean` to ensure that `cold < hot`, and a validation unit test will not catch that.
 For complex scenarios with multiple property objects interacting with each other, it might be better to create a small test application and try to start it.
 Unfortunately, `@SpringBootTest` does not support "invalid" configurations that make the app crash on startup: the tests are marked as failing, and the test method doesn't even execute.
@@ -408,10 +411,14 @@ Each context will consume a few megabytes of RAM, but with try-with-resources, i
 [#ch6-summary, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Summary
 
-- To test different configurations of your application, you can use `@SpringBootTest(properties = "...")` to declare properties inline.
-To declare your properties in a configuration file, use `@ActiveProfiles` or `@TestPropertySource`.
+- To test different configurations of your application, you need to inject the property values you want to validate in your test application.
+- The most straightforward way is to use `@SpringBootTest(properties = "...")` to declare properties inline.
+- To group common properties together, you can use a few configuration files, which you can then inject in your tests using either `@ActiveProfiles` or `@TestPropertySource`.
 - Avoid creating too many variants of your test app with different configuration profiles.
 Each variant will result in a new test app stored in the test context cache, leading to cache evictions and thrashing.
+Where possible, prefer one configuration for the default settings, and one custom configuration testing everything else.
 - To test validation of your `@ConfigurationProperties` classes, unit tests exercising a simple `Validator` instance are much more efficient than full-blown `@SpringBootTest`.
 You can construct your properties instances either as plain Java objects, or write YAML configuration and parse it with Jackson.
+- The validator-based tests are restricted in scope and do not represent a full integration test of your configuration.
+Notably, they can miss issues with nested properties, default values or initializing beans.
 - You can build small test applications programmatically using `SpringApplicationBuilder`, which allows you to test failure cases beyond single-property validation failures.
