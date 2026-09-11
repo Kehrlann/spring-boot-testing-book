@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch5-title, reftext={chapter}, caption='{chapter}']
 = Testing subsets of an application with test slices
@@ -106,7 +105,7 @@ Getting rid of slices and consolidating tests under a small number of test conte
 
 NOTE: I reproduced this experiment, running a thousand very thin slices versus running a thousand tests against a single app context.
 Using a single slice is an order of magnitude faster.
-You can find this very un-scientific benchmark in the examples repository, under `ch5/performance/web`.
+You can find this very un-scientific benchmark in the examples repository, under `ch05/performance/web`.
 
 Test slices shine when these two conditions are met:
 
@@ -170,7 +169,7 @@ Figure <<ch5-figure-03>> illustrates how a test slice produces a thinner test ap
 image::ch05_f03_garniermoiroux.png[]
 
 Before we start writing tests, let's discuss the changes we've made to our weather application for this chapter.
-You can find the complete code under `ch5/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch5/weather.
+You can find the complete code under `ch05/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch05/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
 The sample has the same feature set and overall behavior as the application from chapter 4, with the addition of a "preferences" toolbar.
 With this, users can use the app dark mode, sort cities alphabetically or by date added, and use either metric or imperial units.
@@ -680,7 +679,8 @@ There can only ever be one `TestContextBootstrapper` for a given test class, and
 If you try to combine test slices, the tests won't run and you'll get the following Spring TestContext Framework exception:
 
 ----
-Configuration error: found multiple declarations of @BootstrapWith for test class [your class]: ...
+Configuration error: found multiple declarations of @BootstrapWith for
+[CA]test class [your class]: ...
 ----
 
 `@WebMvcTest` also has code you won't find in `@SpringBootTest`, falling in one of two categories: autoconfiguration and selecting which beans to load in the context.

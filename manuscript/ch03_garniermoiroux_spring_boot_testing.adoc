@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch3-title, reftext={chapter}, caption='{chapter}']
 = Configuring and running an application for testing
@@ -32,7 +31,7 @@ Spring Boot Test has dedicated tooling for all of these use cases, from changing
 Of course, there are important tradeoffs associated with customizing the application under test, and you should be aware of them when creating tests.
 Let's dive in!
 
-NOTE: All samples in this chapter are in the `ch3/configuration` directory of the samples repository, accessible directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch3/configuration.
+NOTE: All samples in this chapter are in the `ch03/configuration` directory of the samples repository, accessible directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch03/configuration.
 There are many more examples than those listed in this chapter, variations that won't go over but that may be useful.
 I encourage you to download the project and skim over the test files as you go through the chapter.
 

@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#appb-title, reftext={chapter}, caption='{appendix}']
 = Beans and the ApplicationContext: dependency injection in Spring

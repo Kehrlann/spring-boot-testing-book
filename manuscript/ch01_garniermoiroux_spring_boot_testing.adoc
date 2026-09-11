@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch1-title, reftext={chapter}, caption='{chapter}']
 = Spring Boot-specific test tooling
@@ -86,7 +85,7 @@ This means the testing-specific dependencies it brings cannot be used by your ma
 <1> The dependencies are in the `test` scope
 
 NOTE: Most of the examples in the book will be using Maven.
-There is an example of a Gradle-based project in the samples for the book, at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch1/gradle.
+There is an example of a Gradle-based project in the samples for the book, at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch01/gradle.
 
 The libraries you get from the starter are broadly divided into two categories.
 
@@ -361,8 +360,8 @@ To recap, in the absence of dedicated Spring tooling for tests, here is a list o
 - Interacting with the running application using low level APIs, for example to access certain beans in the application context, or to get the port of the running server.
 - Optionally, writing utility classes to make tests less verbose.
 
-NOTE: If you would like to see a full example of such tests, check out the samples at https://github.com/Kehrlann/spring-boot-testing-book-samples/, specifically in the `ch1/widget` directory.
-You'll find the tests in `ch1/widget/src/test/java/.../manual`.
+NOTE: If you would like to see a full example of such tests, check out the samples at https://github.com/Kehrlann/spring-boot-testing-book-samples/, specifically in the `ch01/widget` directory.
+You'll find the tests in `ch01/widget/src/test/java/.../manual`.
 
 [#ch1-section4, reftext={chapter}.{counter:section}, caption='{chapter}.{section}']
 == Removing the toil: a typical `@SpringBootTest`

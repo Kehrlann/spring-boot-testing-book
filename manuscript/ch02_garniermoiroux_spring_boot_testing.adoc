@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch2-title, reftext={chapter}, caption='{chapter}']
 = Testing a Spring Boot "Hello World" application
@@ -56,7 +55,7 @@ NOTE: The applications in this book are demo apps, and are not meant to be produ
 As such, there might be shortcuts taken here and there, and some best practices may be overlooked.
 Please take the implementation of those apps with a grain of salt.
 
-First, get the source code in the samples in the `ch2/weather` directory, or directly from https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch2/weather.
+First, get the source code in the samples in the `ch02/weather` directory, or directly from https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch02/weather.
 
 Then run the application, for example by running the Maven wrapper command:
 

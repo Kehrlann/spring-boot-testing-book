@@ -10,7 +10,6 @@
 :table-number:
 :figure-number:
 :listing-number:
-:tabsize: 2
 
 [#ch4-title, reftext={chapter}, caption='{chapter}']
 = Testing web applications
@@ -45,7 +44,7 @@ The Spring team avoided requiring this component in tests by creating test-speci
 But before you can see it in action, we need an app to test.
 
 For the examples in this chapter, we'll use the "weather app" from chapter 2 with a few upgrades.
-You can find the complete code under `ch4/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch4/weather.
+You can find the complete code under `ch04/weather`, or directly at https://github.com/Kehrlann/spring-boot-testing-book-samples/tree/main/ch04/weather.
 As usual, you can run the project with `./mvnw spring-boot:run`, and access the application at http://localhost:8080.
 The general behavior will be very similar to the app from chapter 2, but instead of doing server-only rendering, we have sprinkled the sample with a bit of JavaScript to turn it into something of a "Single Page Application".
 
