@@ -9,6 +9,10 @@ export PATH := $(HOME)/.rbenv/shims:$(PATH)
 remove-blank-lines: manuscript/*.adoc
 	./resources/remove_blank_line.awk $^
 
+.PHONY: toc-brief
+toc-brief:
+	./resources/toc-brief.sh
+
 .PHONY: cleanup-code
 cleanup-code:
 	set -e
@@ -47,6 +51,20 @@ html: manuscript/*.adoc
 # Pattern rule: each PDF depends on its corresponding .adoc file
 pdf/%.pdf: manuscript/%.adoc
 	@mkdir -p pdf/
+	echo $<
+	./resources/remove_blank_line.awk $<
+	asciidoctor-pdf \
+	    --destination-dir pdf/ \
+	    --attribute pdf-theme=manning \
+	    --require asciidoctor-mathematical \
+	    --require ./resources/remove_formatter_comments.rb \
+	    --require ./resources/sectnumoffset-treeprocessor.rb \
+	    --trace \
+	    $<
+
+pdf/toc_brief_garniermoiroux_spring_boot_testing.pdf: resources/toc_brief_garniermoiroux_spring_boot_testing.adoc
+	@mkdir -p pdf/
+	echo $<
 	./resources/remove_blank_line.awk $<
 	asciidoctor-pdf \
 	    --destination-dir pdf/ \
@@ -63,4 +81,4 @@ ADOC_FILES := $(wildcard manuscript/*.adoc)
 PDF_FILES := $(patsubst manuscript/%.adoc,pdf/%.pdf,$(ADOC_FILES))
 
 # Main pdf target: depends on all PDF files (each handles its own preprocessing)
-pdf: $(PDF_FILES)
+pdf: $(PDF_FILES) pdf/toc_brief_garniermoiroux_spring_boot_testing.pdf

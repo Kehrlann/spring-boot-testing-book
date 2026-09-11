@@ -11,7 +11,7 @@
 [horizontal]
 {counter:list-counter}.:: Configuring and running an application for testing
 {counter:list-counter}.:: Testing web applications
-{counter:list-counter}.:: Testing Subsets of an Application
+{counter:list-counter}.:: Testing subsets of an application with test slices
 {counter:list-counter}.:: Testing Configuration and Properties
 {counter:list-counter}.:: Testing Security configurations
 
