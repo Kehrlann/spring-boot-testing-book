@@ -55,7 +55,6 @@ pdf/%.pdf: manuscript/%.adoc
 	./resources/remove_blank_line.awk $<
 	asciidoctor-pdf \
 	    --destination-dir pdf/ \
-	    --attribute pdf-theme=manning \
 	    --require asciidoctor-mathematical \
 	    --require ./resources/remove_formatter_comments.rb \
 	    --require ./resources/sectnumoffset-treeprocessor.rb \
@@ -68,7 +67,6 @@ pdf/toc_brief_garniermoiroux_spring_boot_testing.pdf: resources/toc_brief_garnie
 	./resources/remove_blank_line.awk $<
 	asciidoctor-pdf \
 	    --destination-dir pdf/ \
-	    --attribute pdf-theme=manning \
 	    --require asciidoctor-mathematical \
 	    --require ./resources/remove_formatter_comments.rb \
 	    --require ./resources/sectnumoffset-treeprocessor.rb \
