@@ -1,7 +1,0 @@
-This post is inspired by chapter 4 of my upcoming book, "Testing Spring Boot Applications" with Manning, already available in early access, through the MEAP program. If you like what you read, you can get a copy of the e-book and get chapter updates as I publish them: https://hubs.la/Q0473JSS0 .
-
-Getting a copy helps support my work, and you can join the liveBook forum to give feedback and chat!
-
-Let me know if you have questions!
-
-#Spring #SpringBoot #Testing
